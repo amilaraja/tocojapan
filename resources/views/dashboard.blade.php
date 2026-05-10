@@ -4,14 +4,14 @@
 
 <x-layouts.site :title="$title">
     <section class="bg-gradient-to-b from-toco-navy to-toco-navy-deep text-white">
-        <div class="max-w-[1440px] mx-auto px-6 py-10">
+        <div class="w-full px-6 2xl:px-8 py-10">
             <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-toco-red font-bold">My Toco</p>
             <h1 class="text-2xl md:text-3xl font-extrabold mt-1">Welcome back, {{ Auth::user()->name }}.</h1>
             <p class="text-white/70 text-sm mt-1">Track your saved vehicles, your active quotes, and your account in one place.</p>
         </div>
     </section>
 
-    <section class="max-w-[1440px] mx-auto px-6 py-8">
+    <section class="w-full px-6 2xl:px-8 py-8">
         @if (session('flash'))
             <div class="bg-toco-silver-2 border border-toco-navy/20 text-toco-navy px-4 py-2 rounded-sm text-sm mb-4 font-mono">{{ session('flash') }}</div>
         @endif

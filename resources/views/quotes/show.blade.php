@@ -5,7 +5,7 @@
 
 <x-layouts.site :title="$title">
     <div class="bg-toco-silver-2 border-b border-line">
-        <div class="max-w-[1440px] mx-auto px-6 py-3 text-[12px] font-mono uppercase tracking-widest text-ink-soft">
+        <div class="w-full px-6 2xl:px-8 py-3 text-[12px] font-mono uppercase tracking-widest text-ink-soft">
             <a href="{{ route('dashboard') }}" class="hover:text-toco-red">Dashboard</a>
             <span class="mx-1.5">/</span>
             <a href="{{ route('quotes.index') }}" class="hover:text-toco-red">My quotes</a>
@@ -14,7 +14,7 @@
         </div>
     </div>
 
-    <section class="max-w-[1440px] mx-auto px-6 py-8">
+    <section class="w-full px-6 2xl:px-8 py-8">
         @if (session('flash'))
             <div class="bg-toco-silver-2 border border-toco-navy/20 text-toco-navy px-4 py-2 rounded-sm text-sm mb-4 font-mono">{{ session('flash') }}</div>
         @endif

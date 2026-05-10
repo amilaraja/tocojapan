@@ -1,6 +1,6 @@
 <x-layouts.cms :page="$page">
     <section class="bg-gradient-to-b from-toco-navy to-toco-navy-deep text-white">
-        <div class="max-w-[1440px] mx-auto px-6 py-12 md:py-16">
+        <div class="w-full px-6 2xl:px-8 py-12 md:py-16">
             @if (! empty($page->data['kicker']))
                 <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-toco-red font-bold">{{ $page->data['kicker'] }}</p>
             @elseif ($country)
@@ -15,7 +15,7 @@
         </div>
     </section>
 
-    <section class="max-w-[1440px] mx-auto px-6 py-10">
+    <section class="w-full px-6 2xl:px-8 py-10">
         @if ($country && $country->ports->isNotEmpty())
             <div class="bg-white border border-line rounded-sm overflow-hidden mb-8">
                 <div class="px-5 py-3 border-b border-line">

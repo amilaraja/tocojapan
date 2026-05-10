@@ -5,14 +5,14 @@
 <x-layouts.site :title="$title">
     {{-- Page header band --}}
     <section class="bg-gradient-to-b from-toco-navy to-toco-navy-deep text-white">
-        <div class="max-w-[1440px] mx-auto px-6 py-8 md:py-10">
+        <div class="w-full px-6 2xl:px-8 py-8 md:py-10">
             <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-toco-red font-bold">Stock</p>
             <h1 class="text-2xl md:text-3xl font-extrabold mt-1">Vehicles for export</h1>
             <p class="text-white/70 text-sm mt-1">{{ number_format($vehicles->total()) }} {{ Str::plural('vehicle', $vehicles->total()) }} matching your filters</p>
         </div>
     </section>
 
-    <section class="max-w-[1440px] mx-auto px-6 py-8">
+    <section class="w-full px-6 2xl:px-8 py-8">
         <div class="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6">
             {{-- Filter sidebar --}}
             <aside class="bg-white border border-line rounded-sm h-fit sticky top-20 self-start">
@@ -135,7 +135,7 @@
                 @if ($vehicles->isEmpty())
                     <div class="bg-white border border-line rounded-sm p-12 text-center text-ink-soft">No vehicles match these filters. <a href="{{ route('vehicles.index') }}" class="text-toco-red font-semibold">Reset filters</a></div>
                 @else
-                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
                         @foreach ($vehicles as $vehicle)
                             <x-vehicle-card :vehicle="$vehicle" />
                         @endforeach

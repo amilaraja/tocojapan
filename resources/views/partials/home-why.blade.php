@@ -1,5 +1,5 @@
 <section id="why-toco" class="bg-toco-silver-2 mt-16">
-    <div class="max-w-[1440px] mx-auto px-6 py-16">
+    <div class="w-full px-6 2xl:px-8 py-16">
         <div class="text-center max-w-2xl mx-auto mb-10">
             <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-toco-red font-bold">Why Toco</p>
             <h2 class="text-2xl md:text-3xl font-extrabold text-toco-navy mt-1">A trusted partner from auction to your port.</h2>
@@ -27,9 +27,9 @@
     </div>
 </section>
 
-{{-- How it works strip --}}
+{{-- How it works strip — v5 keeps this slightly tighter (max-w 1280). --}}
 <section id="how-it-works" class="bg-surface">
-    <div class="max-w-[1440px] mx-auto px-6 py-16">
+    <div class="max-w-[1280px] mx-auto px-6 py-16">
         <div class="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-8 items-start">
             <div>
                 <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-toco-red font-bold">How it works</p>

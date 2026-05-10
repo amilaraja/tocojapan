@@ -7,7 +7,7 @@
 <x-layouts.site :title="$title">
     {{-- Breadcrumb --}}
     <div class="bg-toco-silver-2 border-b border-line">
-        <div class="max-w-[1440px] mx-auto px-6 py-3 text-[12px] font-mono uppercase tracking-widest text-ink-soft">
+        <div class="w-full px-6 2xl:px-8 py-3 text-[12px] font-mono uppercase tracking-widest text-ink-soft">
             <a href="{{ route('home') }}" class="hover:text-toco-red">Home</a>
             <span class="mx-1.5">/</span>
             <a href="{{ route('vehicles.index') }}" class="hover:text-toco-red">Vehicles</a>
@@ -18,7 +18,7 @@
         </div>
     </div>
 
-    <section class="max-w-[1440px] mx-auto px-6 py-8">
+    <section class="w-full px-6 2xl:px-8 py-8">
         <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
             <div class="space-y-4">
                 {{-- Photo gallery --}}
