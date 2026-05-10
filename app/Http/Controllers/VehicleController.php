@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\VehicleListRequest;
 use App\Models\BodyType;
+use App\Models\Country;
 use App\Models\Make;
 use App\Models\Vehicle;
 use App\Models\VehicleModel;
@@ -78,7 +79,16 @@ class VehicleController extends Controller
             ->with(['make', 'vehicleModel', 'bodyType', 'media'])
             ->firstOrFail();
 
-        return view('vehicles.show', ['vehicle' => $vehicle]);
+        $countries = Country::query()
+            ->where('is_active', true)
+            ->with(['ports' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')])
+            ->orderBy('sort_order')->orderBy('name')
+            ->get();
+
+        return view('vehicles.show', [
+            'vehicle' => $vehicle,
+            'countries' => $countries,
+        ]);
     }
 
     /**

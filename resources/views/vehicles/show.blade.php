@@ -94,6 +94,69 @@
                     </div>
                 </div>
 
+                {{-- CIF estimator --}}
+                @unless ($vehicle->price_on_request || $vehicle->m3 === null || (float) $vehicle->m3 === 0.0)
+                    <div class="bg-white border border-line rounded-sm p-5"
+                        x-data="{
+                            countryId: '', portId: '', ports: [], result: null, error: null, loading: false,
+                            countries: @js($countries->map(fn($c) => ['id' => $c->id, 'name' => $c->name, 'iso2' => $c->iso2, 'ports' => $c->ports->map(fn($p) => ['id' => $p->id, 'name' => $p->name, 'rate_per_m3' => (float) $p->rate_per_m3])->all()])),
+                            onCountry() {
+                                this.portId = '';
+                                const c = this.countries.find(c => c.id == this.countryId);
+                                this.ports = c ? c.ports : [];
+                            },
+                            async submit() {
+                                this.error = null; this.result = null;
+                                if (!this.portId) { this.error = 'Pick a port.'; return; }
+                                this.loading = true;
+                                try {
+                                    const r = await fetch('/api/v1/cif/calculate', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                                        body: JSON.stringify({ port_id: this.portId, vehicle_slug: '{{ $vehicle->slug }}' })
+                                    });
+                                    const j = await r.json();
+                                    if (!r.ok) { this.error = j.errors?.message || 'Calculation failed.'; }
+                                    else { this.result = j.data; }
+                                } finally { this.loading = false; }
+                            }
+                        }">
+                        <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">Landed cost</p>
+                        <h3 class="font-bold text-toco-navy text-base mb-3">Estimate CIF to your port</h3>
+
+                        <div class="space-y-2 text-sm">
+                            <select x-model="countryId" @change="onCountry()" class="w-full border-line rounded-sm">
+                                <option value="">— Country —</option>
+                                <template x-for="c in countries" :key="c.id">
+                                    <option :value="c.id" x-text="c.name + ' (' + c.iso2 + ')'"></option>
+                                </template>
+                            </select>
+                            <select x-model="portId" :disabled="!ports.length" class="w-full border-line rounded-sm disabled:bg-toco-silver-2">
+                                <option value="">— Port —</option>
+                                <template x-for="p in ports" :key="p.id">
+                                    <option :value="p.id" x-text="p.name + ' · $' + p.rate_per_m3 + '/m³'"></option>
+                                </template>
+                            </select>
+                            <button type="button" @click="submit()" :disabled="loading" class="w-full bg-toco-navy hover:bg-toco-navy-deep disabled:opacity-50 text-white font-bold uppercase tracking-widest text-xs px-4 py-2.5 rounded-sm">
+                                <span x-show="!loading">Calculate</span>
+                                <span x-show="loading" x-cloak>Calculating…</span>
+                            </button>
+                        </div>
+
+                        <div x-show="error" x-cloak class="text-toco-red text-[12px] mt-3" x-text="error"></div>
+
+                        <template x-if="result">
+                            <dl class="mt-4 pt-4 border-t border-line space-y-1.5 text-sm">
+                                <div class="flex justify-between"><dt class="text-ink-soft text-[12px]">FOB</dt><dd class="font-semibold tabular-nums" x-text="'$' + Number(result.price_fob).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})"></dd></div>
+                                <div class="flex justify-between"><dt class="text-ink-soft text-[12px]">Freight</dt><dd class="font-semibold tabular-nums" x-text="'$' + Number(result.freight).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})"></dd></div>
+                                <div class="flex justify-between"><dt class="text-ink-soft text-[12px]">Insurance</dt><dd class="font-semibold tabular-nums" x-text="'$' + Number(result.insurance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})"></dd></div>
+                                <div class="flex justify-between border-t border-line pt-1.5 mt-1"><dt class="font-bold text-toco-navy">CIF</dt><dd class="font-extrabold text-toco-navy tabular-nums" x-text="'$' + Number(result.cif_total).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})"></dd></div>
+                                <p class="text-[11px] text-ink-soft leading-snug pt-1">Estimate only. Land charges in destination country not included.</p>
+                            </dl>
+                        </template>
+                    </div>
+                @endunless
+
                 {{-- Specs --}}
                 <div class="bg-white border border-line rounded-sm p-5 text-sm">
                     <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold mb-3">Specifications</p>

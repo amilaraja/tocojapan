@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CatalogController;
+use App\Http\Controllers\Api\V1\CifController;
 use App\Http\Controllers\Api\V1\ExpoPushTokenController;
 use App\Http\Controllers\Api\V1\VehicleController;
 use Illuminate\Support\Facades\Route;
@@ -14,6 +15,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::get('makes/{makeSlug}/models', [CatalogController::class, 'models'])->name('makes.models');
     Route::get('body-types', [CatalogController::class, 'bodyTypes'])->name('body-types.index');
     Route::get('countries', [CatalogController::class, 'countries'])->name('countries.index');
+
+    Route::post('cif/calculate', [CifController::class, 'calculate'])->name('cif.calculate');
 
     // Auth (public).
     Route::post('auth/register', [AuthController::class, 'register'])->name('auth.register');

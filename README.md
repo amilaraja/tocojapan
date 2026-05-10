@@ -51,7 +51,13 @@ CI runs all of the above on push / PR (`.github/workflows/ci.yml`).
   carousel, overlapping search panel (4 tabs), featured grid with browse-by-make
   / browse-by-body-type sidebars + counts, Why Toco / How it works strips, CTA
   band. v5 assets in `public/img/v5/`. Done.
-- **Sprint 4** — CIF calculator + country→port cascade + Site Settings. (pending)
+- **Sprint 4** — CIF calculator (CifCalculator service, formula
+  `price_fob + m3*rate + (price+freight)*pct`), country→port cascade public
+  /cif page, embedded CIF widget on vehicle detail, POST /api/v1/cif/calculate
+  for Expo, Filament Site settings page (`/admin/settings`) tabbed
+  General / CIF (insurance % editable, persisted via spatie/laravel-settings).
+  Done.
+- **Sprint 5** — customer accounts, orders, messaging. (pending)
 
 ## Default credentials (dev)
 

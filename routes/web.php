@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CifController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\VehicleController;
 use Illuminate\Support\Facades\Route;
@@ -8,6 +9,8 @@ Route::get('/', [VehicleController::class, 'home'])->name('home');
 
 Route::get('/vehicles', [VehicleController::class, 'index'])->name('vehicles.index');
 Route::get('/vehicles/{slug}', [VehicleController::class, 'show'])->name('vehicles.show');
+
+Route::get('/cif', [CifController::class, 'index'])->name('cif.index');
 
 Route::get('/dashboard', function () {
     return view('dashboard');
