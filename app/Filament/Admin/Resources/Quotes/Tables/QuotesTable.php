@@ -3,12 +3,15 @@
 namespace App\Filament\Admin\Resources\Quotes\Tables;
 
 use App\Models\Quote;
+use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
 
 class QuotesTable
 {
@@ -47,6 +50,16 @@ class QuotesTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
+                    BulkAction::make('archive')
+                        ->label('Archive selected')
+                        ->icon('heroicon-o-archive-box')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records) {
+                            $count = $records->count();
+                            $records->toQuery()->update(['status' => 'archived']);
+                            Notification::make()->title("Archived {$count} quote(s).")->success()->send();
+                        }),
                     DeleteBulkAction::make(),
                 ]),
             ]);

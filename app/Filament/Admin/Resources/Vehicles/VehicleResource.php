@@ -22,6 +22,27 @@ class VehicleResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    protected static ?string $recordTitleAttribute = 'title';
+
+    /**
+     * @return array<int, string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['ref_no', 'title', 'slug'];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getGlobalSearchResultDetails($record): array
+    {
+        return [
+            'Ref' => $record->ref_no,
+            'Status' => ucfirst((string) $record->status),
+        ];
+    }
+
     public static function form(Schema $schema): Schema
     {
         return VehicleForm::configure($schema);

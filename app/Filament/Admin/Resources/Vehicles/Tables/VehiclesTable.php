@@ -4,16 +4,19 @@ namespace App\Filament\Admin\Resources\Vehicles\Tables;
 
 use App\Models\BodyType;
 use App\Models\Make;
+use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
 
 class VehiclesTable
 {
@@ -66,6 +69,29 @@ class VehiclesTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
+                    BulkAction::make('publish')
+                        ->label('Publish selected')
+                        ->icon('heroicon-o-eye')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records) {
+                            $count = 0;
+                            foreach ($records as $r) {
+                                $r->update(['status' => 'published', 'published_at' => $r->published_at ?? now()]);
+                                $count++;
+                            }
+                            Notification::make()->title("Published {$count} vehicle(s).")->success()->send();
+                        }),
+                    BulkAction::make('unpublish')
+                        ->label('Move to draft')
+                        ->icon('heroicon-o-pencil-square')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records) {
+                            $count = $records->count();
+                            $records->toQuery()->update(['status' => 'draft']);
+                            Notification::make()->title("Moved {$count} vehicle(s) to draft.")->success()->send();
+                        }),
                     DeleteBulkAction::make(),
                     ForceDeleteBulkAction::make(),
                     RestoreBulkAction::make(),

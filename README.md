@@ -62,7 +62,13 @@ CI runs all of the above on push / PR (`.github/workflows/ci.yml`).
   Filament QuoteResource with Conversation relation manager, and authenticated
   API endpoints for the same so Expo can save vehicles, list/create/reply to
   quotes. Done.
-- **Sprint 6** — admin operations (search, exports, audit log views). (pending)
+- **Sprint 6** — admin operations: UserResource (role management, password
+  reset action, Quotes/Favorites relation managers), dashboard widgets
+  (StatsOverview + Latest quotes), global header search across vehicles +
+  quotes + users, bulk actions (publish/unpublish vehicles, archive quotes),
+  CSV exports for vehicles/quotes/users, Activity log viewer (Spatie
+  activitylog rendered via a custom Filament page). Done.
+- **Sprint 7** — templated CMS, country pages, SEO. (pending)
 
 ## Default credentials (dev)
 

@@ -23,6 +23,16 @@ class QuoteResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    protected static ?string $recordTitleAttribute = 'reference';
+
+    /**
+     * @return array<int, string>
+     */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['reference', 'contact_name', 'contact_email'];
+    }
+
     public static function form(Schema $schema): Schema
     {
         return QuoteForm::configure($schema);
