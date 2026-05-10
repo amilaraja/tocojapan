@@ -10,6 +10,72 @@ class PageSeeder extends Seeder
 {
     public function run(): void
     {
+        Page::updateOrCreate(['slug' => 'home'], [
+            'template_key' => 'home',
+            'title' => 'Toco Japan — Home',
+            'data' => [
+                'promo_left' => [
+                    ['tone' => 'red',    'title' => 'Kei trucks',           'sub' => '660cc · RHD',          'url' => '/vehicles?body_type=mini-truck'],
+                    ['tone' => 'navy',   'title' => 'Import regulations',   'sub' => 'Per country',          'url' => '#'],
+                    ['tone' => 'silver', 'title' => 'Create account',       'sub' => 'Save & request',       'url' => '/register'],
+                ],
+                'promo_right' => [
+                    ['tone' => 'navy',   'title' => 'Auction agent',           'sub' => '69,000+ cars',         'url' => '#'],
+                    ['tone' => 'red',    'title' => 'Shipping & inspection',   'sub' => 'JEVIC · JAAI',         'url' => '#'],
+                    ['tone' => 'silver', 'title' => 'Banking',                 'sub' => 'Telegraphic transfer', 'url' => '#'],
+                ],
+                'hero_slides' => [
+                    ['image' => '/img/v5/hero-1.jpg',  'alt' => ''],
+                    ['image' => '/img/v5/hero-2.jpg',  'alt' => ''],
+                    ['image' => '/img/v5/hero-3.jpeg', 'alt' => ''],
+                ],
+                'seasonal' => [
+                    'image' => '/img/v5/seasonal-banner.jpg',
+                    'tag' => 'Limited time',
+                    'text' => '<strong>Spring Sale</strong> — extra savings on selected vehicles, this month only.',
+                    'cta_label' => 'Shop sale',
+                    'cta_url' => '/vehicles',
+                ],
+                'popular_chips' => [
+                    ['label' => 'Hilux Surf',         'query_string' => '?make=toyota&q=Hilux'],
+                    ['label' => 'Land Cruiser Prado', 'query_string' => '?make=toyota&vehicle_model=land-cruiser-prado'],
+                    ['label' => 'Alphard Hybrid',     'query_string' => '?make=toyota&vehicle_model=alphard&fuel=hybrid'],
+                    ['label' => 'Kei trucks',         'query_string' => '?body_type=mini-truck'],
+                    ['label' => 'RHD SUVs',           'query_string' => '?body_type=suv&steering=right'],
+                    ['label' => 'Under $5,000',       'query_string' => '?price_to=5000'],
+                ],
+                'why_toco' => [
+                    ['num' => '01', 'title' => 'Deep stock',          'body' => 'Direct access to over 69,000 cars across Japan auctions plus our own owner stock.'],
+                    ['num' => '02', 'title' => 'Trusted process',     'body' => 'JEVIC + JAAI inspection, transparent paperwork, and TT banking that just works.'],
+                    ['num' => '03', 'title' => 'Worldwide shipping',  'body' => 'Roll-on/roll-off and container shipping to every major port across Africa, Caribbean, Pacific.'],
+                    ['num' => '04', 'title' => 'Real support',        'body' => 'Talk to people, not bots. We answer in English, French, and Japanese — usually within hours.'],
+                ],
+                'how_intro_kicker' => 'How it works',
+                'how_intro_headline' => 'Four steps from browse to delivery.',
+                'how_intro_body' => 'No surprises, no hidden costs — just a clear path from picking your car to driving it home.',
+                'how_steps' => [
+                    ['num' => '01', 'title' => 'Pick a car',     'body' => 'Browse our stock or send us a target spec.'],
+                    ['num' => '02', 'title' => 'Get a CIF quote', 'body' => 'Country, port and currency picked — we cost it out.'],
+                    ['num' => '03', 'title' => 'Pay & inspect',  'body' => 'TT to a Japanese bank. JEVIC/JAAI inspect on your behalf.'],
+                    ['num' => '04', 'title' => 'Ship & receive', 'body' => 'Containerised or RoRo. We handle docs end to end.'],
+                ],
+                'cta' => [
+                    'kicker' => 'Ready to import?',
+                    'headline' => 'Tell us what you want — we\'ll quote and ship it.',
+                    'body' => 'Get a CIF estimate to your nearest port, in your currency. No commitment until you\'re happy with the deal.',
+                    'button_primary_label' => 'Request a quote',
+                    'button_primary_url' => '/register',
+                    'button_secondary_label' => 'Browse stock',
+                    'button_secondary_url' => '/vehicles',
+                ],
+            ],
+            'status' => 'published',
+            'seo_title' => 'Toco Japan — Japanese cars, delivered worldwide',
+            'seo_description' => 'Quality Japanese vehicles, exported worldwide. Browse stock, get a CIF quote, and import with confidence.',
+            'locale' => 'en',
+            'published_at' => now()->subWeek(),
+        ]);
+
         Page::updateOrCreate(['slug' => 'about'], [
             'template_key' => 'default',
             'title' => 'About Toco Japan',

@@ -1,5 +1,35 @@
 @php
     $title = 'Toco Japan — Japanese cars, delivered worldwide';
+
+    // Defaults — used whenever the CMS data hasn't been set yet (or falls
+    // back to the v5 sample content for a freshly-seeded site).
+    $promoLeftDefault = [
+        ['tone' => 'red',    'title' => 'Kei trucks', 'sub' => '660cc · RHD',     'url' => '#'],
+        ['tone' => 'navy',   'title' => 'Import regulations', 'sub' => 'Per country', 'url' => '#'],
+        ['tone' => 'silver', 'title' => 'Create account', 'sub' => 'Save & request', 'url' => '#'],
+    ];
+    $promoRightDefault = [
+        ['tone' => 'navy',   'title' => 'Auction agent', 'sub' => '69,000+ cars',  'url' => '#'],
+        ['tone' => 'red',    'title' => 'Shipping & inspection', 'sub' => 'JEVIC · JAAI', 'url' => '#'],
+        ['tone' => 'silver', 'title' => 'Banking', 'sub' => 'Telegraphic transfer', 'url' => '#'],
+    ];
+    $heroSlidesDefault = [
+        ['image' => '/img/v5/hero-1.jpg', 'alt' => ''],
+        ['image' => '/img/v5/hero-2.jpg', 'alt' => ''],
+        ['image' => '/img/v5/hero-3.jpeg', 'alt' => ''],
+    ];
+
+    $promoLeft = $content['promo_left'] ?? $promoLeftDefault;
+    $promoRight = $content['promo_right'] ?? $promoRightDefault;
+    $heroSlides = collect($content['hero_slides'] ?? $heroSlidesDefault)->map(function ($s) {
+        // Filament FileUpload stores a relative path like "home/hero/abc.jpg" —
+        // prefix /storage/ so it resolves through the public-storage symlink.
+        $img = $s['image'] ?? '';
+        if ($img !== '' && ! str_starts_with($img, '/') && ! str_starts_with($img, 'http')) {
+            $s['image'] = '/storage/'.$img;
+        }
+        return $s;
+    })->all();
 @endphp
 
 <x-layouts.site :title="$title">
@@ -9,21 +39,17 @@
             <div class="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)_220px] gap-4">
                 {{-- Left promo tiles --}}
                 <div class="hidden lg:flex flex-col gap-3">
-                    @foreach ([
-                        ['tone' => 'red',    'title' => 'Kei trucks', 'sub' => '660cc · RHD'],
-                        ['tone' => 'navy',   'title' => 'Import regulations', 'sub' => 'Per country'],
-                        ['tone' => 'silver', 'title' => 'Create account', 'sub' => 'Save & request'],
-                    ] as $tile)
+                    @foreach ($promoLeft as $tile)
                         @php
-                            $iconBg = match($tile['tone']) { 'red' => 'bg-toco-red text-white', 'navy' => 'bg-toco-navy text-white', default => 'bg-toco-silver text-toco-navy' };
+                            $iconBg = match($tile['tone'] ?? 'navy') { 'red' => 'bg-toco-red text-white', 'navy' => 'bg-toco-navy text-white', default => 'bg-toco-silver text-toco-navy' };
                         @endphp
-                        <a href="#" class="bg-white text-ink rounded-sm border border-line hover:border-ink hover:translate-x-[-2px] transition flex items-center gap-3 px-3.5 py-3 min-h-[76px]">
+                        <a href="{{ $tile['url'] ?? '#' }}" class="bg-white text-ink rounded-sm border border-line hover:border-ink hover:translate-x-[-2px] transition flex items-center gap-3 px-3.5 py-3 min-h-[76px]">
                             <span class="w-9 h-9 grid place-items-center {{ $iconBg }} rounded-sm shrink-0">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
                             </span>
                             <span class="flex-1 min-w-0">
-                                <span class="block font-bold text-[13px] leading-tight">{{ $tile['title'] }}</span>
-                                <span class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mt-0.5">{{ $tile['sub'] }}</span>
+                                <span class="block font-bold text-[13px] leading-tight">{{ $tile['title'] ?? '' }}</span>
+                                <span class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mt-0.5">{{ $tile['sub'] ?? '' }}</span>
                             </span>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-ink-soft shrink-0"><path d="m9 6 6 6-6 6"/></svg>
                         </a>
@@ -32,7 +58,7 @@
 
                 {{-- Center carousel --}}
                 <div class="min-w-0"
-                    x-data="{ idx: 0, slides: ['/img/v5/hero-1.jpg', '/img/v5/hero-2.jpg', '/img/v5/hero-3.jpeg'], next() { this.idx = (this.idx + 1) % this.slides.length }, prev() { this.idx = (this.idx - 1 + this.slides.length) % this.slides.length } }"
+                    x-data="{ idx: 0, slides: @js(array_map(fn($s) => $s['image'] ?? '', $heroSlides)), next() { this.idx = (this.idx + 1) % this.slides.length }, prev() { this.idx = (this.idx - 1 + this.slides.length) % this.slides.length } }"
                     x-init="setInterval(() => next(), 6000)"
                 >
                     {{-- Slider auto-sizes to the natural image height. The
@@ -65,27 +91,48 @@
 
                 {{-- Right promo tiles --}}
                 <div class="hidden lg:flex flex-col gap-3">
-                    @foreach ([
-                        ['tone' => 'navy',   'title' => 'Auction agent', 'sub' => '69,000+ cars'],
-                        ['tone' => 'red',    'title' => 'Shipping & inspection', 'sub' => 'JEVIC · JAAI'],
-                        ['tone' => 'silver', 'title' => 'Banking', 'sub' => 'Telegraphic transfer'],
-                    ] as $tile)
+                    @foreach ($promoRight as $tile)
                         @php
-                            $iconBg = match($tile['tone']) { 'red' => 'bg-toco-red text-white', 'navy' => 'bg-toco-navy text-white', default => 'bg-toco-silver text-toco-navy' };
+                            $iconBg = match($tile['tone'] ?? 'navy') { 'red' => 'bg-toco-red text-white', 'navy' => 'bg-toco-navy text-white', default => 'bg-toco-silver text-toco-navy' };
                         @endphp
-                        <a href="#" class="bg-white text-ink rounded-sm border border-line hover:border-ink hover:translate-x-[2px] transition flex items-center gap-3 px-3.5 py-3 min-h-[76px]">
+                        <a href="{{ $tile['url'] ?? '#' }}" class="bg-white text-ink rounded-sm border border-line hover:border-ink hover:translate-x-[2px] transition flex items-center gap-3 px-3.5 py-3 min-h-[76px]">
                             <span class="w-9 h-9 grid place-items-center {{ $iconBg }} rounded-sm shrink-0">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
                             </span>
                             <span class="flex-1 min-w-0">
-                                <span class="block font-bold text-[13px] leading-tight">{{ $tile['title'] }}</span>
-                                <span class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mt-0.5">{{ $tile['sub'] }}</span>
+                                <span class="block font-bold text-[13px] leading-tight">{{ $tile['title'] ?? '' }}</span>
+                                <span class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mt-0.5">{{ $tile['sub'] ?? '' }}</span>
                             </span>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-ink-soft shrink-0"><path d="m9 6 6 6-6 6"/></svg>
                         </a>
                     @endforeach
                 </div>
             </div>
+
+            {{-- Seasonal strip — sits under the slider, inside the hero band. --}}
+            @if (! empty($content['seasonal']['enabled'] ?? true))
+                @php
+                    $sx = $content['seasonal'] ?? [];
+                    $sxImg = $sx['image'] ?? '/img/v5/seasonal-banner.jpg';
+                    $sxTag = $sx['tag'] ?? 'Limited time';
+                    $sxText = $sx['text'] ?? 'Spring Sale — extra savings on selected vehicles, this month only.';
+                    $sxCta = $sx['cta_label'] ?? 'Shop sale';
+                    $sxUrl = $sx['cta_url'] ?? route('vehicles.index');
+                @endphp
+                <a href="{{ $sxUrl }}" aria-label="Seasonal promotion"
+                   class="group mt-6 block relative overflow-hidden border border-white/10 rounded-sm">
+                    <img src="{{ $sxImg }}" alt="" class="block w-full h-auto">
+                    <div class="absolute inset-0 bg-gradient-to-r from-toco-navy-deep/80 via-toco-navy-deep/30 to-transparent"></div>
+                    <div class="absolute inset-0 flex items-center px-5 md:px-8 gap-4">
+                        <span class="inline-block bg-toco-red text-white font-mono text-[10px] uppercase tracking-widest px-2 py-1">{{ $sxTag }}</span>
+                        <span class="text-white text-sm md:text-base font-semibold flex-1 truncate">{!! $sxText !!}</span>
+                        <span class="hidden sm:inline-flex items-center gap-1 text-white text-[12px] font-bold uppercase tracking-widest group-hover:text-toco-red">
+                            {{ $sxCta }}
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 6 6 6-6 6"/></svg>
+                        </span>
+                    </div>
+                </a>
+            @endif
         </div>
     </section>
 
@@ -211,17 +258,20 @@
                 </form>
 
                 {{-- Popular chips --}}
+                @php
+                    $popularChips = $content['popular_chips'] ?? [
+                        ['label' => 'Hilux Surf',          'query_string' => '?make=toyota&q=Hilux'],
+                        ['label' => 'Land Cruiser Prado',  'query_string' => '?make=toyota&vehicle_model=land-cruiser-prado'],
+                        ['label' => 'Alphard Hybrid',      'query_string' => '?make=toyota&vehicle_model=alphard&fuel=hybrid'],
+                        ['label' => 'Kei trucks',          'query_string' => '?body_type=mini-truck'],
+                        ['label' => 'RHD SUVs',            'query_string' => '?body_type=suv&steering=right'],
+                        ['label' => 'Under $5,000',        'query_string' => '?price_to=5000'],
+                    ];
+                @endphp
                 <div class="mt-5 pt-4 border-t border-line flex items-center flex-wrap gap-2 text-[12px]">
                     <span class="font-mono text-[10px] uppercase tracking-widest text-ink-soft mr-1">Popular</span>
-                    @foreach ([
-                        ['Hilux Surf', '?make=toyota&q=Hilux'],
-                        ['Land Cruiser Prado', '?make=toyota&vehicle_model=land-cruiser-prado'],
-                        ['Alphard Hybrid', '?make=toyota&vehicle_model=alphard&fuel=hybrid'],
-                        ['Kei trucks', '?body_type=mini-truck'],
-                        ['RHD SUVs', '?body_type=suv&steering=right'],
-                        ['Under $5,000', '?price_to=5000'],
-                    ] as $chip)
-                        <a href="{{ route('vehicles.index') }}{{ $chip[1] }}" class="border border-line hover:border-toco-navy px-2.5 py-1 rounded-sm">{{ $chip[0] }}</a>
+                    @foreach ($popularChips as $chip)
+                        <a href="{{ route('vehicles.index') }}{{ $chip['query_string'] ?? '' }}" class="border border-line hover:border-toco-navy px-2.5 py-1 rounded-sm">{{ $chip['label'] ?? '' }}</a>
                     @endforeach
                 </div>
             </div>
@@ -231,20 +281,30 @@
     {{-- Featured grid with browse-by-make and browse-by-body-type sidebars --}}
     @include('partials.home-featured', ['featured' => $featured, 'makesWithCounts' => $makesWithCounts, 'bodyTypesWithCounts' => $bodyTypesWithCounts, 'totalPublished' => $totalPublished])
 
-    {{-- Why Toco --}}
-    @include('partials.home-why')
+    {{-- Why Toco + How it works --}}
+    @include('partials.home-why', ['content' => $content])
 
     {{-- CTA strip --}}
+    @php
+        $cta = $content['cta'] ?? [];
+        $ctaKicker = $cta['kicker'] ?? 'Ready to import?';
+        $ctaHeadline = $cta['headline'] ?? 'Tell us what you want — we\'ll quote and ship it.';
+        $ctaBody = $cta['body'] ?? 'Get a CIF estimate to your nearest port, in your currency. No commitment until you\'re happy with the deal.';
+        $ctaPrimaryLabel = $cta['button_primary_label'] ?? 'Request a quote';
+        $ctaPrimaryUrl = $cta['button_primary_url'] ?? route('register');
+        $ctaSecondaryLabel = $cta['button_secondary_label'] ?? 'Browse stock';
+        $ctaSecondaryUrl = $cta['button_secondary_url'] ?? route('vehicles.index');
+    @endphp
     <section id="contact" class="bg-toco-black text-white">
         <div class="max-w-[1440px] mx-auto px-6 py-12 md:py-16 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 items-center">
             <div>
-                <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-toco-red font-bold">Ready to import?</p>
-                <h2 class="text-3xl md:text-4xl font-extrabold mt-2 leading-tight">Tell us what you want — we'll quote and ship it.</h2>
-                <p class="text-white/70 mt-3 max-w-xl">Get a CIF estimate to your nearest port, in your currency. No commitment until you're happy with the deal.</p>
+                <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-toco-red font-bold">{{ $ctaKicker }}</p>
+                <h2 class="text-3xl md:text-4xl font-extrabold mt-2 leading-tight">{{ $ctaHeadline }}</h2>
+                <p class="text-white/70 mt-3 max-w-xl">{{ $ctaBody }}</p>
             </div>
             <div class="flex gap-3 md:justify-end">
-                <a href="{{ route('register') }}" class="bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-5 py-3 rounded-sm">Request a quote</a>
-                <a href="{{ route('vehicles.index') }}" class="border border-white/30 hover:bg-white/10 text-white font-bold uppercase tracking-widest text-xs px-5 py-3 rounded-sm">Browse stock</a>
+                <a href="{{ $ctaPrimaryUrl }}" class="bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-5 py-3 rounded-sm">{{ $ctaPrimaryLabel }}</a>
+                <a href="{{ $ctaSecondaryUrl }}" class="border border-white/30 hover:bg-white/10 text-white font-bold uppercase tracking-widest text-xs px-5 py-3 rounded-sm">{{ $ctaSecondaryLabel }}</a>
             </div>
         </div>
     </section>

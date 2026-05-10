@@ -15,6 +15,35 @@
         BE AWARE OF FRAUDSTERS · always verify our company details before sending any payment
     </div>
 
+    {{-- Top bar --}}
+    <div class="bg-toco-navy text-white/80 text-[12px] tracking-wide border-b border-white/5">
+        <div class="max-w-[1600px] mx-auto px-6 2xl:px-8 py-2 flex items-center justify-between gap-6">
+            <div class="hidden sm:flex items-center gap-5">
+                @isset($topBarLeft)
+                    {{ $topBarLeft }}
+                @else
+                    <span class="inline-flex items-center gap-1.5">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+                        EN / JP / ES / FR
+                    </span>
+                    <span>USD ▾</span>
+                @endisset
+            </div>
+            <div class="flex items-center gap-5">
+                @isset($topBarRight)
+                    {{ $topBarRight }}
+                @else
+                    <a href="#" class="inline-flex items-center gap-1.5 hover:text-white">
+                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-toco-red"></span>
+                        Live: 12 buyers viewing now
+                    </a>
+                    <a href="#" class="hidden md:inline-flex hover:text-white">Track shipment</a>
+                    <a href="#" class="hidden md:inline-flex hover:text-white">+81 90-1234-5678</a>
+                @endisset
+            </div>
+        </div>
+    </div>
+
     {{-- Sticky header --}}
     <header class="sticky top-0 z-30 bg-white border-b border-line">
         <div class="max-w-[1600px] mx-auto px-6 2xl:px-8 h-16 flex items-center justify-between gap-6">

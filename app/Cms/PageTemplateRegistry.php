@@ -6,6 +6,7 @@ use App\Cms\Templates\ContactTemplate;
 use App\Cms\Templates\CountryLandingTemplate;
 use App\Cms\Templates\DefaultTemplate;
 use App\Cms\Templates\FaqTemplate;
+use App\Cms\Templates\HomeTemplate;
 
 class PageTemplateRegistry
 {
@@ -15,6 +16,7 @@ class PageTemplateRegistry
     public static function all(): array
     {
         return [
+            HomeTemplate::class,
             DefaultTemplate::class,
             CountryLandingTemplate::class,
             ContactTemplate::class,
