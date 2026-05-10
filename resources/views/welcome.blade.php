@@ -37,16 +37,27 @@
     <main class="flex-1 bg-toco-silver-2">
         <section class="mx-auto max-w-[1100px] px-6 py-16">
             <div class="text-toco-red font-mono text-[11px] tracking-[0.2em] uppercase font-bold">
-                Foundations · Sprint 0
+                Toco Japan — Sprint 2 preview
             </div>
             <h1 class="mt-3 text-4xl md:text-5xl font-extrabold tracking-tight text-ink">
-                Hello, Toco.
+                Quality Japanese vehicles, exported worldwide.
             </h1>
             <p class="mt-4 max-w-2xl text-base text-ink-soft leading-relaxed">
-                The Laravel skeleton is live with the v5 design tokens wired into Tailwind.
-                Montserrat is the body face, JetBrains Mono is the label face. Brand red, navy
-                and silvers below confirm the palette renders correctly.
+                Find your next vehicle below — pick a make to see the available models, then refine
+                by year and body type. The full v5 homepage lands in Sprint 3.
             </p>
+
+            <div class="mt-8 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
+                <div class="bg-white border border-line rounded-md p-5">
+                    <h2 class="font-bold text-toco-navy text-lg">Latest stock</h2>
+                    <p class="text-sm text-ink-soft mt-1">{{ \App\Models\Vehicle::published()->count() }} vehicles currently listed for export.</p>
+                    <a href="{{ route('vehicles.index') }}" class="inline-block mt-4 text-sm font-semibold text-toco-red hover:underline">Browse all vehicles →</a>
+                </div>
+                <x-search-widget
+                    :makes="\App\Models\Make::where('is_active', true)->orderBy('name')->get(['id','slug','name'])"
+                    :body-types="\App\Models\BodyType::where('is_active', true)->orderBy('name')->get(['id','slug','name'])"
+                />
+            </div>
 
             {{-- Palette swatches --}}
             <div class="mt-10 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">

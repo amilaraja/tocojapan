@@ -42,7 +42,11 @@ CI runs all of the above on push / PR (`.github/workflows/ci.yml`).
 - **Sprint 1** — schema, models, seeders, Filament admin shell at `/admin`,
   Breeze customer auth (Blade), Sanctum-backed JSON API at `/api/v1` for the
   Expo mobile client (auth + Expo push token registry). Done.
-- **Sprint 2** — vehicle CRUD + public listings + filters. (pending)
+- **Sprint 2** — vehicle CRUD in Filament (tabbed form + media library photos),
+  public listings + filters at `/vehicles`, vehicle detail at `/vehicles/{slug}`,
+  public read API (`/api/v1/vehicles`, `/makes`, `/makes/{slug}/models`,
+  `/body-types`, `/countries`), reusable Alpine search widget. Done.
+- **Sprint 3** — v5 homepage + listing UI redesign in Blade. (pending)
 
 ## Default credentials (dev)
 

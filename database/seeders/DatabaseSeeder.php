@@ -13,8 +13,10 @@ class DatabaseSeeder extends Seeder
             CountrySeeder::class,
             PortSeeder::class,
             MakeSeeder::class,
+            VehicleModelSeeder::class,
             BodyTypeSeeder::class,
             AdminUserSeeder::class,
+            VehicleSeeder::class,
         ]);
     }
 }
