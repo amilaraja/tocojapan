@@ -1,0 +1,13 @@
+includes:
+    - ./vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app/
+        - database/
+    level: 6
+    ignoreErrors:
+        # Loosen for early scaffolding; tighten later as code stabilises.
+        - '#PHPDoc tag @var.*does not specify variable name#'
+    excludePaths:
+        - app/Console/Kernel.php
