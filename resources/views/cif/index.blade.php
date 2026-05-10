@@ -5,14 +5,14 @@
 <x-layouts.site :title="$title">
     {{-- Page header --}}
     <section class="bg-gradient-to-b from-toco-navy to-toco-navy-deep text-white">
-        <div class="w-full px-6 2xl:px-8 py-10">
+        <div class="max-w-[1600px] mx-auto px-6 2xl:px-8 py-10">
             <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-toco-red font-bold">Tools</p>
             <h1 class="text-2xl md:text-3xl font-extrabold mt-1">CIF calculator</h1>
             <p class="text-white/70 text-sm mt-2 max-w-2xl">Estimate your landed cost (FOB + freight + insurance) to any of our destination ports. Pick a vehicle from stock, or enter your own price + dimensions.</p>
         </div>
     </section>
 
-    <section class="w-full px-6 2xl:px-8 py-8">
+    <section class="max-w-[1600px] mx-auto px-6 2xl:px-8 py-8">
         <div
             x-data="{
                 tab: 'vehicle',

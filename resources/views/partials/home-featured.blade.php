@@ -1,5 +1,5 @@
 <section class="bg-surface mt-16">
-    <div class="w-full px-6 2xl:px-8">
+    <div class="max-w-[1600px] mx-auto px-6 2xl:px-8">
         {{-- Section heading --}}
         <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-6">
             <div>

@@ -17,7 +17,7 @@
 
     {{-- Sticky header --}}
     <header class="sticky top-0 z-30 bg-white border-b border-line">
-        <div class="w-full px-6 2xl:px-8 h-16 flex items-center justify-between gap-6">
+        <div class="max-w-[1600px] mx-auto px-6 2xl:px-8 h-16 flex items-center justify-between gap-6">
             <a href="{{ route('home') }}" class="inline-flex items-center gap-2.5 shrink-0">
                 <span class="inline-flex items-center justify-center w-9 h-9 rounded-sm bg-toco-red text-white font-bold text-sm font-mono">TJ</span>
                 <span class="font-extrabold tracking-tight text-toco-navy text-lg">Toco Japan</span>

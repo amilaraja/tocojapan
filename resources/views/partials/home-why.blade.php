@@ -1,5 +1,5 @@
 <section id="why-toco" class="bg-toco-silver-2 mt-16">
-    <div class="w-full px-6 2xl:px-8 py-16">
+    <div class="max-w-[1600px] mx-auto px-6 2xl:px-8 py-16">
         <div class="text-center max-w-2xl mx-auto mb-10">
             <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-toco-red font-bold">Why Toco</p>
             <h2 class="text-2xl md:text-3xl font-extrabold text-toco-navy mt-1">A trusted partner from auction to your port.</h2>
