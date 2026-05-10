@@ -49,4 +49,21 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     {
         return $this->hasMany(ExpoPushToken::class);
     }
+
+    /** @return HasMany<Favorite, $this> */
+    public function favorites(): HasMany
+    {
+        return $this->hasMany(Favorite::class);
+    }
+
+    /** @return HasMany<Quote, $this> */
+    public function quotes(): HasMany
+    {
+        return $this->hasMany(Quote::class);
+    }
+
+    public function hasFavorited(Vehicle $vehicle): bool
+    {
+        return $this->favorites()->where('vehicle_id', $vehicle->id)->exists();
+    }
 }

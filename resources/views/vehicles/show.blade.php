@@ -89,8 +89,11 @@
                         </p>
                     </div>
                     <div class="p-5 space-y-2">
-                        <a href="{{ route('register') }}" class="block text-center bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">Request a quote</a>
-                        <a href="#" class="block text-center border border-toco-navy hover:bg-toco-silver-2 text-toco-navy font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">Contact a sales rep</a>
+                        @auth
+                            <a href="#quote-form" class="block text-center bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">Request a quote</a>
+                        @else
+                            <a href="{{ route('login') }}" class="block text-center bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">Sign in to request a quote</a>
+                        @endauth
                     </div>
                 </div>
 
@@ -186,5 +189,69 @@
                 </div>
             </aside>
         </div>
+
+        @auth
+            {{-- Request-a-quote form --}}
+            <div id="quote-form" class="bg-white border border-line border-t-4 border-t-toco-red rounded-sm p-6 mt-8 max-w-3xl"
+                x-data="{
+                    countryId: '', portId: '', ports: [],
+                    countries: @js($countries->map(fn($c) => ['id' => $c->id, 'name' => $c->name, 'iso2' => $c->iso2, 'ports' => $c->ports->map(fn($p) => ['id' => $p->id, 'name' => $p->name])->all()])),
+                    onCountry() {
+                        this.portId = '';
+                        const c = this.countries.find(c => c.id == this.countryId);
+                        this.ports = c ? c.ports : [];
+                    }
+                }">
+                <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">Request a quote</p>
+                <h2 class="font-extrabold text-toco-navy text-xl mt-1">Get a CIF estimate for {{ $vehicle->title }}</h2>
+                <p class="text-sm text-ink-soft mt-1">Tell us where you'd like it delivered. We'll come back with a final figure within one business day.</p>
+
+                <form method="POST" action="{{ route('quotes.store', $vehicle->slug) }}" class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-5 text-sm">
+                    @csrf
+                    <div>
+                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Your name</label>
+                        <input type="text" name="contact_name" value="{{ old('contact_name', Auth::user()->name) }}" required class="w-full border-line rounded-sm">
+                        @error('contact_name')<p class="text-toco-red text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Email</label>
+                        <input type="email" name="contact_email" value="{{ old('contact_email', Auth::user()->email) }}" required class="w-full border-line rounded-sm">
+                        @error('contact_email')<p class="text-toco-red text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Phone (optional)</label>
+                        <input type="text" name="contact_phone" value="{{ old('contact_phone', Auth::user()->phone) }}" class="w-full border-line rounded-sm">
+                    </div>
+                    <div></div>
+                    <div>
+                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Destination country</label>
+                        <select name="country_id" x-model="countryId" @change="onCountry()" class="w-full border-line rounded-sm">
+                            <option value="">— Country —</option>
+                            <template x-for="c in countries" :key="c.id">
+                                <option :value="c.id" x-text="c.name + ' (' + c.iso2 + ')'"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Port</label>
+                        <select name="port_id" x-model="portId" :disabled="!ports.length" class="w-full border-line rounded-sm disabled:bg-toco-silver-2">
+                            <option value="">— Port —</option>
+                            <template x-for="p in ports" :key="p.id">
+                                <option :value="p.id" x-text="p.name"></option>
+                            </template>
+                        </select>
+                        @error('port_id')<p class="text-toco-red text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Message (optional)</label>
+                        <textarea name="message" rows="4" maxlength="4000" placeholder="Anything we should know? (target accessories, alternative models, currency, ETA…)" class="w-full border-line rounded-sm">{{ old('message') }}</textarea>
+                        @error('message')<p class="text-toco-red text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="md:col-span-2 flex justify-end">
+                        <button type="submit" class="bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-5 py-3 rounded-sm">Submit quote request</button>
+                    </div>
+                </form>
+            </div>
+        @endauth
     </section>
 </x-layouts.site>

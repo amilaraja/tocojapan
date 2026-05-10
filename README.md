@@ -57,7 +57,12 @@ CI runs all of the above on push / PR (`.github/workflows/ci.yml`).
   for Expo, Filament Site settings page (`/admin/settings`) tabbed
   General / CIF (insurance % editable, persisted via spatie/laravel-settings).
   Done.
-- **Sprint 5** — customer accounts, orders, messaging. (pending)
+- **Sprint 5** — customer accounts (My Toco dashboard), saved vehicles
+  (heart toggle), quote requests with messaging thread (customer + admin reply),
+  Filament QuoteResource with Conversation relation manager, and authenticated
+  API endpoints for the same so Expo can save vehicles, list/create/reply to
+  quotes. Done.
+- **Sprint 6** — admin operations (search, exports, audit log views). (pending)
 
 ## Default credentials (dev)
 
