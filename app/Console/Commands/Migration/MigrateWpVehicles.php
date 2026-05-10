@@ -8,16 +8,23 @@ use App\Models\VehicleModel;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-#[Signature('migrate:wp-vehicles {--dry-run} {--limit=0 : Stop after N products (0 = no limit)} {--exclude-auction : Skip products tagged as auction stock (the One Price system)}')]
-#[Description('Import owner-stock vehicles (WC products + ACF postmeta) into the vehicles table.')]
+#[Signature('migrate:wp-vehicles
+    {--dry-run}
+    {--limit=0 : Stop after N products (0 = no limit)}
+    {--exclude-auction : Skip products tagged as auction stock (the One Price system)}
+    {--no-photos : Skip downloading featured + gallery images}
+    {--uploads-path= : Absolute path to wp-content/uploads (defaults to env WP_UPLOADS_PATH)}')]
+#[Description('Import owner-stock vehicles (WC products + ACF postmeta + featured/gallery images) into the vehicles table.')]
 class MigrateWpVehicles extends Command
 {
     /** @var array<string, string>  postmeta_key => vehicles column */
     private const POSTMETA_TO_COLUMN = [
-        'ref_no' => 'ref_no',
+        // WP/ACF key      => Laravel column
+        'chassis_no' => 'ref_no',
         'year' => 'year_first_reg',
         'mileage' => 'mileage_km',
         'engine_cc' => 'engine_cc',
@@ -25,13 +32,10 @@ class MigrateWpVehicles extends Command
         'transmission' => 'transmission',
         'drive' => 'drive',
         'steering_side' => 'steering_side',
-        'exterior_color' => 'exterior_color',
+        'body_color' => 'exterior_color',
         'interior_color' => 'interior_color',
         'doors' => 'doors',
         'seats' => 'seats',
-        'length_cm' => 'length_cm',
-        'width_cm' => 'width_cm',
-        'height_cm' => 'height_cm',
         'm3' => 'm3',
         'warranty_period' => 'warranty_period',
     ];
@@ -41,6 +45,17 @@ class MigrateWpVehicles extends Command
         $dry = (bool) $this->option('dry-run');
         $limit = (int) $this->option('limit');
         $excludeAuction = (bool) $this->option('exclude-auction');
+        $importPhotos = ! (bool) $this->option('no-photos');
+        $uploadsPath = (string) ($this->option('uploads-path') ?: env('WP_UPLOADS_PATH', ''));
+
+        if ($importPhotos && $uploadsPath === '') {
+            $this->warn('No --uploads-path set and WP_UPLOADS_PATH env is empty — photos will be skipped.');
+            $importPhotos = false;
+        }
+        if ($importPhotos && ! is_dir($uploadsPath)) {
+            $this->warn("Uploads path {$uploadsPath} does not exist — photos will be skipped.");
+            $importPhotos = false;
+        }
 
         $reporter->open('vehicles');
 
@@ -62,14 +77,15 @@ class MigrateWpVehicles extends Command
         }
 
         $total = (clone $q)->count();
-        $this->info("Found {$total} WC products. Streaming…");
+        $this->info("Found {$total} WC products. photos=".($importPhotos ? 'yes' : 'no').' Streaming…');
         $bar = $this->output->createProgressBar($total);
 
         $written = 0;
         $skipped = 0;
+        $photosWritten = 0;
         $errors = [];
 
-        $q->orderBy('ID')->lazy(200)->each(function ($post) use ($dry, $bar, &$written, &$skipped, &$errors, $limit) {
+        $q->orderBy('ID')->lazy(50)->each(function ($post) use ($dry, $bar, $importPhotos, $uploadsPath, &$written, &$skipped, &$photosWritten, &$errors, $limit) {
             if ($limit > 0 && $written + $skipped >= $limit) {
                 return false;
             }
@@ -79,7 +95,7 @@ class MigrateWpVehicles extends Command
                     ->where('post_id', $post->ID)
                     ->pluck('meta_value', 'meta_key');
 
-                $refNo = (string) ($meta['ref_no'] ?? 'TJ-WP-'.$post->ID);
+                $refNo = (string) ($meta['chassis_no'] ?? $meta['ref_no'] ?? 'TJ-WP-'.$post->ID);
 
                 // Resolve make/model via product_cat term relationships.
                 $cats = DB::connection('wp')->table('term_relationships as tr')
@@ -103,9 +119,12 @@ class MigrateWpVehicles extends Command
                     return;
                 }
 
+                // WP often has unicode chars (★, ⁕) in post_name — slug them out.
+                $cleanSlug = Str::slug($post->post_title.' '.$refNo) ?: Str::slug($post->post_name) ?: 'tj-wp-'.$post->ID;
+
                 $attrs = [
                     'ref_no' => $refNo,
-                    'slug' => $post->post_name ?: Str::slug($post->post_title.'-'.$refNo),
+                    'slug' => $cleanSlug,
                     'title' => $post->post_title,
                     'description' => $post->post_content,
                     'status' => 'published',
@@ -122,13 +141,27 @@ class MigrateWpVehicles extends Command
                     }
                 }
 
+                // Parse lwh "3.25×1.39×1.75" (metres) → length/width/height in cm.
+                if (! empty($meta['lwh'])) {
+                    [$l, $w, $h] = array_pad(self::parseLwh((string) $meta['lwh']), 3, null);
+                    if ($l) {
+                        $attrs['length_cm'] = $l;
+                    }
+                    if ($w) {
+                        $attrs['width_cm'] = $w;
+                    }
+                    if ($h) {
+                        $attrs['height_cm'] = $h;
+                    }
+                }
+
                 // ACF feature groups stored as serialized arrays.
                 $features = [];
                 foreach (['comfort', 'safety', 'sound_system', 'seats', 'windows', 'other', 'other_selling_points'] as $group) {
                     $raw = $meta[$group] ?? null;
                     if (is_string($raw) && $raw !== '') {
                         $unserialized = @unserialize($raw);
-                        if (is_array($unserialized)) {
+                        if (is_array($unserialized) && $unserialized !== []) {
                             $features[$group] = $unserialized;
                         }
                     }
@@ -138,7 +171,11 @@ class MigrateWpVehicles extends Command
                 }
 
                 if (! $dry) {
-                    Vehicle::updateOrCreate(['ref_no' => $refNo], $attrs);
+                    $vehicle = Vehicle::updateOrCreate(['ref_no' => $refNo], $attrs);
+
+                    if ($importPhotos) {
+                        $photosWritten += $this->importPhotos($vehicle, $post->ID, $meta, $uploadsPath, $errors);
+                    }
                 }
 
                 $written++;
@@ -156,15 +193,98 @@ class MigrateWpVehicles extends Command
         $reporter->note('total_seen', $total);
         $reporter->note('written', $written);
         $reporter->note('skipped', $skipped);
+        $reporter->note('photos_written', $photosWritten);
         $reporter->note('errors_sample', array_slice($errors, 0, 50));
         $reporter->note('dry_run', $dry);
         $reporter->close('vehicles');
 
-        $this->info(($dry ? 'DRY: ' : '')."Vehicles written={$written}, skipped={$skipped}");
+        $this->info(($dry ? 'DRY: ' : '')."Vehicles written={$written}, skipped={$skipped}, photos={$photosWritten}");
         if ($errors !== []) {
             $this->warn(count($errors).' error(s) — see storage/migration-reports/.');
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Import featured + gallery images for a single vehicle from WP attachments.
+     *
+     * @param  Collection<string, mixed>  $meta
+     * @param  array<int, string>  $errors
+     * @return int number of photos written
+     */
+    private function importPhotos(Vehicle $vehicle, int $wpPostId, $meta, string $uploadsPath, array &$errors): int
+    {
+        $featuredId = (int) ($meta['_thumbnail_id'] ?? 0);
+        $galleryCsv = (string) ($meta['_product_image_gallery'] ?? '');
+        $galleryIds = array_filter(array_map('intval', explode(',', $galleryCsv)));
+
+        // Featured first so it ends up as the lead photo.
+        $attachmentIds = $featuredId > 0 ? array_merge([$featuredId], $galleryIds) : $galleryIds;
+        if ($attachmentIds === []) {
+            return 0;
+        }
+
+        // Resolve all attachment file paths in one query.
+        $relPaths = DB::connection('wp')->table('postmeta')
+            ->where('meta_key', '_wp_attached_file')
+            ->whereIn('post_id', $attachmentIds)
+            ->pluck('meta_value', 'post_id');
+
+        // Already-imported attachment ids on this vehicle (idempotency).
+        $existingNames = $vehicle->getMedia('photos')->pluck('name')->all();
+
+        $count = 0;
+        foreach ($attachmentIds as $attId) {
+            $name = 'wp-'.$attId;
+            if (in_array($name, $existingNames, true)) {
+                continue;
+            }
+            $relPath = $relPaths[$attId] ?? null;
+            if (! $relPath) {
+                continue;
+            }
+            $abs = rtrim($uploadsPath, '/').'/'.ltrim($relPath, '/');
+            if (! is_file($abs)) {
+                $errors[] = "post {$wpPostId}: attachment {$attId} file missing at {$abs}";
+
+                continue;
+            }
+            try {
+                $vehicle
+                    ->addMedia($abs)
+                    ->preservingOriginal()
+                    ->usingName($name)
+                    ->usingFileName(basename($abs))
+                    ->toMediaCollection('photos');
+                $count++;
+            } catch (\Throwable $e) {
+                $errors[] = "post {$wpPostId}: attachment {$attId} failed: ".$e->getMessage();
+            }
+        }
+
+        return $count;
+    }
+
+    /**
+     * Parse an LWH string like "3.25×1.39×1.75" or "3.25x1.39x1.75" (metres) into cm.
+     *
+     * @return array<int, ?float>
+     */
+    private static function parseLwh(string $raw): array
+    {
+        $clean = str_replace(['×', 'X', '*'], 'x', $raw);
+        $parts = array_map('trim', explode('x', $clean));
+        $out = [];
+        foreach ($parts as $p) {
+            if ($p === '' || ! is_numeric($p)) {
+                $out[] = null;
+
+                continue;
+            }
+            $out[] = round(((float) $p) * 100.0, 2); // m → cm
+        }
+
+        return $out;
     }
 }
