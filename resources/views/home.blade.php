@@ -35,17 +35,20 @@
                     x-data="{ idx: 0, slides: ['/img/v5/hero-1.jpg', '/img/v5/hero-2.jpg', '/img/v5/hero-3.jpeg'], next() { this.idx = (this.idx + 1) % this.slides.length }, prev() { this.idx = (this.idx - 1 + this.slides.length) % this.slides.length } }"
                     x-init="setInterval(() => next(), 6000)"
                 >
-                    <div class="relative bg-toco-silver border border-white/10 overflow-hidden aspect-[16/9]">
+                    {{-- Slider auto-sizes to the natural image height. The
+                         first image (rendered statically, opacity-0 if not
+                         active) sets the box height; the others overlay
+                         absolutely and cross-fade. Hero banners are 1500x250
+                         (6:1) but this works for any matching-ratio set. --}}
+                    <div class="relative bg-toco-silver border border-white/10 overflow-hidden">
                         <template x-for="(slide, i) in slides" :key="slide">
-                            <img :src="slide" alt="" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-700" :class="i === idx ? 'opacity-100' : 'opacity-0'">
+                            <img :src="slide" alt=""
+                                 class="block w-full h-auto transition-opacity duration-700"
+                                 :class="{
+                                     'opacity-100 relative': i === idx,
+                                     'opacity-0 absolute inset-0 h-full object-cover pointer-events-none': i !== idx
+                                 }">
                         </template>
-                        <div class="absolute inset-0 bg-gradient-to-tr from-black/40 via-black/10 to-transparent"></div>
-                        <div class="absolute bottom-0 left-0 right-0 p-6 md:p-8 text-white">
-                            <p class="font-mono text-[11px] tracking-[0.2em] uppercase text-toco-red font-bold">Toco · since 2009</p>
-                            <h1 class="font-extrabold text-3xl md:text-5xl leading-tight mt-2 max-w-2xl">
-                                Japanese cars, <span class="text-toco-red">delivered worldwide</span> with confidence.
-                            </h1>
-                        </div>
                         <button type="button" @click="prev" class="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 grid place-items-center bg-white/85 hover:bg-white text-toco-navy rounded-sm" aria-label="Previous">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m15 6-6 6 6 6"/></svg>
                         </button>
