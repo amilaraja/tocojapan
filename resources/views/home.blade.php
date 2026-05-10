@@ -88,32 +88,21 @@
                         </div>
                     </div>
 
-                    {{-- Seasonal strip — same column as slider, sits directly under it. --}}
+                    {{-- Seasonal strip — image-only, links to the CTA URL. --}}
                     @if (! empty($content['seasonal']['enabled'] ?? true))
                         @php
                             $sx = $content['seasonal'] ?? [];
                             $sxImg = $sx['image'] ?? '/img/v5/seasonal-banner.jpg';
-                            $sxTag = $sx['tag'] ?? 'Limited time';
-                            $sxText = $sx['text'] ?? 'Spring Sale — extra savings on selected vehicles, this month only.';
-                            $sxCta = $sx['cta_label'] ?? 'Shop sale';
                             $sxUrl = $sx['cta_url'] ?? route('vehicles.index');
+                            $sxAlt = $sx['tag'] ?? 'Seasonal promotion';
                             // FileUpload paths are relative — prefix /storage/ if so.
                             if ($sxImg !== '' && ! str_starts_with($sxImg, '/') && ! str_starts_with($sxImg, 'http')) {
                                 $sxImg = '/storage/'.$sxImg;
                             }
                         @endphp
-                        <a href="{{ $sxUrl }}" aria-label="Seasonal promotion"
-                           class="group mt-3 block relative overflow-hidden border border-white/10 rounded-sm">
-                            <img src="{{ $sxImg }}" alt="" class="block w-full h-auto">
-                            <div class="absolute inset-0 bg-gradient-to-r from-toco-navy-deep/80 via-toco-navy-deep/30 to-transparent"></div>
-                            <div class="absolute inset-0 flex items-center px-4 md:px-6 gap-3">
-                                <span class="inline-block bg-toco-red text-white font-mono text-[10px] uppercase tracking-widest px-2 py-1 shrink-0">{{ $sxTag }}</span>
-                                <span class="text-white text-xs md:text-sm font-semibold flex-1 truncate">{!! $sxText !!}</span>
-                                <span class="hidden sm:inline-flex items-center gap-1 text-white text-[11px] font-bold uppercase tracking-widest group-hover:text-toco-red shrink-0">
-                                    {{ $sxCta }}
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 6 6 6-6 6"/></svg>
-                                </span>
-                            </div>
+                        <a href="{{ $sxUrl }}" aria-label="{{ $sxAlt }}"
+                           class="mt-3 block overflow-hidden border border-white/10 rounded-sm">
+                            <img src="{{ $sxImg }}" alt="{{ $sxAlt }}" class="block w-full h-auto">
                         </a>
                     @endif
                 </div>
