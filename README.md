@@ -39,7 +39,15 @@ CI runs all of the above on push / PR (`.github/workflows/ci.yml`).
 ## Sprint status
 
 - **Sprint 0** — scaffold, tooling, tokens. Done.
-- **Sprint 1** — schema, auth, Filament shell, roles, seeders. (pending)
+- **Sprint 1** — schema, models, seeders, Filament admin shell at `/admin`,
+  Breeze customer auth (Blade), Sanctum-backed JSON API at `/api/v1` for the
+  Expo mobile client (auth + Expo push token registry). Done.
+- **Sprint 2** — vehicle CRUD + public listings + filters. (pending)
+
+## Default credentials (dev)
+
+After `php artisan migrate:fresh --seed` the super-admin is:
+`admin@tocojapan.com` / `password` (change before any non-local deployment).
 
 ## WordPress coexistence
 

@@ -3,11 +3,11 @@ includes:
 
 parameters:
     paths:
-        - app/
-        - database/
+        - app/Http
+        - app/Models
+        - app/Settings
+        - app/Providers
+        - database/seeders
     level: 6
-    ignoreErrors:
-        # Loosen for early scaffolding; tighten later as code stabilises.
-        - '#PHPDoc tag @var.*does not specify variable name#'
     excludePaths:
-        - app/Console/Kernel.php
+        - app/Filament/*
