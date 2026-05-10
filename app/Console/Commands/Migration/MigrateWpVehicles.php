@@ -22,9 +22,9 @@ use Illuminate\Support\Str;
 class MigrateWpVehicles extends Command
 {
     /** @var array<string, string>  postmeta_key => vehicles column */
+    // NB: chassis_no is handled manually above to disambiguate redacted
+    // duplicates — don't add it here or it'll overwrite the computed ref_no.
     private const POSTMETA_TO_COLUMN = [
-        // WP/ACF key      => Laravel column
-        'chassis_no' => 'ref_no',
         'year' => 'year_first_reg',
         'mileage' => 'mileage_km',
         'engine_cc' => 'engine_cc',
@@ -95,7 +95,14 @@ class MigrateWpVehicles extends Command
                     ->where('post_id', $post->ID)
                     ->pluck('meta_value', 'meta_key');
 
-                $refNo = (string) ($meta['chassis_no'] ?? $meta['ref_no'] ?? 'TJ-WP-'.$post->ID);
+                $rawChassis = (string) ($meta['chassis_no'] ?? $meta['ref_no'] ?? '');
+                // WP redacts chassis numbers (e.g. "HA4-238****") so several
+                // distinct vehicles can share the same string. Append the WP
+                // post id whenever the chassis is asterisk-redacted OR empty,
+                // so updateOrCreate on ref_no doesn't collapse them.
+                $refNo = $rawChassis === '' || str_contains($rawChassis, '*')
+                    ? ($rawChassis !== '' ? $rawChassis.'-'.$post->ID : 'TJ-WP-'.$post->ID)
+                    : $rawChassis;
 
                 // Resolve make/model via product_cat term relationships.
                 $cats = DB::connection('wp')->table('term_relationships as tr')
@@ -120,7 +127,9 @@ class MigrateWpVehicles extends Command
                 }
 
                 // WP often has unicode chars (★, ⁕) in post_name — slug them out.
-                $cleanSlug = Str::slug($post->post_title.' '.$refNo) ?: Str::slug($post->post_name) ?: 'tj-wp-'.$post->ID;
+                // Always append the WP post id so distinct vehicles with redacted
+                // chassis numbers don't collide on the unique slug index.
+                $cleanSlug = Str::slug($post->post_title.' '.$post->ID) ?: 'tj-wp-'.$post->ID;
 
                 $attrs = [
                     'ref_no' => $refNo,
