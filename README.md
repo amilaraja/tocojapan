@@ -68,7 +68,14 @@ CI runs all of the above on push / PR (`.github/workflows/ci.yml`).
   quotes + users, bulk actions (publish/unpublish vehicles, archive quotes),
   CSV exports for vehicles/quotes/users, Activity log viewer (Spatie
   activitylog rendered via a custom Filament page). Done.
-- **Sprint 7** — templated CMS, country pages, SEO. (pending)
+- **Sprint 7** — ACF-style templated CMS. PageTemplate registry with 4
+  templates (Default, FAQ, Contact, CountryLanding); Filament PageResource
+  with dynamic schema based on selected template; public catch-all route
+  `/{slug}` rendering published pages with SEO meta + canonical + OG tags;
+  hand-rolled `/sitemap.xml` (cached 1h) listing home + listings + CIF +
+  pages + every published vehicle; dynamic `/robots.txt`. Sample seed:
+  /about, /faq, /contact, /sri-lanka, /tanzania. Done.
+- **Sprint 8** — data migration from WordPress, UAT, cutover. (pending)
 
 ## Default credentials (dev)
 

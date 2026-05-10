@@ -7,6 +7,7 @@
     <title>{{ $title ?? config('app.name', 'Toco Japan') }}</title>
     <meta name="description" content="{{ $description ?? 'Toco Japan — quality Japanese vehicles, exported worldwide. Browse stock, get a CIF quote, and import with confidence.' }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('head')
 </head>
 <body class="font-sans text-ink antialiased bg-surface min-h-screen flex flex-col">
     {{-- Fraud notice bar --}}

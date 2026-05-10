@@ -3,8 +3,10 @@
 use App\Http\Controllers\CifController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FavoriteController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuoteController;
+use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\VehicleController;
 use Illuminate\Support\Facades\Route;
 
@@ -31,4 +33,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/quotes/{quote}/messages', [QuoteController::class, 'reply'])->name('quotes.reply');
 });
 
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
+Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
+
 require __DIR__.'/auth.php';
+
+// CMS catch-all — must come last so it doesn't shadow more specific routes.
+Route::get('/{slug}', [PageController::class, 'show'])
+    ->where('slug', '[a-z0-9](?:[a-z0-9-]*[a-z0-9])?')
+    ->name('cms.page');

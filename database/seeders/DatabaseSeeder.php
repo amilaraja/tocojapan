@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             BodyTypeSeeder::class,
             AdminUserSeeder::class,
             VehicleSeeder::class,
+            PageSeeder::class,
         ]);
     }
 }
