@@ -5,34 +5,96 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? config('app.name', 'Toco Japan') }}</title>
+    <meta name="description" content="{{ $description ?? 'Toco Japan — quality Japanese vehicles, exported worldwide. Browse stock, get a CIF quote, and import with confidence.' }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="font-sans text-ink antialiased bg-surface-2 min-h-screen">
-    <header class="bg-toco-navy text-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-            <a href="/" class="inline-flex items-center gap-2">
-                <span class="inline-flex items-center justify-center w-9 h-9 rounded-md bg-toco-red text-white font-bold text-sm">TJ</span>
-                <span class="font-extrabold tracking-tight text-lg">Toco Japan</span>
+<body class="font-sans text-ink antialiased bg-surface min-h-screen flex flex-col">
+    {{-- Fraud notice bar --}}
+    <div class="bg-[#FDECEE] text-toco-navy text-[11px] font-semibold tracking-wider uppercase py-2 px-4 text-center font-mono">
+        BE AWARE OF FRAUDSTERS · always verify our company details before sending any payment
+    </div>
+
+    {{-- Sticky header --}}
+    <header class="sticky top-0 z-30 bg-white border-b border-line">
+        <div class="max-w-[1440px] mx-auto px-6 h-16 flex items-center justify-between gap-6">
+            <a href="{{ route('home') }}" class="inline-flex items-center gap-2.5 shrink-0">
+                <span class="inline-flex items-center justify-center w-9 h-9 rounded-sm bg-toco-red text-white font-bold text-sm font-mono">TJ</span>
+                <span class="font-extrabold tracking-tight text-toco-navy text-lg">Toco Japan</span>
             </a>
-            <nav class="hidden sm:flex items-center gap-6 text-sm">
-                <a href="{{ route('vehicles.index') }}" class="hover:text-white/80">Vehicles</a>
-                @auth
-                    <a href="{{ route('dashboard') }}" class="hover:text-white/80">Dashboard</a>
-                @else
-                    <a href="{{ route('login') }}" class="hover:text-white/80">Sign in</a>
-                    <a href="{{ route('register') }}" class="bg-toco-red px-3 py-1.5 rounded font-semibold text-xs uppercase tracking-widest">Register</a>
-                @endauth
+            <nav class="hidden lg:flex items-center gap-7 text-[13px] font-semibold text-ink">
+                <a href="{{ route('home') }}" class="hover:text-toco-red">Home</a>
+                <a href="{{ route('vehicles.index') }}" class="hover:text-toco-red">Vehicles</a>
+                <a href="#how-it-works" class="hover:text-toco-red">How it works</a>
+                <a href="#why-toco" class="hover:text-toco-red">Why Toco</a>
+                <a href="#contact" class="hover:text-toco-red">Contact</a>
             </nav>
+            <div class="flex items-center gap-2 shrink-0">
+                @auth
+                    <a href="{{ route('dashboard') }}" class="text-[12px] font-semibold text-ink hover:text-toco-red">Dashboard</a>
+                @else
+                    <a href="{{ route('login') }}" class="hidden sm:inline-block text-[12px] font-semibold text-ink hover:text-toco-red">Sign in</a>
+                    <a href="{{ route('register') }}" class="bg-toco-red hover:bg-toco-red-deep text-white text-[11px] font-bold uppercase tracking-widest px-3.5 py-2 rounded-sm">Register</a>
+                @endauth
+            </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="flex-1">
         {{ $slot }}
     </main>
 
-    <footer class="bg-toco-navy-deep text-white/80 mt-12 py-6 text-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            &copy; {{ date('Y') }} Toco Japan — Japanese auto exporter.
+    <footer class="bg-toco-navy-deep text-white/85 mt-12">
+        <div class="max-w-[1440px] mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 text-sm">
+            <div class="col-span-2 lg:col-span-1">
+                <div class="inline-flex items-center gap-2.5 mb-3">
+                    <span class="inline-flex items-center justify-center w-9 h-9 rounded-sm bg-toco-red text-white font-bold text-sm font-mono">TJ</span>
+                    <span class="font-extrabold tracking-tight text-white text-lg">Toco Japan</span>
+                </div>
+                <p class="text-white/70 text-[13px] leading-relaxed max-w-xs">
+                    Quality Japanese vehicles, exported worldwide since 2009. We source, inspect and ship — you import with confidence.
+                </p>
+            </div>
+            <div>
+                <h4 class="font-bold text-white uppercase tracking-widest text-xs mb-3">Buy</h4>
+                <ul class="space-y-2 text-white/75">
+                    <li><a href="{{ route('vehicles.index') }}" class="hover:text-white">Browse stock</a></li>
+                    <li><a href="{{ route('vehicles.index') }}?body_type=suv" class="hover:text-white">SUVs</a></li>
+                    <li><a href="{{ route('vehicles.index') }}?body_type=mini-truck" class="hover:text-white">Kei trucks</a></li>
+                    <li><a href="{{ route('register') }}" class="hover:text-white">Request a quote</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-white uppercase tracking-widest text-xs mb-3">Ship</h4>
+                <ul class="space-y-2 text-white/75">
+                    <li><a href="#" class="hover:text-white">Destinations</a></li>
+                    <li><a href="#" class="hover:text-white">CIF calculator</a></li>
+                    <li><a href="#" class="hover:text-white">Shipping schedule</a></li>
+                    <li><a href="#" class="hover:text-white">Inspection</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-white uppercase tracking-widest text-xs mb-3">Trust</h4>
+                <ul class="space-y-2 text-white/75">
+                    <li><a href="#" class="hover:text-white">About Toco</a></li>
+                    <li><a href="#" class="hover:text-white">Process</a></li>
+                    <li><a href="#" class="hover:text-white">Reviews</a></li>
+                    <li><a href="#" class="hover:text-white">Banking</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-white uppercase tracking-widest text-xs mb-3">Contact</h4>
+                <ul class="space-y-2 text-white/75">
+                    <li>sales@tocojapan.com</li>
+                    <li>+81 (0) 00 0000 0000</li>
+                    <li>Yokohama, Japan</li>
+                </ul>
+            </div>
+        </div>
+        <div class="border-t border-white/10">
+            <div class="max-w-[1440px] mx-auto px-6 py-4 text-[11px] text-white/55 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <span>&copy; {{ date('Y') }} Toco Japan Co., Ltd. All rights reserved.</span>
+                <span class="font-mono uppercase tracking-widest">JUMVEA · JEVIC · JAAI member</span>
+            </div>
         </div>
     </footer>
 </body>

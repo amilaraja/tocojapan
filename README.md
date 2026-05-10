@@ -46,7 +46,12 @@ CI runs all of the above on push / PR (`.github/workflows/ci.yml`).
   public listings + filters at `/vehicles`, vehicle detail at `/vehicles/{slug}`,
   public read API (`/api/v1/vehicles`, `/makes`, `/makes/{slug}/models`,
   `/body-types`, `/countries`), reusable Alpine search widget. Done.
-- **Sprint 3** — v5 homepage + listing UI redesign in Blade. (pending)
+- **Sprint 3** — v5 homepage + listing/detail redesign in Blade. New site shell
+  (notice bar, sticky header, 5-col footer), hero with 3-col promo tiles + auto
+  carousel, overlapping search panel (4 tabs), featured grid with browse-by-make
+  / browse-by-body-type sidebars + counts, Why Toco / How it works strips, CTA
+  band. v5 assets in `public/img/v5/`. Done.
+- **Sprint 4** — CIF calculator + country→port cascade + Site Settings. (pending)
 
 ## Default credentials (dev)
 

@@ -11,6 +11,39 @@ use Illuminate\Contracts\View\View;
 
 class VehicleController extends Controller
 {
+    public function home(): View
+    {
+        $featured = Vehicle::query()
+            ->published()
+            ->with(['make', 'vehicleModel', 'bodyType', 'media'])
+            ->orderByDesc('published_at')
+            ->limit(8)
+            ->get();
+
+        $makesWithCounts = Make::where('is_active', true)
+            ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
+            ->orderByDesc('published_count')
+            ->orderBy('name')
+            ->limit(12)
+            ->get();
+
+        $bodyTypesWithCounts = BodyType::where('is_active', true)
+            ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
+            ->orderByDesc('published_count')
+            ->orderBy('name')
+            ->limit(8)
+            ->get();
+
+        return view('home', [
+            'featured' => $featured,
+            'makesWithCounts' => $makesWithCounts,
+            'bodyTypesWithCounts' => $bodyTypesWithCounts,
+            'allMakes' => Make::where('is_active', true)->orderBy('name')->get(['id', 'slug', 'name']),
+            'allBodyTypes' => BodyType::where('is_active', true)->orderBy('name')->get(['id', 'slug', 'name']),
+            'totalPublished' => Vehicle::query()->published()->count(),
+        ]);
+    }
+
     public function index(VehicleListRequest $request): View
     {
         $filters = $request->validated();
