@@ -13,14 +13,25 @@
     </section>
 
     <section class="max-w-[1600px] mx-auto px-6 2xl:px-8 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6">
-            {{-- Filter sidebar --}}
-            <aside class="bg-white border border-line rounded-sm h-fit sticky top-20 self-start">
-                <div class="px-4 py-3 border-b border-line">
+        <div class="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6" x-data="{ filtersOpen: false }">
+            {{-- Filter sidebar — full sidebar on lg+, collapses below to a toggle button --}}
+            <aside class="bg-white border border-line rounded-sm h-fit lg:sticky lg:top-20 self-start">
+                <button
+                    type="button"
+                    @click="filtersOpen = !filtersOpen"
+                    class="lg:hidden w-full flex items-center justify-between px-4 py-3 border-b border-line"
+                >
+                    <span class="text-left">
+                        <span class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft">Refine</span>
+                        <span class="block font-bold text-toco-navy">Filter vehicles</span>
+                    </span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" :class="filtersOpen ? 'rotate-180' : ''" class="transition-transform"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="hidden lg:block px-4 py-3 border-b border-line">
                     <p class="font-mono text-[10px] uppercase tracking-widest text-ink-soft">Refine</p>
                     <h2 class="font-bold text-toco-navy">Filter vehicles</h2>
                 </div>
-                <form method="GET" action="{{ route('vehicles.index') }}" class="p-4 space-y-3 text-sm">
+                <form method="GET" action="{{ route('vehicles.index') }}" class="p-4 space-y-3 text-sm" :class="{ 'hidden lg:block': ! filtersOpen }">
                     <div>
                         <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Search</label>
                         <input type="text" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="ref no, title…" class="w-full border-line rounded-sm">
@@ -135,7 +146,7 @@
                 @if ($vehicles->isEmpty())
                     <div class="bg-white border border-line rounded-sm p-12 text-center text-ink-soft">No vehicles match these filters. <a href="{{ route('vehicles.index') }}" class="text-toco-red font-semibold">Reset filters</a></div>
                 @else
-                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
                         @foreach ($vehicles as $vehicle)
                             <x-vehicle-card :vehicle="$vehicle" />
                         @endforeach

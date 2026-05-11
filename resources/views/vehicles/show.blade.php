@@ -22,7 +22,7 @@
     </div>
 
     <section class="max-w-[1600px] mx-auto px-6 2xl:px-8 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6">
             <div class="space-y-4">
                 {{-- Photo gallery --}}
                 <div
@@ -198,7 +198,7 @@
             </div>
 
             {{-- Sticky aside --}}
-            <aside class="space-y-4 lg:sticky lg:top-20 self-start">
+            <aside class="space-y-4 md:sticky md:top-20 self-start">
                 <div class="bg-white border border-line rounded-sm">
                     <div class="border-b-4 border-toco-red px-5 py-5">
                         <p class="font-mono text-[10px] uppercase tracking-widest text-ink-soft">{{ $vehicle->ref_no }}</p>

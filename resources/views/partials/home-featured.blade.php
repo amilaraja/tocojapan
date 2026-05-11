@@ -14,7 +14,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)_240px] gap-6">
             {{-- Browse by Make sidebar --}}
-            <aside class="bg-white border border-line rounded-sm">
+            <aside class="bg-white border border-line rounded-sm hidden lg:block">
                 <div class="p-3 border-b border-line">
                     <p class="font-mono text-[10px] uppercase tracking-widest text-ink-soft">Browse by</p>
                     <h3 class="font-bold text-toco-navy">Make</h3>
@@ -44,7 +44,7 @@
                 @if ($featured->isEmpty())
                     <div class="bg-white border border-line rounded-sm p-8 text-center text-ink-soft">No published vehicles yet.</div>
                 @else
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                         @foreach ($featured as $vehicle)
                             <x-vehicle-card :vehicle="$vehicle" />
                         @endforeach
@@ -53,7 +53,7 @@
             </div>
 
             {{-- Browse by Body Type sidebar --}}
-            <aside class="bg-white border border-line rounded-sm">
+            <aside class="bg-white border border-line rounded-sm hidden lg:block">
                 <div class="p-3 border-b border-line">
                     <p class="font-mono text-[10px] uppercase tracking-widest text-ink-soft">Browse by</p>
                     <h3 class="font-bold text-toco-navy">Body type</h3>
