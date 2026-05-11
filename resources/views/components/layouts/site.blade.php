@@ -17,8 +17,8 @@
 
     {{-- Top bar --}}
     <div class="bg-toco-navy text-white/80 text-[12px] tracking-wide border-b border-white/5">
-        <div class="max-w-[1600px] mx-auto px-6 2xl:px-8 py-2 flex items-center justify-between gap-6">
-            <div class="hidden sm:flex items-center gap-5">
+        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 2xl:px-8 py-2 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3 sm:gap-5">
                 @isset($topBarLeft)
                     {{ $topBarLeft }}
                 @else
@@ -60,13 +60,14 @@
                     @endif
                 @endisset
             </div>
-            <div class="flex items-center gap-5">
+            <div class="flex items-center gap-3 sm:gap-5">
                 @isset($topBarRight)
                     {{ $topBarRight }}
                 @else
-                    <a href="#" class="inline-flex items-center gap-1.5 hover:text-white">
+                    <a href="#" class="hidden sm:inline-flex items-center gap-1.5 hover:text-white">
                         <span class="inline-block w-1.5 h-1.5 rounded-full bg-toco-red"></span>
-                        Live: 12 buyers viewing now
+                        <span class="hidden lg:inline">Live: 12 buyers viewing now</span>
+                        <span class="lg:hidden">Live</span>
                     </a>
                     <a href="#" class="hidden md:inline-flex hover:text-white">Track shipment</a>
                     <a href="#" class="hidden md:inline-flex hover:text-white">+81 90-1234-5678</a>
@@ -76,15 +77,15 @@
     </div>
 
     {{-- Sticky header --}}
-    <header class="sticky top-0 z-30 bg-white border-b border-line">
-        <div class="max-w-[1600px] mx-auto px-6 2xl:px-8 h-16 flex items-center justify-between gap-6">
+    <header class="sticky top-0 z-30 bg-white border-b border-line" x-data="{ mobileOpen: false }">
+        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 2xl:px-8 h-16 flex items-center justify-between gap-3 sm:gap-6">
             @php($headerLogo = app(\App\Settings\GeneralSettings::class)->header_logo ?? null)
             <a href="{{ route('home') }}" class="inline-flex items-center gap-2.5 shrink-0">
                 @if ($headerLogo)
-                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($headerLogo) }}" alt="{{ config('app.name', 'Toco Japan') }}" class="h-10 w-auto">
+                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($headerLogo) }}" alt="{{ config('app.name', 'Toco Japan') }}" class="h-9 sm:h-10 w-auto">
                 @else
                     <span class="inline-flex items-center justify-center w-9 h-9 rounded-sm bg-toco-red text-white font-bold text-sm font-mono">TJ</span>
-                    <span class="font-extrabold tracking-tight text-toco-navy text-lg">Toco Japan</span>
+                    <span class="font-extrabold tracking-tight text-toco-navy text-lg hidden sm:inline">Toco Japan</span>
                 @endif
             </a>
             <nav class="hidden lg:flex items-center gap-7 text-[13px] font-semibold text-ink">
@@ -94,7 +95,7 @@
                 <a href="#why-toco" class="hover:text-toco-red">Why Toco</a>
                 <a href="#contact" class="hover:text-toco-red">Contact</a>
             </nav>
-            <div class="flex items-center gap-3 shrink-0">
+            <div class="flex items-center gap-2 sm:gap-3 shrink-0">
                 @auth
                     <a href="{{ route('orders.index') }}" class="relative inline-flex items-center text-ink hover:text-toco-red" title="My orders & messages">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -102,12 +103,48 @@
                             <span class="absolute -top-1 -right-1.5 min-w-[16px] h-[16px] px-1 bg-toco-red text-white text-[10px] font-bold rounded-full grid place-items-center">{{ $unreadMessageCount }}</span>
                         @endif
                     </a>
-                    <a href="{{ route('dashboard') }}" class="text-[12px] font-semibold text-ink hover:text-toco-red">Dashboard</a>
+                    <a href="{{ route('dashboard') }}" class="hidden sm:inline text-[12px] font-semibold text-ink hover:text-toco-red">Dashboard</a>
                 @else
                     <a href="{{ route('login') }}" class="hidden sm:inline-block text-[12px] font-semibold text-ink hover:text-toco-red">Sign in</a>
-                    <a href="{{ route('register') }}" class="bg-toco-red hover:bg-toco-red-deep text-white text-[11px] font-bold uppercase tracking-widest px-3.5 py-2 rounded-sm">Register</a>
+                    <a href="{{ route('register') }}" class="bg-toco-red hover:bg-toco-red-deep text-white text-[11px] font-bold uppercase tracking-widest px-3 sm:px-3.5 py-2 rounded-sm">Register</a>
                 @endauth
+                <button type="button" @click="mobileOpen = !mobileOpen" aria-label="Menu" class="lg:hidden inline-flex items-center justify-center w-9 h-9 -mr-1 rounded-sm hover:bg-toco-silver-2 text-toco-navy">
+                    <svg x-show="!mobileOpen" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    <svg x-show="mobileOpen" x-cloak width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M6 18 18 6"/></svg>
+                </button>
             </div>
+        </div>
+
+        {{-- Mobile drawer --}}
+        <div
+            x-show="mobileOpen"
+            x-cloak
+            x-transition.opacity
+            @click.self="mobileOpen = false"
+            class="lg:hidden fixed inset-0 top-[88px] bg-black/40 z-40"
+        >
+            <nav
+                x-show="mobileOpen"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="-translate-y-2 opacity-0"
+                x-transition:enter-end="translate-y-0 opacity-100"
+                class="bg-white border-b border-line shadow-lg max-w-[1600px] mx-auto"
+            >
+                <ul class="divide-y divide-line text-base font-semibold text-ink">
+                    <li><a href="{{ route('home') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Home</a></li>
+                    <li><a href="{{ route('vehicles.index') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Vehicles</a></li>
+                    <li><a href="{{ route('cif.index') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">CIF calculator</a></li>
+                    <li><a href="{{ route('home') }}#how-it-works" class="block px-5 py-3.5 hover:bg-toco-silver-2">How it works</a></li>
+                    <li><a href="{{ route('home') }}#why-toco" class="block px-5 py-3.5 hover:bg-toco-silver-2">Why Toco</a></li>
+                    @auth
+                        <li><a href="{{ route('dashboard') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Dashboard</a></li>
+                        <li><a href="{{ route('orders.index') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">My orders @if (($unreadMessageCount ?? 0) > 0)<span class="ml-2 inline-block bg-toco-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ $unreadMessageCount }}</span>@endif</a></li>
+                        <li><a href="{{ route('favorites.index') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Favorites</a></li>
+                    @else
+                        <li><a href="{{ route('login') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Sign in</a></li>
+                    @endauth
+                </ul>
+            </nav>
         </div>
     </header>
 
