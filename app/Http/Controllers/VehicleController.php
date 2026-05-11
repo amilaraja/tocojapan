@@ -8,6 +8,7 @@ use App\Models\BodyType;
 use App\Models\Country;
 use App\Models\Make;
 use App\Models\Page;
+use App\Models\Testimonial;
 use App\Models\Vehicle;
 use App\Models\VehicleModel;
 use Illuminate\Contracts\View\View;
@@ -37,33 +38,36 @@ class VehicleController extends Controller
             ->limit(8)
             ->get();
 
+        $testimonials = Testimonial::query()
+            ->featured()
+            ->with('media')
+            ->orderBy('sort_order')
+            ->orderByDesc('created_at')
+            ->limit(8)
+            ->get();
+
         // Resolve the editable Home page content from the CMS, if present.
         // The HomeTemplate's render() pulls the page record and merges
         // hardcoded defaults — see app/Cms/Templates/HomeTemplate.php.
         $page = Page::where('slug', 'home')->first();
         $template = PageTemplateRegistry::resolve('home');
 
-        if ($page && $page->isPublished() && $template) {
-            return $template::render($page)->with([
-                'featured' => $featured,
-                'makesWithCounts' => $makesWithCounts,
-                'bodyTypesWithCounts' => $bodyTypesWithCounts,
-                'allMakes' => Make::where('is_active', true)->orderBy('name')->get(['id', 'slug', 'name']),
-                'allBodyTypes' => BodyType::where('is_active', true)->orderBy('name')->get(['id', 'slug', 'name']),
-                'totalPublished' => Vehicle::query()->published()->count(),
-            ]);
-        }
-
-        // Fallback: render with empty $content so the Blade defaults kick in.
-        return view('home', [
-            'content' => [],
+        $shared = [
             'featured' => $featured,
             'makesWithCounts' => $makesWithCounts,
             'bodyTypesWithCounts' => $bodyTypesWithCounts,
             'allMakes' => Make::where('is_active', true)->orderBy('name')->get(['id', 'slug', 'name']),
             'allBodyTypes' => BodyType::where('is_active', true)->orderBy('name')->get(['id', 'slug', 'name']),
             'totalPublished' => Vehicle::query()->published()->count(),
-        ]);
+            'testimonials' => $testimonials,
+        ];
+
+        if ($page && $page->isPublished() && $template) {
+            return $template::render($page)->with($shared);
+        }
+
+        // Fallback: render with empty $content so the Blade defaults kick in.
+        return view('home', array_merge(['content' => []], $shared));
     }
 
     public function index(VehicleListRequest $request): View

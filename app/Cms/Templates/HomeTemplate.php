@@ -156,22 +156,14 @@ class HomeTemplate implements PageTemplate
 
                 Tab::make('Testimonials')
                     ->schema([
-                        TextInput::make('data.testimonials.kicker')->default('Worldwide deliveries'),
-                        TextInput::make('data.testimonials.headline')
-                            ->default('Customers in 90+ countries.'),
-                        Textarea::make('data.testimonials.body')->rows(2),
-                        Repeater::make('data.testimonials.items')
-                            ->label('Testimonial cards (6 recommended)')
+                        Section::make('Section copy')
+                            ->description('Edit individual testimonial cards under Admin → Testimonials.')
                             ->schema([
-                                FileUpload::make('image')
-                                    ->disk('public')->directory('home/testimonials')
-                                    ->image()->imageEditor()->required(),
-                                TextInput::make('name')->required()->placeholder('K. Muzinga'),
-                                TextInput::make('country')->required()->placeholder('Congo'),
-                                TextInput::make('flag')->label('Flag emoji')->placeholder('🇨🇩')->maxLength(8),
-                            ])
-                            ->itemLabel(fn (array $state): ?string => trim(($state['name'] ?? '').' — '.($state['country'] ?? '')) ?: null)
-                            ->collapsible()->defaultItems(0)->columnSpanFull(),
+                                TextInput::make('data.testimonials.kicker')->default('Worldwide deliveries'),
+                                TextInput::make('data.testimonials.headline')
+                                    ->default('Customers in 90+ countries.'),
+                                Textarea::make('data.testimonials.body')->rows(2),
+                            ]),
                     ]),
 
                 Tab::make('How it works')
