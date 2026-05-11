@@ -53,7 +53,7 @@
                                 class="bg-transparent border-0 text-white/80 hover:text-white text-[12px] cursor-pointer focus:outline-none notranslate"
                             >
                                 @foreach ($currencyOptions as $c)
-                                    <option value="{{ $c->code }}" {{ $c->code === $currentCurrency ? 'selected' : '' }} class="text-toco-navy">{{ $c->code }}</option>
+                                    <option value="{{ $c['code'] }}" {{ $c['code'] === $currentCurrency ? 'selected' : '' }} class="text-toco-navy">{{ $c['code'] }}</option>
                                 @endforeach
                             </select>
                         </form>

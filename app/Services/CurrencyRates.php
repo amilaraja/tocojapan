@@ -49,11 +49,11 @@ class CurrencyRates
     }
 
     /**
-     * Returns a list of plain objects: { code, name, symbol }.
-     * Plain objects (not Eloquent models) so the cache layer never trips on
-     * an Incomplete_Class on deserialize across deploys.
+     * Returns a list of plain associative arrays: ['code' => ..., 'name' => ..., 'symbol' => ...].
+     * Plain arrays (not objects) because Laravel's default cache.serializable_classes=false
+     * strips every object — including stdClass — to __PHP_Incomplete_Class on read.
      *
-     * @return array<int, object{code: string, name: string, symbol: ?string}>
+     * @return array<int, array{code: string, name: string, symbol: ?string}>
      */
     public function activeCurrencies(): array
     {
@@ -61,7 +61,7 @@ class CurrencyRates
             ->where('is_active', true)
             ->orderBy('sort_order')
             ->get(['code', 'name', 'symbol'])
-            ->map(fn ($c) => (object) ['code' => $c->code, 'name' => $c->name, 'symbol' => $c->symbol])
+            ->map(fn ($c) => ['code' => $c->code, 'name' => $c->name, 'symbol' => $c->symbol])
             ->all());
     }
 
