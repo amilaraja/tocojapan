@@ -35,6 +35,15 @@ return [
         ],
     ],
 
+    // Cloudflare Turnstile — server-side CAPTCHA on guest auth forms.
+    // Site key is rendered into the widget; secret_key is used by
+    // App\Rules\Turnstile to call siteverify. Both blank ⇒ rule skipped
+    // (so local dev without Cloudflare set up still works).
+    'turnstile' => [
+        'site_key' => env('TURNSTILE_SITE_KEY'),
+        'secret_key' => env('TURNSTILE_SECRET_KEY'),
+    ],
+
     'google' => [
         // Google Search Console API integration for the admin dashboard.
         //   site_url: the verified property, e.g. "sc-domain:tocojapan.com" or

@@ -8,6 +8,7 @@
         <title>{{ config('app.name', 'Toco Japan') }}</title>
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @stack('head')
     </head>
     <body class="font-sans text-ink antialiased">
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-surface-2">
@@ -22,5 +23,6 @@
                 {{ $slot }}
             </div>
         </div>
+        @stack('scripts')
     </body>
 </html>
