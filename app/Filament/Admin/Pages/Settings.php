@@ -4,8 +4,11 @@ namespace App\Filament\Admin\Pages;
 
 use App\Settings\CifSettings;
 use App\Settings\GeneralSettings;
+use App\Settings\ImageSettings;
 use App\Settings\SocialSettings;
 use Filament\Actions\Action;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -38,6 +41,7 @@ class Settings extends Page implements HasForms
         $general = app(GeneralSettings::class);
         $cif = app(CifSettings::class);
         $social = app(SocialSettings::class);
+        $image = app(ImageSettings::class);
 
         $this->form->fill([
             'general' => [
@@ -58,6 +62,15 @@ class Settings extends Page implements HasForms
                 // isn't shoulder-surfed but is still editable by re-typing.
                 'facebook_page_access_token' => $social->facebook_page_access_token,
                 'facebook_post_template' => $social->facebook_post_template,
+            ],
+            'image' => [
+                'max_width' => $image->max_width,
+                'webp_quality' => $image->webp_quality,
+                'watermark_enabled' => $image->watermark_enabled,
+                'watermark_image_path' => $image->watermark_image_path,
+                'watermark_position' => $image->watermark_position,
+                'watermark_opacity' => $image->watermark_opacity,
+                'watermark_width_pct' => $image->watermark_width_pct,
             ],
         ]);
     }
@@ -100,6 +113,73 @@ class Settings extends Page implements HasForms
                                             ->maxLength(3)
                                             ->required(),
                                     ]),
+                            ]),
+                        Tab::make('Vehicle images')
+                            ->schema([
+                                Section::make('Resize & format')
+                                    ->description('Uploaded vehicle photos are converted to WebP and resized to fit. Set to a sensible width for fast page loads.')
+                                    ->columns(2)
+                                    ->schema([
+                                        TextInput::make('image.max_width')
+                                            ->label('Max width (px)')
+                                            ->numeric()
+                                            ->minValue(400)
+                                            ->maxValue(4096)
+                                            ->required(),
+                                        TextInput::make('image.webp_quality')
+                                            ->label('WebP quality')
+                                            ->numeric()
+                                            ->minValue(40)
+                                            ->maxValue(100)
+                                            ->suffix('1-100')
+                                            ->required(),
+                                    ]),
+                                Section::make('Watermark')
+                                    ->description('Stamps the watermark onto every uploaded photo. Use a PNG with transparency for best results.')
+                                    ->columns(2)
+                                    ->schema([
+                                        Toggle::make('image.watermark_enabled')
+                                            ->label('Apply watermark on upload')
+                                            ->columnSpanFull(),
+                                        FileUpload::make('image.watermark_image_path')
+                                            ->label('Watermark image (PNG)')
+                                            ->image()
+                                            ->disk('public')
+                                            ->directory('watermarks')
+                                            ->maxSize(2048)
+                                            ->acceptedFileTypes(['image/png', 'image/webp'])
+                                            ->columnSpanFull()
+                                            ->helperText('Stored under storage/app/public/watermarks. PNG with transparency recommended.'),
+                                        Select::make('image.watermark_position')
+                                            ->label('Position')
+                                            ->options([
+                                                'top-left' => 'Top left',
+                                                'top-center' => 'Top center',
+                                                'top-right' => 'Top right',
+                                                'center' => 'Center',
+                                                'bottom-left' => 'Bottom left',
+                                                'bottom-center' => 'Bottom center',
+                                                'bottom-right' => 'Bottom right',
+                                            ])
+                                            ->required(),
+                                        TextInput::make('image.watermark_width_pct')
+                                            ->label('Width (% of photo)')
+                                            ->numeric()
+                                            ->minValue(5)
+                                            ->maxValue(100)
+                                            ->suffix('%')
+                                            ->required(),
+                                        TextInput::make('image.watermark_opacity')
+                                            ->label('Opacity')
+                                            ->numeric()
+                                            ->minValue(10)
+                                            ->maxValue(100)
+                                            ->suffix('%')
+                                            ->required(),
+                                    ]),
+                                Section::make('Reprocess existing photos')
+                                    ->description('Run `php artisan vehicles:reprocess-images` from the server (or via a queue worker) to apply current settings to all existing vehicle photos.')
+                                    ->schema([]),
                             ]),
                         Tab::make('Social media')
                             ->schema([
@@ -154,6 +234,16 @@ class Settings extends Page implements HasForms
         $social->facebook_page_access_token = $state['social']['facebook_page_access_token'] ?: null;
         $social->facebook_post_template = (string) ($state['social']['facebook_post_template'] ?? '');
         $social->save();
+
+        $image = app(ImageSettings::class);
+        $image->max_width = (int) $state['image']['max_width'];
+        $image->webp_quality = (int) $state['image']['webp_quality'];
+        $image->watermark_enabled = (bool) ($state['image']['watermark_enabled'] ?? false);
+        $image->watermark_image_path = $state['image']['watermark_image_path'] ?: null;
+        $image->watermark_position = (string) ($state['image']['watermark_position'] ?? 'bottom-right');
+        $image->watermark_opacity = (int) $state['image']['watermark_opacity'];
+        $image->watermark_width_pct = (int) $state['image']['watermark_width_pct'];
+        $image->save();
 
         Notification::make()->title('Settings saved.')->success()->send();
     }

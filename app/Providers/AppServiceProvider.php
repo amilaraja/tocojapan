@@ -2,9 +2,12 @@
 
 namespace App\Providers;
 
+use App\Listeners\ConvertVehiclePhotoOnUpload;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Spatie\MediaLibrary\MediaCollections\Events\MediaHasBeenAddedEvent;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,5 +25,7 @@ class AppServiceProvider extends ServiceProvider
                 ? Auth::user()->favorites()->pluck('vehicle_id')->all()
                 : []);
         });
+
+        Event::listen(MediaHasBeenAddedEvent::class, ConvertVehiclePhotoOnUpload::class);
     }
 }
