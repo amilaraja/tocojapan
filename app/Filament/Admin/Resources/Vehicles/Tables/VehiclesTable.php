@@ -4,6 +4,10 @@ namespace App\Filament\Admin\Resources\Vehicles\Tables;
 
 use App\Models\BodyType;
 use App\Models\Make;
+use App\Models\Vehicle;
+use App\Services\Social\FacebookPosterService;
+use App\Settings\SocialSettings;
+use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -44,6 +48,16 @@ class VehiclesTable
                     })
                     ->sortable()
                     ->toggleable(),
+                TextColumn::make('fb_shared_at')
+                    ->label('FB')
+                    ->badge()
+                    ->state(fn (Vehicle $r) => $r->fb_shared_at ? 'Shared' : ($r->status === 'published' ? 'Not shared' : ''))
+                    ->color(fn (Vehicle $r) => $r->fb_shared_at ? 'success' : 'gray')
+                    ->icon(fn (Vehicle $r) => $r->fb_shared_at ? 'heroicon-o-check-circle' : null)
+                    ->url(fn (Vehicle $r) => $r->fb_post_url)
+                    ->openUrlInNewTab()
+                    ->tooltip(fn (Vehicle $r) => $r->fb_shared_at?->format('Y-m-d H:i'))
+                    ->toggleable(),
                 TextColumn::make('published_at')->dateTime('Y-m-d')->sortable()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')->dateTime('Y-m-d H:i')->sortable()->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('price_on_request')->boolean()->toggleable(isToggledHiddenByDefault: true),
@@ -65,6 +79,41 @@ class VehiclesTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
+                Action::make('shareToFacebook')
+                    ->label('Share to FB')
+                    ->icon('heroicon-o-share')
+                    ->color('info')
+                    ->modalHeading('Share to Facebook?')
+                    ->modalDescription(fn (Vehicle $r) => 'This will post "'.$r->title.'" to your Facebook page now.')
+                    ->modalSubmitActionLabel('Share now')
+                    ->modalCancelActionLabel('Skip')
+                    ->visible(fn (Vehicle $r) => $r->status === 'published'
+                        && ! $r->fb_shared_at
+                        && app(SocialSettings::class)->facebook_enabled)
+                    ->action(function (Vehicle $r) {
+                        $result = app(FacebookPosterService::class)->shareVehicle($r);
+
+                        if ($result['success']) {
+                            $r->forceFill([
+                                'fb_shared_at' => now(),
+                                'fb_post_id' => $result['post_id'] ?? null,
+                                'fb_post_url' => $result['post_url'] ?? null,
+                            ])->save();
+
+                            Notification::make()
+                                ->title('Shared to Facebook')
+                                ->body($result['post_url'] ?? '')
+                                ->success()
+                                ->send();
+                        } else {
+                            Notification::make()
+                                ->title('Facebook share failed')
+                                ->body($result['error'] ?? 'Unknown error')
+                                ->danger()
+                                ->persistent()
+                                ->send();
+                        }
+                    }),
                 EditAction::make(),
             ])
             ->toolbarActions([

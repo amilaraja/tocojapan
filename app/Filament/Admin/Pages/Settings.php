@@ -4,8 +4,11 @@ namespace App\Filament\Admin\Pages;
 
 use App\Settings\CifSettings;
 use App\Settings\GeneralSettings;
+use App\Settings\SocialSettings;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
@@ -34,6 +37,7 @@ class Settings extends Page implements HasForms
     {
         $general = app(GeneralSettings::class);
         $cif = app(CifSettings::class);
+        $social = app(SocialSettings::class);
 
         $this->form->fill([
             'general' => [
@@ -46,6 +50,14 @@ class Settings extends Page implements HasForms
                 'insurance_pct_display' => $cif->insurance_pct * 100, // shown as %
                 'default_currency' => $cif->default_currency,
                 'price_on_request_default' => $cif->price_on_request_default,
+            ],
+            'social' => [
+                'facebook_enabled' => $social->facebook_enabled,
+                'facebook_page_id' => $social->facebook_page_id,
+                // The token is decrypted at read-time; mask it in the UI so it
+                // isn't shoulder-surfed but is still editable by re-typing.
+                'facebook_page_access_token' => $social->facebook_page_access_token,
+                'facebook_post_template' => $social->facebook_post_template,
             ],
         ]);
     }
@@ -89,6 +101,31 @@ class Settings extends Page implements HasForms
                                             ->required(),
                                     ]),
                             ]),
+                        Tab::make('Social media')
+                            ->schema([
+                                Section::make('Facebook page')
+                                    ->description('Posts a vehicle to your Facebook page on publish. Use a long-lived Page Access Token from Meta Graph API Explorer with the `pages_manage_posts` permission.')
+                                    ->columns(2)
+                                    ->schema([
+                                        Toggle::make('social.facebook_enabled')
+                                            ->label('Enable Facebook sharing')
+                                            ->columnSpanFull(),
+                                        TextInput::make('social.facebook_page_id')
+                                            ->label('Page ID')
+                                            ->placeholder('e.g. 123456789012345'),
+                                        TextInput::make('social.facebook_page_access_token')
+                                            ->label('Page access token')
+                                            ->password()
+                                            ->revealable()
+                                            ->autocomplete('off')
+                                            ->helperText('Encrypted at rest. Paste a long-lived Page token.'),
+                                        Textarea::make('social.facebook_post_template')
+                                            ->label('Post template')
+                                            ->rows(8)
+                                            ->columnSpanFull()
+                                            ->helperText('Placeholders: {title} {ref_no} {year} {mileage} {engine_cc} {price} {url}'),
+                                    ]),
+                            ]),
                     ]),
             ])
             ->statePath('data');
@@ -110,6 +147,13 @@ class Settings extends Page implements HasForms
         $cif->default_currency = strtoupper((string) $state['cif']['default_currency']);
         $cif->price_on_request_default = (bool) ($state['cif']['price_on_request_default'] ?? false);
         $cif->save();
+
+        $social = app(SocialSettings::class);
+        $social->facebook_enabled = (bool) ($state['social']['facebook_enabled'] ?? false);
+        $social->facebook_page_id = $state['social']['facebook_page_id'] ?: null;
+        $social->facebook_page_access_token = $state['social']['facebook_page_access_token'] ?: null;
+        $social->facebook_post_template = (string) ($state['social']['facebook_post_template'] ?? '');
+        $social->save();
 
         Notification::make()->title('Settings saved.')->success()->send();
     }
