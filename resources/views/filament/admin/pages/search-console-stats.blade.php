@@ -1,6 +1,5 @@
 <x-filament-panels::page>
     @if (! $isConfigured)
-        {{-- Setup Instructions --}}
         <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-8">
             <div class="max-w-2xl mx-auto text-center">
                 <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -36,6 +35,11 @@ GOOGLE_SEARCH_CONSOLE_SITE_URL=sc-domain:tocojapan.com</pre>
             </div>
         </div>
     @else
+        @php
+            $hasAnyData = ($summary && ($summary['clicks'] > 0 || $summary['impressions'] > 0))
+                || ! empty($topQueries) || ! empty($topPages);
+        @endphp
+
         <div class="space-y-6" x-data="gscDashboard()" x-init="init()">
             {{-- Header --}}
             <div class="flex items-center justify-between flex-wrap gap-3">
@@ -80,176 +84,194 @@ GOOGLE_SEARCH_CONSOLE_SITE_URL=sc-domain:tocojapan.com</pre>
             {{-- PERFORMANCE TAB --}}
             {{-- ============================================ --}}
             <div x-show="activeTab === 'performance'" x-cloak>
-                @if ($summary)
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                        <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-5">
-                            <div class="flex items-center gap-2 mb-1">
-                                <div class="w-2 h-2 rounded-full bg-blue-500"></div>
-                                <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Clicks</span>
-                            </div>
-                            <div class="text-3xl font-bold text-blue-600">{{ number_format($summary['clicks']) }}</div>
-                        </div>
-                        <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-5">
-                            <div class="flex items-center gap-2 mb-1">
-                                <div class="w-2 h-2 rounded-full bg-purple-500"></div>
-                                <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Impressions</span>
-                            </div>
-                            <div class="text-3xl font-bold text-purple-600">{{ number_format($summary['impressions']) }}</div>
-                        </div>
-                        <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-5">
-                            <div class="flex items-center gap-2 mb-1">
-                                <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
-                                <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Avg CTR</span>
-                            </div>
-                            <div class="text-3xl font-bold text-emerald-600">{{ $summary['ctr'] }}%</div>
-                        </div>
-                        <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-5">
-                            <div class="flex items-center gap-2 mb-1">
-                                <div class="w-2 h-2 rounded-full bg-orange-500"></div>
-                                <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Avg Position</span>
-                            </div>
-                            <div class="text-3xl font-bold text-orange-600">{{ $summary['position'] }}</div>
-                        </div>
+                @if (! $hasAnyData)
+                    <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-12 text-center">
+                        <x-heroicon-o-chart-bar class="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <h3 class="text-base font-semibold text-gray-900 mb-1">No search data for this period</h3>
+                        <p class="text-sm text-gray-500">Try a longer date range, or wait — Google data has a 2–3 day delay.</p>
                     </div>
-                @endif
+                @else
+                    @if ($summary)
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-5">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Clicks</span>
+                                </div>
+                                <div class="text-3xl font-bold text-blue-600">{{ number_format($summary['clicks']) }}</div>
+                            </div>
+                            <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-5">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <div class="w-2 h-2 rounded-full bg-purple-500"></div>
+                                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Impressions</span>
+                                </div>
+                                <div class="text-3xl font-bold text-purple-600">{{ number_format($summary['impressions']) }}</div>
+                            </div>
+                            <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-5">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Avg CTR</span>
+                                </div>
+                                <div class="text-3xl font-bold text-emerald-600">{{ $summary['ctr'] }}%</div>
+                            </div>
+                            <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-5">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <div class="w-2 h-2 rounded-full bg-orange-500"></div>
+                                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Avg Position</span>
+                                </div>
+                                <div class="text-3xl font-bold text-orange-600">{{ $summary['position'] }}</div>
+                            </div>
+                        </div>
+                    @endif
 
-                @if ($dailyData && count($dailyData) > 0)
                     <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-6 mb-6">
                         <h3 class="text-base font-semibold text-gray-900 mb-4">Performance Over Time</h3>
-                        <div class="h-72">
-                            <canvas x-ref="performanceChart"></canvas>
+                        @if ($dailyData && count($dailyData) > 0)
+                            <div class="h-72">
+                                <canvas x-ref="performanceChart"></canvas>
+                            </div>
+                        @else
+                            <div class="h-32 flex items-center justify-center text-sm text-gray-400">No daily breakdown available yet.</div>
+                        @endif
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-6">
+                            <h3 class="text-base font-semibold text-gray-900 mb-4">Top Search Queries</h3>
+                            @if ($topQueries && count($topQueries) > 0)
+                                <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                                    <table class="w-full text-sm">
+                                        <thead class="sticky top-0 bg-white">
+                                            <tr class="border-b text-left text-gray-500">
+                                                <th class="py-2 font-medium">Query</th>
+                                                <th class="py-2 font-medium text-right">Clicks</th>
+                                                <th class="py-2 font-medium text-right">Impr.</th>
+                                                <th class="py-2 font-medium text-right">CTR</th>
+                                                <th class="py-2 font-medium text-right">Pos.</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (array_slice($topQueries, 0, 25) as $query)
+                                                <tr class="border-b border-gray-50 hover:bg-gray-50">
+                                                    <td class="py-2 font-medium text-gray-900 max-w-[200px] truncate" title="{{ $query['key'] }}">{{ Str::limit($query['key'], 35) }}</td>
+                                                    <td class="py-2 text-right text-blue-600 font-semibold">{{ number_format($query['clicks']) }}</td>
+                                                    <td class="py-2 text-right text-gray-500">{{ number_format($query['impressions']) }}</td>
+                                                    <td class="py-2 text-right text-gray-500">{{ $query['ctr'] }}%</td>
+                                                    <td class="py-2 text-right">
+                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium {{ $query['position'] <= 3 ? 'bg-green-100 text-green-700' : ($query['position'] <= 10 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600') }}">
+                                                            {{ $query['position'] }}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <p class="text-sm text-gray-400 py-6 text-center">No queries returned by Search Console.</p>
+                            @endif
+                        </div>
+
+                        <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-6">
+                            <h3 class="text-base font-semibold text-gray-900 mb-4">Top Pages</h3>
+                            @if ($topPages && count($topPages) > 0)
+                                <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                                    <table class="w-full text-sm">
+                                        <thead class="sticky top-0 bg-white">
+                                            <tr class="border-b text-left text-gray-500">
+                                                <th class="py-2 font-medium">Page</th>
+                                                <th class="py-2 font-medium text-right">Clicks</th>
+                                                <th class="py-2 font-medium text-right">CTR</th>
+                                                <th class="py-2 font-medium text-right">Pos.</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (array_slice($topPages, 0, 25) as $page)
+                                                @php $path = parse_url($page['key'], PHP_URL_PATH) ?: '/'; @endphp
+                                                <tr class="border-b border-gray-50 hover:bg-gray-50">
+                                                    <td class="py-2 max-w-[250px]">
+                                                        <a href="{{ $page['key'] }}" target="_blank" class="text-blue-600 hover:underline truncate block text-xs" title="{{ $path }}">{{ Str::limit($path, 40) }}</a>
+                                                    </td>
+                                                    <td class="py-2 text-right text-blue-600 font-semibold">{{ number_format($page['clicks']) }}</td>
+                                                    <td class="py-2 text-right text-gray-500">{{ $page['ctr'] }}%</td>
+                                                    <td class="py-2 text-right">
+                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium {{ $page['position'] <= 3 ? 'bg-green-100 text-green-700' : ($page['position'] <= 10 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600') }}">
+                                                            {{ $page['position'] }}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <p class="text-sm text-gray-400 py-6 text-center">No pages returned by Search Console.</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-6">
+                            <h3 class="text-base font-semibold text-gray-900 mb-4">By Device</h3>
+                            @if ($deviceData && count($deviceData) > 0)
+                                <div class="h-48 mb-4">
+                                    <canvas x-ref="deviceChart"></canvas>
+                                </div>
+                                <div class="space-y-2">
+                                    @foreach ($deviceData as $device)
+                                        <div class="flex items-center justify-between text-sm">
+                                            <div class="flex items-center gap-2">
+                                                @if (strtolower($device['key']) === 'mobile')
+                                                    <x-heroicon-o-device-phone-mobile class="w-4 h-4 text-blue-500" />
+                                                @elseif (strtolower($device['key']) === 'desktop')
+                                                    <x-heroicon-o-computer-desktop class="w-4 h-4 text-purple-500" />
+                                                @else
+                                                    <x-heroicon-o-device-tablet class="w-4 h-4 text-emerald-500" />
+                                                @endif
+                                                <span class="text-gray-700">{{ $this->formatDevice($device['key']) }}</span>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="font-semibold text-gray-900">{{ number_format($device['clicks']) }}</span>
+                                                <span class="text-gray-400 text-xs ml-1">clicks</span>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-sm text-gray-400 py-6 text-center">No device data.</p>
+                            @endif
+                        </div>
+
+                        <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-6 md:col-span-2">
+                            <h3 class="text-base font-semibold text-gray-900 mb-4">By Country</h3>
+                            @if ($countryData && count($countryData) > 0)
+                                <div class="grid grid-cols-2 gap-2">
+                                    @foreach ($countryData as $country)
+                                        @php
+                                            $totalClicks = collect($countryData)->sum('clicks') ?: 1;
+                                            $pct = round(($country['clicks'] / $totalClicks) * 100, 1);
+                                        @endphp
+                                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                            <span class="text-lg">{{ $this->getCountryFlag($country['key']) }}</span>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="font-medium text-sm uppercase text-gray-700">{{ $country['key'] }}</span>
+                                                    <span class="font-semibold text-sm text-gray-900">{{ number_format($country['clicks']) }}</span>
+                                                </div>
+                                                <div class="mt-1 w-full bg-gray-200 rounded-full h-1.5">
+                                                    <div class="bg-blue-500 h-1.5 rounded-full" style="width: {{ min($pct, 100) }}%"></div>
+                                                </div>
+                                                <div class="text-xs text-gray-400 mt-0.5">{{ number_format($country['impressions']) }} impr.</div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-sm text-gray-400 py-6 text-center">No country data.</p>
+                            @endif
                         </div>
                     </div>
                 @endif
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    @if ($topQueries)
-                        <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-6">
-                            <h3 class="text-base font-semibold text-gray-900 mb-4">Top Search Queries</h3>
-                            <div class="overflow-x-auto max-h-96 overflow-y-auto">
-                                <table class="w-full text-sm">
-                                    <thead class="sticky top-0 bg-white">
-                                        <tr class="border-b text-left text-gray-500">
-                                            <th class="py-2 font-medium">Query</th>
-                                            <th class="py-2 font-medium text-right">Clicks</th>
-                                            <th class="py-2 font-medium text-right">Impr.</th>
-                                            <th class="py-2 font-medium text-right">CTR</th>
-                                            <th class="py-2 font-medium text-right">Pos.</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (array_slice($topQueries, 0, 25) as $query)
-                                            <tr class="border-b border-gray-50 hover:bg-gray-50">
-                                                <td class="py-2 font-medium text-gray-900 max-w-[200px] truncate" title="{{ $query['key'] }}">{{ Str::limit($query['key'], 35) }}</td>
-                                                <td class="py-2 text-right text-blue-600 font-semibold">{{ number_format($query['clicks']) }}</td>
-                                                <td class="py-2 text-right text-gray-500">{{ number_format($query['impressions']) }}</td>
-                                                <td class="py-2 text-right text-gray-500">{{ $query['ctr'] }}%</td>
-                                                <td class="py-2 text-right">
-                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium {{ $query['position'] <= 3 ? 'bg-green-100 text-green-700' : ($query['position'] <= 10 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600') }}">
-                                                        {{ $query['position'] }}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    @endif
-
-                    @if ($topPages)
-                        <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-6">
-                            <h3 class="text-base font-semibold text-gray-900 mb-4">Top Pages</h3>
-                            <div class="overflow-x-auto max-h-96 overflow-y-auto">
-                                <table class="w-full text-sm">
-                                    <thead class="sticky top-0 bg-white">
-                                        <tr class="border-b text-left text-gray-500">
-                                            <th class="py-2 font-medium">Page</th>
-                                            <th class="py-2 font-medium text-right">Clicks</th>
-                                            <th class="py-2 font-medium text-right">CTR</th>
-                                            <th class="py-2 font-medium text-right">Pos.</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (array_slice($topPages, 0, 25) as $page)
-                                            @php $path = parse_url($page['key'], PHP_URL_PATH) ?: '/'; @endphp
-                                            <tr class="border-b border-gray-50 hover:bg-gray-50">
-                                                <td class="py-2 max-w-[250px]">
-                                                    <a href="{{ $page['key'] }}" target="_blank" class="text-blue-600 hover:underline truncate block text-xs" title="{{ $path }}">{{ Str::limit($path, 40) }}</a>
-                                                </td>
-                                                <td class="py-2 text-right text-blue-600 font-semibold">{{ number_format($page['clicks']) }}</td>
-                                                <td class="py-2 text-right text-gray-500">{{ $page['ctr'] }}%</td>
-                                                <td class="py-2 text-right">
-                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium {{ $page['position'] <= 3 ? 'bg-green-100 text-green-700' : ($page['position'] <= 10 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600') }}">
-                                                        {{ $page['position'] }}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    @endif
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    @if ($deviceData)
-                        <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-6">
-                            <h3 class="text-base font-semibold text-gray-900 mb-4">By Device</h3>
-                            <div class="h-48 mb-4">
-                                <canvas x-ref="deviceChart"></canvas>
-                            </div>
-                            <div class="space-y-2">
-                                @foreach ($deviceData as $device)
-                                    <div class="flex items-center justify-between text-sm">
-                                        <div class="flex items-center gap-2">
-                                            @if (strtolower($device['key']) === 'mobile')
-                                                <x-heroicon-o-device-phone-mobile class="w-4 h-4 text-blue-500" />
-                                            @elseif (strtolower($device['key']) === 'desktop')
-                                                <x-heroicon-o-computer-desktop class="w-4 h-4 text-purple-500" />
-                                            @else
-                                                <x-heroicon-o-device-tablet class="w-4 h-4 text-emerald-500" />
-                                            @endif
-                                            <span class="text-gray-700">{{ $this->formatDevice($device['key']) }}</span>
-                                        </div>
-                                        <div class="text-right">
-                                            <span class="font-semibold text-gray-900">{{ number_format($device['clicks']) }}</span>
-                                            <span class="text-gray-400 text-xs ml-1">clicks</span>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
-
-                    @if ($countryData)
-                        <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-6 md:col-span-2">
-                            <h3 class="text-base font-semibold text-gray-900 mb-4">By Country</h3>
-                            <div class="grid grid-cols-2 gap-2">
-                                @foreach ($countryData as $country)
-                                    @php
-                                        $totalClicks = collect($countryData)->sum('clicks') ?: 1;
-                                        $pct = round(($country['clicks'] / $totalClicks) * 100, 1);
-                                    @endphp
-                                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                        <span class="text-lg">{{ $this->getCountryFlag($country['key']) }}</span>
-                                        <div class="flex-1 min-w-0">
-                                            <div class="flex items-center justify-between">
-                                                <span class="font-medium text-sm uppercase text-gray-700">{{ $country['key'] }}</span>
-                                                <span class="font-semibold text-sm text-gray-900">{{ number_format($country['clicks']) }}</span>
-                                            </div>
-                                            <div class="mt-1 w-full bg-gray-200 rounded-full h-1.5">
-                                                <div class="bg-blue-500 h-1.5 rounded-full" style="width: {{ min($pct, 100) }}%"></div>
-                                            </div>
-                                            <div class="text-xs text-gray-400 mt-0.5">{{ number_format($country['impressions']) }} impr.</div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
-                </div>
             </div>
 
             {{-- ============================================ --}}
@@ -374,7 +396,8 @@ GOOGLE_SEARCH_CONSOLE_SITE_URL=sc-domain:tocojapan.com</pre>
                 @else
                     <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-12 text-center">
                         <x-heroicon-o-document-magnifying-glass class="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                        <p class="text-gray-500">No content performance data available yet.</p>
+                        <h3 class="text-base font-semibold text-gray-900 mb-1">No content performance data yet</h3>
+                        <p class="text-sm text-gray-500">Once your pages start picking up impressions, you'll see a breakdown by section here.</p>
                     </div>
                 @endif
             </div>
@@ -383,74 +406,80 @@ GOOGLE_SEARCH_CONSOLE_SITE_URL=sc-domain:tocojapan.com</pre>
             {{-- INSIGHTS TAB --}}
             {{-- ============================================ --}}
             <div x-show="activeTab === 'insights'" x-cloak>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    @if ($positionDistribution)
-                        <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-6" x-data="{ expandedBracket: null }">
-                            <h3 class="text-base font-semibold text-gray-900 mb-2">Ranking Distribution</h3>
-                            <p class="text-xs text-gray-500 mb-4">Click a bracket to see queries in that range</p>
-                            <div class="h-48 mb-4">
-                                <canvas x-ref="positionChart"></canvas>
-                            </div>
-                            @php
-                                $posColors = ['1-3' => 'bg-green-500', '4-10' => 'bg-emerald-400', '11-20' => 'bg-yellow-400', '21-50' => 'bg-orange-400', '50+' => 'bg-red-400'];
-                                $posBorderColors = ['1-3' => 'border-green-500', '4-10' => 'border-emerald-400', '11-20' => 'border-yellow-400', '21-50' => 'border-orange-400', '50+' => 'border-red-400'];
-                                $posLabels = ['1-3' => 'Page 1 Top', '4-10' => 'Page 1', '11-20' => 'Page 2', '21-50' => 'Page 3-5', '50+' => 'Beyond'];
-                                $posBounds = ['1-3' => [0, 3], '4-10' => [3, 10], '11-20' => [10, 20], '21-50' => [20, 50], '50+' => [50, 999]];
-                            @endphp
-                            <div class="grid grid-cols-5 gap-2 text-center mb-4">
+                @if (empty($topQueries))
+                    <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-12 text-center">
+                        <x-heroicon-o-light-bulb class="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <h3 class="text-base font-semibold text-gray-900 mb-1">No query data yet</h3>
+                        <p class="text-sm text-gray-500">Insights need queries to analyse. Extend the date range or come back once impressions accumulate.</p>
+                    </div>
+                @else
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        @if ($positionDistribution)
+                            <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-6" x-data="{ expandedBracket: null }">
+                                <h3 class="text-base font-semibold text-gray-900 mb-2">Ranking Distribution</h3>
+                                <p class="text-xs text-gray-500 mb-4">Click a bracket to see queries in that range</p>
+                                <div class="h-48 mb-4">
+                                    <canvas x-ref="positionChart"></canvas>
+                                </div>
+                                @php
+                                    $posColors = ['1-3' => 'bg-green-500', '4-10' => 'bg-emerald-400', '11-20' => 'bg-yellow-400', '21-50' => 'bg-orange-400', '50+' => 'bg-red-400'];
+                                    $posBorderColors = ['1-3' => 'border-green-500', '4-10' => 'border-emerald-400', '11-20' => 'border-yellow-400', '21-50' => 'border-orange-400', '50+' => 'border-red-400'];
+                                    $posLabels = ['1-3' => 'Page 1 Top', '4-10' => 'Page 1', '11-20' => 'Page 2', '21-50' => 'Page 3-5', '50+' => 'Beyond'];
+                                    $posBounds = ['1-3' => [0, 3], '4-10' => [3, 10], '11-20' => [10, 20], '21-50' => [20, 50], '50+' => [50, 999]];
+                                @endphp
+                                <div class="grid grid-cols-5 gap-2 text-center mb-4">
+                                    @foreach ($positionDistribution as $range => $count)
+                                        <button
+                                            @click="expandedBracket = expandedBracket === '{{ $range }}' ? null : '{{ $range }}'"
+                                            class="rounded-lg p-2 transition-all cursor-pointer hover:shadow-md"
+                                            :class="expandedBracket === '{{ $range }}' ? 'ring-2 {{ $posBorderColors[$range] ?? 'border-gray-400' }} bg-gray-50 shadow' : 'hover:bg-gray-50'"
+                                        >
+                                            <div class="w-3 h-3 rounded-full {{ $posColors[$range] ?? 'bg-gray-400' }} mx-auto mb-1"></div>
+                                            <div class="text-lg font-bold text-gray-900">{{ $count }}</div>
+                                            <div class="text-xs text-gray-500">{{ $posLabels[$range] ?? $range }}</div>
+                                        </button>
+                                    @endforeach
+                                </div>
+
                                 @foreach ($positionDistribution as $range => $count)
-                                    <button
-                                        @click="expandedBracket = expandedBracket === '{{ $range }}' ? null : '{{ $range }}'"
-                                        class="rounded-lg p-2 transition-all cursor-pointer hover:shadow-md"
-                                        :class="expandedBracket === '{{ $range }}' ? 'ring-2 {{ $posBorderColors[$range] ?? 'border-gray-400' }} bg-gray-50 shadow' : 'hover:bg-gray-50'"
-                                    >
-                                        <div class="w-3 h-3 rounded-full {{ $posColors[$range] ?? 'bg-gray-400' }} mx-auto mb-1"></div>
-                                        <div class="text-lg font-bold text-gray-900">{{ $count }}</div>
-                                        <div class="text-xs text-gray-500">{{ $posLabels[$range] ?? $range }}</div>
-                                    </button>
+                                    @php
+                                        [$minPos, $maxPos] = $posBounds[$range];
+                                        $bracketQueries = collect($topQueries ?? [])->filter(fn ($q) => $q['position'] > $minPos && $q['position'] <= $maxPos)->sortBy('position')->values();
+                                        if ($range === '1-3') {
+                                            $bracketQueries = collect($topQueries ?? [])->filter(fn ($q) => $q['position'] <= 3)->sortBy('position')->values();
+                                        }
+                                    @endphp
+                                    <div x-show="expandedBracket === '{{ $range }}'" x-collapse x-cloak class="mt-2">
+                                        <div class="border-t pt-3">
+                                            <div class="flex items-center gap-2 mb-3">
+                                                <div class="w-2.5 h-2.5 rounded-full {{ $posColors[$range] ?? 'bg-gray-400' }}"></div>
+                                                <span class="text-sm font-semibold text-gray-700">{{ $posLabels[$range] ?? $range }} — {{ $bracketQueries->count() }} queries</span>
+                                            </div>
+                                            @if ($bracketQueries->isNotEmpty())
+                                                <div class="max-h-64 overflow-y-auto space-y-1">
+                                                    @foreach ($bracketQueries as $q)
+                                                        <div class="flex items-center justify-between py-1.5 px-2 rounded hover:bg-gray-50 text-sm">
+                                                            <span class="text-gray-700 truncate max-w-[55%]" title="{{ $q['key'] }}">{{ Str::limit($q['key'], 35) }}</span>
+                                                            <div class="flex items-center gap-3 text-xs">
+                                                                <span class="text-blue-600 font-semibold">{{ $q['clicks'] }} clicks</span>
+                                                                <span class="text-gray-400">{{ number_format($q['impressions']) }} impr</span>
+                                                                <span class="text-gray-400">{{ $q['ctr'] }}%</span>
+                                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded font-medium {{ $q['position'] <= 3 ? 'bg-green-100 text-green-700' : ($q['position'] <= 10 ? 'bg-yellow-100 text-yellow-700' : ($q['position'] <= 20 ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600')) }}">
+                                                                    {{ $q['position'] }}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <p class="text-xs text-gray-400 italic">No queries in this range</p>
+                                            @endif
+                                        </div>
+                                    </div>
                                 @endforeach
                             </div>
+                        @endif
 
-                            @foreach ($positionDistribution as $range => $count)
-                                @php
-                                    [$minPos, $maxPos] = $posBounds[$range];
-                                    $bracketQueries = collect($topQueries ?? [])->filter(fn ($q) => $q['position'] > $minPos && $q['position'] <= $maxPos)->sortBy('position')->values();
-                                    if ($range === '1-3') {
-                                        $bracketQueries = collect($topQueries ?? [])->filter(fn ($q) => $q['position'] <= 3)->sortBy('position')->values();
-                                    }
-                                @endphp
-                                <div x-show="expandedBracket === '{{ $range }}'" x-collapse x-cloak class="mt-2">
-                                    <div class="border-t pt-3">
-                                        <div class="flex items-center gap-2 mb-3">
-                                            <div class="w-2.5 h-2.5 rounded-full {{ $posColors[$range] ?? 'bg-gray-400' }}"></div>
-                                            <span class="text-sm font-semibold text-gray-700">{{ $posLabels[$range] ?? $range }} — {{ $bracketQueries->count() }} queries</span>
-                                        </div>
-                                        @if ($bracketQueries->isNotEmpty())
-                                            <div class="max-h-64 overflow-y-auto space-y-1">
-                                                @foreach ($bracketQueries as $q)
-                                                    <div class="flex items-center justify-between py-1.5 px-2 rounded hover:bg-gray-50 text-sm">
-                                                        <span class="text-gray-700 truncate max-w-[55%]" title="{{ $q['key'] }}">{{ Str::limit($q['key'], 35) }}</span>
-                                                        <div class="flex items-center gap-3 text-xs">
-                                                            <span class="text-blue-600 font-semibold">{{ $q['clicks'] }} clicks</span>
-                                                            <span class="text-gray-400">{{ number_format($q['impressions']) }} impr</span>
-                                                            <span class="text-gray-400">{{ $q['ctr'] }}%</span>
-                                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded font-medium {{ $q['position'] <= 3 ? 'bg-green-100 text-green-700' : ($q['position'] <= 10 ? 'bg-yellow-100 text-yellow-700' : ($q['position'] <= 20 ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600')) }}">
-                                                                {{ $q['position'] }}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        @else
-                                            <p class="text-xs text-gray-400 italic">No queries in this range</p>
-                                        @endif
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @endif
-
-                    @if ($topQueries)
                         <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-6">
                             <h3 class="text-base font-semibold text-gray-900 mb-2">CTR vs Position</h3>
                             <p class="text-xs text-gray-500 mb-4">Click-through rate relative to ranking position</p>
@@ -458,63 +487,61 @@ GOOGLE_SEARCH_CONSOLE_SITE_URL=sc-domain:tocojapan.com</pre>
                                 <canvas x-ref="ctrPositionChart"></canvas>
                             </div>
                         </div>
-                    @endif
-                </div>
-
-                @if ($quickWins && count($quickWins) > 0)
-                    <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-6 mb-6">
-                        <div class="flex items-center gap-2 mb-1">
-                            <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-                                <x-heroicon-o-light-bulb class="w-5 h-5 text-amber-600" />
-                            </div>
-                            <div>
-                                <h3 class="text-base font-semibold text-gray-900">Quick Win Opportunities</h3>
-                                <p class="text-xs text-gray-500">Queries with high impressions but ranking 4-20 — optimise these for more clicks</p>
-                            </div>
-                        </div>
-                        <div class="overflow-x-auto mt-4">
-                            <table class="w-full text-sm">
-                                <thead>
-                                    <tr class="border-b text-left text-gray-500">
-                                        <th class="py-2 font-medium">Query</th>
-                                        <th class="py-2 font-medium text-right">Impressions</th>
-                                        <th class="py-2 font-medium text-right">Clicks</th>
-                                        <th class="py-2 font-medium text-right">CTR</th>
-                                        <th class="py-2 font-medium text-right">Position</th>
-                                        <th class="py-2 font-medium text-right">Potential</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($quickWins as $qw)
-                                        @php
-                                            $potentialClicks = round($qw['impressions'] * 0.10) - $qw['clicks'];
-                                            if ($potentialClicks < 0) $potentialClicks = 0;
-                                        @endphp
-                                        <tr class="border-b border-gray-50 hover:bg-amber-50">
-                                            <td class="py-2 font-medium text-gray-900 max-w-[250px] truncate" title="{{ $qw['key'] }}">{{ Str::limit($qw['key'], 40) }}</td>
-                                            <td class="py-2 text-right text-purple-600 font-semibold">{{ number_format($qw['impressions']) }}</td>
-                                            <td class="py-2 text-right text-blue-600">{{ number_format($qw['clicks']) }}</td>
-                                            <td class="py-2 text-right text-gray-500">{{ $qw['ctr'] }}%</td>
-                                            <td class="py-2 text-right">
-                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700">{{ $qw['position'] }}</span>
-                                            </td>
-                                            <td class="py-2 text-right">
-                                                @if ($potentialClicks > 0)
-                                                    <span class="text-green-600 font-semibold">+{{ $potentialClicks }}</span>
-                                                    <span class="text-xs text-gray-400">clicks</span>
-                                                @else
-                                                    <span class="text-gray-400">-</span>
-                                                @endif
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
                     </div>
-                @endif
 
-                @if ($topQueries)
+                    @if ($quickWins && count($quickWins) > 0)
+                        <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-6 mb-6">
+                            <div class="flex items-center gap-2 mb-1">
+                                <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                                    <x-heroicon-o-light-bulb class="w-5 h-5 text-amber-600" />
+                                </div>
+                                <div>
+                                    <h3 class="text-base font-semibold text-gray-900">Quick Win Opportunities</h3>
+                                    <p class="text-xs text-gray-500">Queries with high impressions but ranking 4-20 — optimise these for more clicks</p>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto mt-4">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="border-b text-left text-gray-500">
+                                            <th class="py-2 font-medium">Query</th>
+                                            <th class="py-2 font-medium text-right">Impressions</th>
+                                            <th class="py-2 font-medium text-right">Clicks</th>
+                                            <th class="py-2 font-medium text-right">CTR</th>
+                                            <th class="py-2 font-medium text-right">Position</th>
+                                            <th class="py-2 font-medium text-right">Potential</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($quickWins as $qw)
+                                            @php
+                                                $potentialClicks = round($qw['impressions'] * 0.10) - $qw['clicks'];
+                                                if ($potentialClicks < 0) $potentialClicks = 0;
+                                            @endphp
+                                            <tr class="border-b border-gray-50 hover:bg-amber-50">
+                                                <td class="py-2 font-medium text-gray-900 max-w-[250px] truncate" title="{{ $qw['key'] }}">{{ Str::limit($qw['key'], 40) }}</td>
+                                                <td class="py-2 text-right text-purple-600 font-semibold">{{ number_format($qw['impressions']) }}</td>
+                                                <td class="py-2 text-right text-blue-600">{{ number_format($qw['clicks']) }}</td>
+                                                <td class="py-2 text-right text-gray-500">{{ $qw['ctr'] }}%</td>
+                                                <td class="py-2 text-right">
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700">{{ $qw['position'] }}</span>
+                                                </td>
+                                                <td class="py-2 text-right">
+                                                    @if ($potentialClicks > 0)
+                                                        <span class="text-green-600 font-semibold">+{{ $potentialClicks }}</span>
+                                                        <span class="text-xs text-gray-400">clicks</span>
+                                                    @else
+                                                        <span class="text-gray-400">-</span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @endif
+
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-6">
                             <div class="flex items-center gap-2 mb-4">
@@ -526,17 +553,21 @@ GOOGLE_SEARCH_CONSOLE_SITE_URL=sc-domain:tocojapan.com</pre>
                             @php
                                 $bestCtr = collect($topQueries)->filter(fn ($q) => $q['impressions'] >= 5)->sortByDesc('ctr')->take(10)->values();
                             @endphp
-                            <div class="space-y-2">
-                                @foreach ($bestCtr as $q)
-                                    <div class="flex items-center justify-between p-2 rounded-lg hover:bg-green-50">
-                                        <span class="text-sm text-gray-700 truncate max-w-[200px]" title="{{ $q['key'] }}">{{ Str::limit($q['key'], 30) }}</span>
-                                        <div class="flex items-center gap-3">
-                                            <span class="text-xs text-gray-400">pos {{ $q['position'] }}</span>
-                                            <span class="font-bold text-green-600 text-sm">{{ $q['ctr'] }}%</span>
+                            @if ($bestCtr->isNotEmpty())
+                                <div class="space-y-2">
+                                    @foreach ($bestCtr as $q)
+                                        <div class="flex items-center justify-between p-2 rounded-lg hover:bg-green-50">
+                                            <span class="text-sm text-gray-700 truncate max-w-[200px]" title="{{ $q['key'] }}">{{ Str::limit($q['key'], 30) }}</span>
+                                            <div class="flex items-center gap-3">
+                                                <span class="text-xs text-gray-400">pos {{ $q['position'] }}</span>
+                                                <span class="font-bold text-green-600 text-sm">{{ $q['ctr'] }}%</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                @endforeach
-                            </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-sm text-gray-400 py-4 text-center">No queries with enough impressions yet.</p>
+                            @endif
                         </div>
 
                         <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-6">
@@ -575,7 +606,6 @@ GOOGLE_SEARCH_CONSOLE_SITE_URL=sc-domain:tocojapan.com</pre>
                         $totalMakes = \App\Models\Make::where('is_active', true)->count();
                         $totalBodyTypes = \App\Models\BodyType::where('is_active', true)->count();
                         $totalCmsPages = \App\Models\Page::where('status', 'published')->count();
-                        // +1 for /, +1 for /vehicles browse, +1 for /cif
                         $totalPages = $totalVehicles + $totalMakes + $totalBodyTypes + $totalCmsPages + 3;
                     @endphp
 
@@ -671,11 +701,17 @@ GOOGLE_SEARCH_CONSOLE_SITE_URL=sc-domain:tocojapan.com</pre>
                                 @endforeach
                             </div>
                         </div>
+                    @else
+                        <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-6 text-center">
+                            <p class="text-sm text-gray-500">No sitemaps submitted to Search Console yet.</p>
+                            <p class="text-xs text-gray-400 mt-1">Submit your sitemap.xml in Search Console → Sitemaps to track indexing.</p>
+                        </div>
                     @endif
                 @else
                     <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-12 text-center">
                         <x-heroicon-o-document-magnifying-glass class="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                        <p class="text-gray-500">No indexing data available.</p>
+                        <h3 class="text-base font-semibold text-gray-900 mb-1">No indexing data available</h3>
+                        <p class="text-sm text-gray-500">Google hasn't returned sitemap data for this property yet.</p>
                     </div>
                 @endif
             </div>
@@ -688,212 +724,222 @@ GOOGLE_SEARCH_CONSOLE_SITE_URL=sc-domain:tocojapan.com</pre>
             </div>
         </div>
 
-        {{-- Chart.js --}}
+        {{-- Chart.js loaded synchronously, then dashboard payload + renderer --}}
         @push('scripts')
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script>
-            function gscDashboard() {
-                return {
-                    activeTab: 'performance',
-                    charts: {},
-                    init() {
-                        this.$nextTick(() => this.renderCharts());
-                        this.$watch('activeTab', () => {
+            <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+            <script>
+                window.gscData = {
+                    daily: @json($dailyData ?? []),
+                    device: @json($deviceData ?? []),
+                    content: @json($contentBreakdown ?? (object) []),
+                    position: @json($positionDistribution ?? (object) []),
+                    queries: @json($topQueries ?? []),
+                };
+
+                function gscDashboard() {
+                    return {
+                        activeTab: 'performance',
+                        charts: {},
+                        init() {
                             this.$nextTick(() => this.renderCharts());
-                        });
-                    },
-                    renderCharts() {
-                        Object.values(this.charts).forEach(c => c.destroy());
-                        this.charts = {};
+                            this.$watch('activeTab', () => {
+                                this.$nextTick(() => this.renderCharts());
+                            });
+                            document.addEventListener('livewire:updated', () => {
+                                this.$nextTick(() => this.renderCharts());
+                            });
+                        },
+                        renderCharts() {
+                            if (typeof Chart === 'undefined') return;
+                            Object.values(this.charts).forEach(c => { try { c.destroy(); } catch (e) {} });
+                            this.charts = {};
 
-                        if (this.activeTab === 'performance') {
-                            this.renderPerformanceChart();
-                            this.renderDeviceChart();
-                        } else if (this.activeTab === 'content') {
-                            this.renderContentClicksChart();
-                        } else if (this.activeTab === 'insights') {
-                            this.renderPositionChart();
-                            this.renderCtrPositionChart();
-                        }
-                    },
-                    renderPerformanceChart() {
-                        const el = this.$refs.performanceChart;
-                        if (!el) return;
-                        const data = @js($dailyData ?? []);
-                        if (!data.length) return;
-
-                        this.charts.performance = new Chart(el.getContext('2d'), {
-                            type: 'line',
-                            data: {
-                                labels: data.map(d => {
-                                    const date = new Date(d.date);
-                                    return date.toLocaleDateString('en', { month: 'short', day: 'numeric' });
-                                }),
-                                datasets: [{
-                                    label: 'Clicks',
-                                    data: data.map(d => d.clicks),
-                                    borderColor: '#3B82F6',
-                                    backgroundColor: 'rgba(59, 130, 246, 0.08)',
-                                    fill: true,
-                                    tension: 0.4,
-                                    borderWidth: 2,
-                                    pointRadius: 3,
-                                    pointBackgroundColor: '#3B82F6',
-                                    yAxisID: 'y'
-                                }, {
-                                    label: 'Impressions',
-                                    data: data.map(d => d.impressions),
-                                    borderColor: '#8B5CF6',
-                                    backgroundColor: 'transparent',
-                                    borderDash: [5, 5],
-                                    tension: 0.4,
-                                    borderWidth: 2,
-                                    pointRadius: 2,
-                                    yAxisID: 'y1'
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                interaction: { mode: 'index', intersect: false },
-                                plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 20 } } },
-                                scales: {
-                                    y: { position: 'left', title: { display: true, text: 'Clicks', color: '#3B82F6' }, grid: { color: 'rgba(0,0,0,0.04)' } },
-                                    y1: { position: 'right', title: { display: true, text: 'Impressions', color: '#8B5CF6' }, grid: { drawOnChartArea: false } },
-                                    x: { grid: { display: false } }
-                                }
+                            if (this.activeTab === 'performance') {
+                                this.renderPerformanceChart();
+                                this.renderDeviceChart();
+                            } else if (this.activeTab === 'content') {
+                                this.renderContentClicksChart();
+                            } else if (this.activeTab === 'insights') {
+                                this.renderPositionChart();
+                                this.renderCtrPositionChart();
                             }
-                        });
-                    },
-                    renderDeviceChart() {
-                        const el = this.$refs.deviceChart;
-                        if (!el) return;
-                        const data = @js($deviceData ?? []);
-                        if (!data.length) return;
+                        },
+                        renderPerformanceChart() {
+                            const el = this.$refs.performanceChart;
+                            const data = window.gscData.daily;
+                            if (!el || !data || !data.length) return;
 
-                        const colors = { 'MOBILE': '#3B82F6', 'DESKTOP': '#8B5CF6', 'TABLET': '#10B981' };
-                        this.charts.device = new Chart(el.getContext('2d'), {
-                            type: 'doughnut',
-                            data: {
-                                labels: data.map(d => d.key.charAt(0) + d.key.slice(1).toLowerCase()),
-                                datasets: [{
-                                    data: data.map(d => d.clicks),
-                                    backgroundColor: data.map(d => colors[d.key] || '#6B7280'),
-                                    borderWidth: 0,
-                                    spacing: 2
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                cutout: '65%',
-                                plugins: { legend: { display: false } }
-                            }
-                        });
-                    },
-                    renderContentClicksChart() {
-                        const el = this.$refs.contentClicksChart;
-                        if (!el) return;
-                        const data = @js($contentBreakdown ?? []);
-                        const entries = Object.entries(data).filter(([_, v]) => v.clicks > 0);
-                        if (!entries.length) return;
-
-                        this.charts.contentClicks = new Chart(el.getContext('2d'), {
-                            type: 'doughnut',
-                            data: {
-                                labels: entries.map(([k]) => k),
-                                datasets: [{
-                                    data: entries.map(([_, v]) => v.clicks),
-                                    backgroundColor: entries.map(([_, v]) => v.color),
-                                    borderWidth: 0,
-                                    spacing: 2
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                cutout: '60%',
-                                plugins: {
-                                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12, font: { size: 11 } } }
-                                }
-                            }
-                        });
-                    },
-                    renderPositionChart() {
-                        const el = this.$refs.positionChart;
-                        if (!el) return;
-                        const data = @js($positionDistribution ?? []);
-                        const labels = Object.keys(data);
-                        const values = Object.values(data);
-                        const colors = ['#22C55E', '#34D399', '#FBBF24', '#FB923C', '#EF4444'];
-
-                        this.charts.position = new Chart(el.getContext('2d'), {
-                            type: 'bar',
-                            data: {
-                                labels: labels,
-                                datasets: [{
-                                    data: values,
-                                    backgroundColor: colors,
-                                    borderRadius: 6,
-                                    borderSkipped: false,
-                                    barThickness: 36
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                plugins: { legend: { display: false } },
-                                scales: {
-                                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { stepSize: 1 } },
-                                    x: { grid: { display: false } }
-                                }
-                            }
-                        });
-                    },
-                    renderCtrPositionChart() {
-                        const el = this.$refs.ctrPositionChart;
-                        if (!el) return;
-                        const queries = @js(collect($topQueries ?? [])->filter(fn($q) => $q['impressions'] >= 5)->take(50)->values()->toArray());
-                        if (!queries.length) return;
-
-                        this.charts.ctrPosition = new Chart(el.getContext('2d'), {
-                            type: 'scatter',
-                            data: {
-                                datasets: [{
-                                    label: 'Queries',
-                                    data: queries.map(q => ({ x: q.position, y: q.ctr, label: q.key })),
-                                    backgroundColor: queries.map(q => {
-                                        if (q.position <= 3) return 'rgba(34, 197, 94, 0.7)';
-                                        if (q.position <= 10) return 'rgba(59, 130, 246, 0.7)';
-                                        return 'rgba(156, 163, 175, 0.5)';
+                            this.charts.performance = new Chart(el.getContext('2d'), {
+                                type: 'line',
+                                data: {
+                                    labels: data.map(d => {
+                                        const date = new Date(d.date);
+                                        return date.toLocaleDateString('en', { month: 'short', day: 'numeric' });
                                     }),
-                                    pointRadius: queries.map(q => Math.max(3, Math.min(12, Math.sqrt(q.impressions) / 2))),
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: { display: false },
-                                    tooltip: {
-                                        callbacks: {
-                                            label: (ctx) => {
-                                                const q = queries[ctx.dataIndex];
-                                                return `${q.key} — Pos: ${q.position}, CTR: ${q.ctr}%, ${q.impressions} impr.`;
+                                    datasets: [{
+                                        label: 'Clicks',
+                                        data: data.map(d => d.clicks),
+                                        borderColor: '#3B82F6',
+                                        backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                                        fill: true,
+                                        tension: 0.4,
+                                        borderWidth: 2,
+                                        pointRadius: 3,
+                                        pointBackgroundColor: '#3B82F6',
+                                        yAxisID: 'y'
+                                    }, {
+                                        label: 'Impressions',
+                                        data: data.map(d => d.impressions),
+                                        borderColor: '#8B5CF6',
+                                        backgroundColor: 'transparent',
+                                        borderDash: [5, 5],
+                                        tension: 0.4,
+                                        borderWidth: 2,
+                                        pointRadius: 2,
+                                        yAxisID: 'y1'
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    interaction: { mode: 'index', intersect: false },
+                                    plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 20 } } },
+                                    scales: {
+                                        y: { position: 'left', title: { display: true, text: 'Clicks', color: '#3B82F6' }, grid: { color: 'rgba(0,0,0,0.04)' } },
+                                        y1: { position: 'right', title: { display: true, text: 'Impressions', color: '#8B5CF6' }, grid: { drawOnChartArea: false } },
+                                        x: { grid: { display: false } }
+                                    }
+                                }
+                            });
+                        },
+                        renderDeviceChart() {
+                            const el = this.$refs.deviceChart;
+                            const data = window.gscData.device;
+                            if (!el || !data || !data.length) return;
+
+                            const colors = { 'MOBILE': '#3B82F6', 'DESKTOP': '#8B5CF6', 'TABLET': '#10B981' };
+                            this.charts.device = new Chart(el.getContext('2d'), {
+                                type: 'doughnut',
+                                data: {
+                                    labels: data.map(d => d.key.charAt(0) + d.key.slice(1).toLowerCase()),
+                                    datasets: [{
+                                        data: data.map(d => d.clicks),
+                                        backgroundColor: data.map(d => colors[d.key] || '#6B7280'),
+                                        borderWidth: 0,
+                                        spacing: 2
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    cutout: '65%',
+                                    plugins: { legend: { display: false } }
+                                }
+                            });
+                        },
+                        renderContentClicksChart() {
+                            const el = this.$refs.contentClicksChart;
+                            const data = window.gscData.content;
+                            const entries = Object.entries(data || {}).filter(([_, v]) => v.clicks > 0);
+                            if (!el || !entries.length) return;
+
+                            this.charts.contentClicks = new Chart(el.getContext('2d'), {
+                                type: 'doughnut',
+                                data: {
+                                    labels: entries.map(([k]) => k),
+                                    datasets: [{
+                                        data: entries.map(([_, v]) => v.clicks),
+                                        backgroundColor: entries.map(([_, v]) => v.color),
+                                        borderWidth: 0,
+                                        spacing: 2
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    cutout: '60%',
+                                    plugins: {
+                                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12, font: { size: 11 } } }
+                                    }
+                                }
+                            });
+                        },
+                        renderPositionChart() {
+                            const el = this.$refs.positionChart;
+                            const data = window.gscData.position;
+                            if (!el || !data) return;
+                            const labels = Object.keys(data);
+                            const values = Object.values(data);
+                            if (!labels.length) return;
+                            const colors = ['#22C55E', '#34D399', '#FBBF24', '#FB923C', '#EF4444'];
+
+                            this.charts.position = new Chart(el.getContext('2d'), {
+                                type: 'bar',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        data: values,
+                                        backgroundColor: colors,
+                                        borderRadius: 6,
+                                        borderSkipped: false,
+                                        barThickness: 36
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: { legend: { display: false } },
+                                    scales: {
+                                        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { stepSize: 1 } },
+                                        x: { grid: { display: false } }
+                                    }
+                                }
+                            });
+                        },
+                        renderCtrPositionChart() {
+                            const el = this.$refs.ctrPositionChart;
+                            const all = window.gscData.queries || [];
+                            const queries = all.filter(q => q.impressions >= 5).slice(0, 50);
+                            if (!el || !queries.length) return;
+
+                            this.charts.ctrPosition = new Chart(el.getContext('2d'), {
+                                type: 'scatter',
+                                data: {
+                                    datasets: [{
+                                        label: 'Queries',
+                                        data: queries.map(q => ({ x: q.position, y: q.ctr, label: q.key })),
+                                        backgroundColor: queries.map(q => {
+                                            if (q.position <= 3) return 'rgba(34, 197, 94, 0.7)';
+                                            if (q.position <= 10) return 'rgba(59, 130, 246, 0.7)';
+                                            return 'rgba(156, 163, 175, 0.5)';
+                                        }),
+                                        pointRadius: queries.map(q => Math.max(3, Math.min(12, Math.sqrt(q.impressions) / 2))),
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { display: false },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: (ctx) => {
+                                                    const q = queries[ctx.dataIndex];
+                                                    return `${q.key} — Pos: ${q.position}, CTR: ${q.ctr}%, ${q.impressions} impr.`;
+                                                }
                                             }
                                         }
+                                    },
+                                    scales: {
+                                        x: { title: { display: true, text: 'Position' }, reverse: false, grid: { color: 'rgba(0,0,0,0.04)' } },
+                                        y: { title: { display: true, text: 'CTR %' }, beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } }
                                     }
-                                },
-                                scales: {
-                                    x: { title: { display: true, text: 'Position' }, reverse: false, grid: { color: 'rgba(0,0,0,0.04)' } },
-                                    y: { title: { display: true, text: 'CTR %' }, beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } }
                                 }
-                            }
-                        });
-                    }
-                };
-            }
-        </script>
+                            });
+                        }
+                    };
+                }
+            </script>
         @endpush
     @endif
 </x-filament-panels::page>
