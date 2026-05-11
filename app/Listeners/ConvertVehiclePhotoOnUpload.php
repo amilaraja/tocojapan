@@ -55,10 +55,12 @@ class ConvertVehiclePhotoOnUpload
         $newRelative = $media->id.'/'.$newFileName;
         $newAbsolute = $disk->path($newRelative);
 
+        $refNo = $media->model?->ref_no;
+
         if ($newAbsolute === $originalAbsolute && $media->mime_type === 'image/webp') {
             // Already a webp at the right path — still resize/watermark in place.
             $tmp = $originalAbsolute.'.tmp';
-            $this->processor->process($originalAbsolute, $tmp);
+            $this->processor->process($originalAbsolute, $tmp, $refNo);
             @rename($tmp, $originalAbsolute);
             $media->size = filesize($originalAbsolute) ?: $media->size;
             $media->saveQuietly();
@@ -66,7 +68,7 @@ class ConvertVehiclePhotoOnUpload
             return;
         }
 
-        $this->processor->process($originalAbsolute, $newAbsolute);
+        $this->processor->process($originalAbsolute, $newAbsolute, $refNo);
 
         if (file_exists($originalAbsolute) && $originalAbsolute !== $newAbsolute) {
             @unlink($originalAbsolute);

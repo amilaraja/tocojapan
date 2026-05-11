@@ -88,8 +88,9 @@ class ReprocessVehicleImages extends Command
 
         $isSamePath = $sourceAbs === $newAbs;
         $tmp = $sourceAbs.'.tmp';
+        $refNo = $media->model?->ref_no;
 
-        $processor->process($sourceAbs, $isSamePath ? $tmp : $newAbs);
+        $processor->process($sourceAbs, $isSamePath ? $tmp : $newAbs, $refNo);
 
         if ($isSamePath) {
             @rename($tmp, $sourceAbs);
