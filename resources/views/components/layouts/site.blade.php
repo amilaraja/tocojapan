@@ -76,8 +76,14 @@
                 <a href="#why-toco" class="hover:text-toco-red">Why Toco</a>
                 <a href="#contact" class="hover:text-toco-red">Contact</a>
             </nav>
-            <div class="flex items-center gap-2 shrink-0">
+            <div class="flex items-center gap-3 shrink-0">
                 @auth
+                    <a href="{{ route('orders.index') }}" class="relative inline-flex items-center text-ink hover:text-toco-red" title="My orders & messages">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        @if (($unreadMessageCount ?? 0) > 0)
+                            <span class="absolute -top-1 -right-1.5 min-w-[16px] h-[16px] px-1 bg-toco-red text-white text-[10px] font-bold rounded-full grid place-items-center">{{ $unreadMessageCount }}</span>
+                        @endif
+                    </a>
                     <a href="{{ route('dashboard') }}" class="text-[12px] font-semibold text-ink hover:text-toco-red">Dashboard</a>
                 @else
                     <a href="{{ route('login') }}" class="hidden sm:inline-block text-[12px] font-semibold text-ink hover:text-toco-red">Sign in</a>

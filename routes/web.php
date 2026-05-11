@@ -39,6 +39,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::post('/orders/{order}/messages', [OrderController::class, 'postMessage'])->name('orders.messages.store');
 
     Route::post('/checkout/{slug}', [CheckoutController::class, 'start'])->name('checkout.start');
     Route::get('/checkout/{order}/return', [CheckoutController::class, 'return'])->name('checkout.return');

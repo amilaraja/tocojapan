@@ -38,7 +38,57 @@
 
         <div class="bg-white border border-line rounded-sm p-5">
             <h2 class="font-bold text-toco-navy mb-3">Messages</h2>
-            <p class="text-sm text-ink-soft">Order messaging arrives in Sprint 4.</p>
+
+            @if (session('status'))
+                <div class="mb-3 text-sm text-green-700 bg-green-50 border border-green-200 rounded px-3 py-2">{{ session('status') }}</div>
+            @endif
+
+            @if ($order->messages->isEmpty())
+                <p class="text-sm text-ink-soft mb-4">Send the Toco team a message about this order — questions, shipping address, anything.</p>
+            @else
+                <div class="space-y-3 mb-5 max-h-[480px] overflow-y-auto pr-1">
+                    @foreach ($order->messages as $m)
+                        <div class="flex {{ $m->from_admin ? 'justify-start' : 'justify-end' }}">
+                            <div class="max-w-[80%] {{ $m->from_admin ? 'bg-toco-silver-2 text-ink' : 'bg-toco-navy text-white' }} rounded-lg px-3.5 py-2 text-sm">
+                                <p class="text-[10px] uppercase tracking-widest opacity-70 mb-0.5">
+                                    {{ $m->from_admin ? 'Toco team' : 'You' }} · {{ $m->created_at->diffForHumans() }}
+                                </p>
+                                @if ($m->body)
+                                    <div class="whitespace-pre-wrap">{{ $m->body }}</div>
+                                @endif
+                                @php($attachments = $m->getMedia('attachments'))
+                                @if ($attachments->isNotEmpty())
+                                    <ul class="mt-2 space-y-1">
+                                        @foreach ($attachments as $att)
+                                            <li>
+                                                <a href="{{ $att->getUrl() }}" target="_blank" class="inline-flex items-center gap-1.5 text-[12px] underline opacity-90 hover:opacity-100">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></svg>
+                                                    {{ $att->file_name }}
+                                                </a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
+            <form method="POST" action="{{ route('orders.messages.store', $order) }}" enctype="multipart/form-data" class="space-y-2">
+                @csrf
+                <textarea name="body" rows="3" placeholder="Type your message..." class="w-full border-line rounded-sm text-sm">{{ old('body') }}</textarea>
+                @error('body')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+                <div class="flex items-center justify-between gap-3">
+                    <label class="text-xs text-ink-soft inline-flex items-center gap-1.5 cursor-pointer">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21 11.05-9.06 9.06a5.5 5.5 0 0 1-7.78-7.78l9.06-9.06a4 4 0 0 1 5.66 5.66l-9.06 9.07a2.5 2.5 0 0 1-3.54-3.54l8.36-8.36"/></svg>
+                        Attach files
+                        <input type="file" name="attachments[]" multiple class="hidden" onchange="document.getElementById('atc').textContent = this.files.length ? this.files.length + ' file(s) selected' : ''">
+                    </label>
+                    <span id="atc" class="text-xs text-ink-soft"></span>
+                    <button type="submit" class="ml-auto bg-toco-red hover:bg-toco-red-deep text-white text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-sm">Send</button>
+                </div>
+            </form>
         </div>
     </section>
 </x-layouts.site>

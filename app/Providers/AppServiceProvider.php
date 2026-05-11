@@ -32,6 +32,16 @@ class AppServiceProvider extends ServiceProvider
             $rates = app(CurrencyRates::class);
             $view->with('currencyOptions', $rates->activeCurrencies());
             $view->with('currentCurrency', $rates->userCurrencyCode());
+
+            $unread = 0;
+            if (Auth::check()) {
+                $unread = \App\Models\OrderMessage::query()
+                    ->whereHas('order', fn ($q) => $q->where('user_id', Auth::id()))
+                    ->where('from_admin', true)
+                    ->whereNull('read_by_customer_at')
+                    ->count();
+            }
+            $view->with('unreadMessageCount', $unread);
         });
 
         Event::listen(MediaHasBeenAddedEvent::class, ConvertVehiclePhotoOnUpload::class);
