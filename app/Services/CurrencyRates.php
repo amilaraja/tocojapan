@@ -48,12 +48,21 @@ class CurrencyRates
         return $updated;
     }
 
-    public function activeCurrencies()
+    /**
+     * Returns a list of plain objects: { code, name, symbol }.
+     * Plain objects (not Eloquent models) so the cache layer never trips on
+     * an Incomplete_Class on deserialize across deploys.
+     *
+     * @return array<int, object{code: string, name: string, symbol: ?string}>
+     */
+    public function activeCurrencies(): array
     {
         return Cache::remember('active_currencies', 600, fn () => Currency::query()
             ->where('is_active', true)
             ->orderBy('sort_order')
-            ->get());
+            ->get(['code', 'name', 'symbol'])
+            ->map(fn ($c) => (object) ['code' => $c->code, 'name' => $c->name, 'symbol' => $c->symbol])
+            ->all());
     }
 
     public function convert(float $usdAmount, string $toCode): float
