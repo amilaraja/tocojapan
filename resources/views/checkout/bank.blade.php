@@ -5,9 +5,20 @@
         </div>
         <h1 class="text-2xl font-extrabold text-toco-navy mb-6">Bank-transfer checkout</h1>
 
+        @php
+            $countryPayload = $countries->map(fn ($c) => [
+                'id' => $c->id,
+                'name' => $c->name,
+                'ports' => $c->ports->map(fn ($p) => [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'rate_per_m3' => (float) $p->rate_per_m3,
+                ])->all(),
+            ])->all();
+        @endphp
         <div
             class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6"
-            x-data="bankCheckout({{ $countries->toJson() }}, {{ (float) $vehicle->price_fob }}, {{ (float) ($vehicle->m3 ?: 0) }}, {{ (float) (app(\App\Settings\CifSettings::class)->insurance_pct ?: 0) }})"
+            x-data="bankCheckout(@js($countryPayload), {{ (float) $vehicle->price_fob }}, {{ (float) ($vehicle->m3 ?: 0) }}, {{ (float) (app(\App\Settings\CifSettings::class)->insurance_pct ?: 0) }})"
         >
             <form method="POST" action="{{ route('checkout.bank.store', $vehicle->slug) }}" class="space-y-6">
                 @csrf
