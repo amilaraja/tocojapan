@@ -4,9 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Make extends Model
+class Make extends Model implements HasMedia
 {
+    use InteractsWithMedia;
+
     protected $guarded = [];
 
     protected $casts = [
@@ -24,5 +28,17 @@ class Make extends Model
     public function vehicles(): HasMany
     {
         return $this->hasMany(Vehicle::class);
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('logo')->singleFile();
+    }
+
+    public function getLogoUrl(): ?string
+    {
+        $url = $this->getFirstMediaUrl('logo');
+
+        return $url ?: null;
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\Makes\Schemas;
 
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
@@ -16,7 +17,13 @@ class MakeForm
                     ->required(),
                 TextInput::make('name')
                     ->required(),
-                TextInput::make('logo_path'),
+                SpatieMediaLibraryFileUpload::make('logo')
+                    ->collection('logo')
+                    ->image()
+                    ->imageEditor()
+                    ->acceptedFileTypes(['image/svg+xml', 'image/png', 'image/jpeg', 'image/webp'])
+                    ->helperText('SVG preferred. Will be shown on the homepage and on browse filters.')
+                    ->columnSpanFull(),
                 Toggle::make('is_active')
                     ->required(),
                 TextInput::make('sort_order')

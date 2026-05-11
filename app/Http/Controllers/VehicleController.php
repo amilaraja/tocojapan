@@ -25,6 +25,7 @@ class VehicleController extends Controller
             ->get();
 
         $makesWithCounts = Make::where('is_active', true)
+            ->with('media')
             ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
             ->orderByDesc('published_count')
             ->orderBy('name')
@@ -32,6 +33,7 @@ class VehicleController extends Controller
             ->get();
 
         $bodyTypesWithCounts = BodyType::where('is_active', true)
+            ->with('media')
             ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
             ->orderByDesc('published_count')
             ->orderBy('name')
@@ -57,7 +59,7 @@ class VehicleController extends Controller
             'makesWithCounts' => $makesWithCounts,
             'bodyTypesWithCounts' => $bodyTypesWithCounts,
             'allMakes' => Make::where('is_active', true)->orderBy('name')->get(['id', 'slug', 'name']),
-            'allBodyTypes' => BodyType::where('is_active', true)->orderBy('name')->get(['id', 'slug', 'name']),
+            'allBodyTypes' => BodyType::where('is_active', true)->with('media')->orderBy('name')->get(),
             'totalPublished' => Vehicle::query()->published()->count(),
             'testimonials' => $testimonials,
         ];

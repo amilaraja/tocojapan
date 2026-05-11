@@ -229,8 +229,11 @@
                 {{-- By Body Type --}}
                 <form @submit.prevent="submit()" x-show="tab === 'body'" x-cloak class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
                     @foreach ($allBodyTypes as $bt)
-                        <button type="button" @click="bodyType = '{{ $bt->slug }}'; submit()" class="border border-line hover:border-toco-navy hover:bg-toco-silver-2 px-3 py-3 text-[12px] font-semibold text-ink rounded-sm">
-                            {{ $bt->name }}
+                        <button type="button" @click="bodyType = '{{ $bt->slug }}'; submit()" class="border border-line hover:border-toco-navy hover:bg-toco-silver-2 px-3 py-3 text-[12px] font-semibold text-ink rounded-sm flex flex-col items-center gap-1.5">
+                            @if ($bt->getLogoUrl())
+                                <img src="{{ $bt->getLogoUrl() }}" alt="" class="h-9 w-auto" loading="lazy">
+                            @endif
+                            <span>{{ $bt->name }}</span>
                         </button>
                     @endforeach
                 </form>
