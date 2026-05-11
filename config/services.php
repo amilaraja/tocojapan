@@ -35,6 +35,15 @@ return [
         ],
     ],
 
+    // Gmail OAuth — drives the gmail-api mail transport. Mirrors the
+    // wp-mail-smtp setup on the original WP site so info@tocojapan.com
+    // sends transactional email via Gmail without an app password.
+    'gmail_oauth' => [
+        'client_id' => env('GMAIL_OAUTH_CLIENT_ID'),
+        'client_secret' => env('GMAIL_OAUTH_CLIENT_SECRET'),
+        'refresh_token' => env('GMAIL_OAUTH_REFRESH_TOKEN'),
+    ],
+
     // Cloudflare Turnstile — server-side CAPTCHA on guest auth forms.
     // Site key is rendered into the widget; secret_key is used by
     // App\Rules\Turnstile to call siteverify. Both blank ⇒ rule skipped
