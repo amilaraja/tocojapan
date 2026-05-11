@@ -22,9 +22,27 @@
                 @isset($topBarLeft)
                     {{ $topBarLeft }}
                 @else
-                    <span class="inline-flex items-center gap-1.5">
+                    <span class="inline-flex items-center gap-1.5 notranslate" translate="no">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
-                        <span id="google_translate_element" class="notranslate"></span>
+                        <select
+                            id="lang_picker"
+                            onchange="window.setSiteLanguage(this.value)"
+                            class="bg-transparent border-0 text-white/80 hover:text-white text-[12px] cursor-pointer focus:outline-none pr-1"
+                        >
+                            <option value="en" class="text-toco-navy">English</option>
+                            <option value="ja" class="text-toco-navy">日本語</option>
+                            <option value="es" class="text-toco-navy">Español</option>
+                            <option value="fr" class="text-toco-navy">Français</option>
+                            <option value="de" class="text-toco-navy">Deutsch</option>
+                            <option value="ru" class="text-toco-navy">Русский</option>
+                            <option value="zh-CN" class="text-toco-navy">中文</option>
+                            <option value="ko" class="text-toco-navy">한국어</option>
+                            <option value="ar" class="text-toco-navy">العربية</option>
+                            <option value="th" class="text-toco-navy">ไทย</option>
+                            <option value="vi" class="text-toco-navy">Tiếng Việt</option>
+                            <option value="sw" class="text-toco-navy">Kiswahili</option>
+                        </select>
+                        <span id="google_translate_element" class="hidden"></span>
                     </span>
                     @if (! empty($currencyOptions))
                         <form method="POST" action="#" id="currencyForm" class="inline">
@@ -169,22 +187,37 @@
         </div>
     </footer>
 
-    {{-- Google Translate widget for the header language picker --}}
+    {{-- Google Translate — driven by a custom select; the default widget is hidden. --}}
     <style>
-        #google_translate_element select { background: transparent; color: currentColor; border: 0; padding: 0 4px; font: inherit; cursor: pointer; }
-        #google_translate_element select option { color: #1a1a1a; }
-        .goog-te-banner-frame.skiptranslate, .goog-te-gadget-icon { display: none !important; }
-        body { top: 0 !important; }
+        #google_translate_element, .goog-te-banner-frame.skiptranslate, .goog-te-gadget-icon, .goog-logo-link, .goog-te-balloon-frame, #goog-gt-tt, .goog-tooltip { display: none !important; }
+        body { top: 0 !important; position: static !important; }
+        .goog-te-spinner-pos { display: none !important; }
+        /* Kill Google's added top padding on body and any injected #goog-gt-tt tooltip on hover */
+        font[style*="background-color: rgb(255, 255, 102)"] { background-color: transparent !important; box-shadow: none !important; }
     </style>
     <script>
         function googleTranslateElementInit() {
             new google.translate.TranslateElement({
                 pageLanguage: 'en',
                 includedLanguages: 'en,ja,es,fr,zh-CN,ru,ar,de,ko,th,vi,sw',
-                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
                 autoDisplay: false,
             }, 'google_translate_element');
+            // Once initialized, sync the picker to whatever cookie says we're showing.
+            var current = (document.cookie.match(/(?:^|;\s*)googtrans=\/en\/([\w-]+)/) || [])[1] || 'en';
+            var sel = document.getElementById('lang_picker');
+            if (sel) sel.value = current;
         }
+
+        window.setSiteLanguage = function (lang) {
+            // Google Translate reads the `googtrans` cookie; set it for the
+            // host + parent domain so the choice survives subdomain hops.
+            var host = location.hostname;
+            var parent = host.split('.').slice(-2).join('.');
+            var value = lang === 'en' ? '/en/en' : '/en/' + lang;
+            document.cookie = 'googtrans=' + value + ';path=/;max-age=31536000';
+            document.cookie = 'googtrans=' + value + ';path=/;domain=.' + parent + ';max-age=31536000';
+            location.reload();
+        };
     </script>
     <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async></script>
 </body>
