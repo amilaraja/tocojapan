@@ -97,8 +97,9 @@
                         @click.self="closeLightbox()"
                         @wheel.prevent="onWheel($event)"
                         @pointermove.window="onDrag($event)"
-                        @pointerup.window="endDrag()"
-                        class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 overflow-hidden select-none"
+                        @pointerup.window="endDrag($event)"
+                        @pointercancel.window="endDrag($event)"
+                        class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 overflow-hidden select-none touch-none"
                         style="display: none;"
                     >
                         <button
@@ -128,12 +129,12 @@
                             x-ref="zoomImage"
                             :src="photos[index]"
                             alt="{{ $vehicle->title }}"
-                            class="max-w-full max-h-[88vh] object-contain shadow-2xl will-change-transform transition-transform duration-150"
-                            :style="{ transform: transform, cursor: zoom > 1 ? (dragging ? 'grabbing' : 'grab') : 'zoom-in', transitionDuration: dragging ? '0ms' : '150ms' }"
+                            class="max-w-full max-h-[88vh] object-contain shadow-2xl will-change-transform touch-none"
+                            :style="{ transform: transform, cursor: zoom > 1 ? (dragging ? 'grabbing' : 'grab') : 'zoom-in', transition: (dragging || activePointerCount >= 2) ? 'none' : 'transform 150ms' }"
                             draggable="false"
                             @click.stop
                             @dblclick.stop="toggleZoom($event)"
-                            @pointerdown.stop="startDrag($event)"
+                            @pointerdown.stop="startDrag($event); $event.target.setPointerCapture && $event.target.setPointerCapture($event.pointerId)"
                         >
 
                         @if (count($photoUrls) > 1)
