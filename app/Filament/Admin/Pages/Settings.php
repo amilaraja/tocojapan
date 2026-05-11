@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Pages;
 use App\Settings\CifSettings;
 use App\Settings\GeneralSettings;
 use App\Settings\ImageSettings;
+use App\Settings\PaymentSettings;
 use App\Settings\SocialSettings;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
@@ -43,6 +44,7 @@ class Settings extends Page implements HasForms
         $cif = app(CifSettings::class);
         $social = app(SocialSettings::class);
         $image = app(ImageSettings::class);
+        $payment = app(PaymentSettings::class);
 
         $this->form->fill([
             'general' => [
@@ -74,6 +76,11 @@ class Settings extends Page implements HasForms
                 'watermark_position' => $image->watermark_position,
                 'watermark_opacity' => $image->watermark_opacity,
                 'watermark_width_pct' => $image->watermark_width_pct,
+            ],
+            'payment' => [
+                'paypal_enabled' => $payment->paypal_enabled,
+                'bank_transfer_enabled' => $payment->bank_transfer_enabled,
+                'bank_account_details' => $payment->bank_account_details,
             ],
         ]);
     }
@@ -225,6 +232,24 @@ class Settings extends Page implements HasForms
                                     ->description('Run `php artisan vehicles:reprocess-images` from the server (or via a queue worker) to apply current settings to all existing vehicle photos.')
                                     ->schema([]),
                             ]),
+                        Tab::make('Payments')
+                            ->schema([
+                                Section::make('PayPal (USD)')
+                                    ->description('When enabled AND PAYPAL_* env keys are present, a "Buy now" button appears on every priced vehicle.')
+                                    ->schema([
+                                        Toggle::make('payment.paypal_enabled')->label('Enable PayPal checkout'),
+                                    ]),
+                                Section::make('Bank transfer')
+                                    ->description('When enabled, a "Buy with bank transfer" button appears alongside PayPal. After clicking, the customer sees these account details and is asked to reference the order number on the transfer.')
+                                    ->schema([
+                                        Toggle::make('payment.bank_transfer_enabled')->label('Enable bank transfer checkout')->columnSpanFull(),
+                                        Textarea::make('payment.bank_account_details')
+                                            ->label('Account details shown to customers')
+                                            ->rows(8)
+                                            ->placeholder("Account name: Toco Japan Co., Ltd.\nBank name: ...\nBranch: ...\nAccount no.: ...\nSWIFT / BIC: ...")
+                                            ->columnSpanFull(),
+                                    ]),
+                            ]),
                         Tab::make('Social media')
                             ->schema([
                                 Section::make('Facebook page')
@@ -293,6 +318,12 @@ class Settings extends Page implements HasForms
         $image->watermark_opacity = (int) $state['image']['watermark_opacity'];
         $image->watermark_width_pct = (int) $state['image']['watermark_width_pct'];
         $image->save();
+
+        $payment = app(PaymentSettings::class);
+        $payment->paypal_enabled = (bool) ($state['payment']['paypal_enabled'] ?? false);
+        $payment->bank_transfer_enabled = (bool) ($state['payment']['bank_transfer_enabled'] ?? false);
+        $payment->bank_account_details = (string) ($state['payment']['bank_account_details'] ?? '');
+        $payment->save();
 
         Notification::make()->title('Settings saved.')->success()->send();
     }

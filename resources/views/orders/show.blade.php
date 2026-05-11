@@ -28,6 +28,19 @@
             </div>
         </div>
 
+        @if ($order->payment_provider === 'bank_transfer' && $order->status === 'pending')
+            <div class="bg-amber-50 border border-amber-200 rounded-sm p-5">
+                <p class="font-mono text-[10px] uppercase tracking-widest text-amber-800 font-bold">Bank transfer instructions</p>
+                <h2 class="font-bold text-toco-navy text-base mt-1 mb-3">Please send your payment to:</h2>
+                <pre class="whitespace-pre-wrap text-sm bg-white border border-line rounded p-4 font-mono">{{ app(\App\Settings\PaymentSettings::class)->bank_account_details ?: 'Bank details have not been published yet. Please contact us.' }}</pre>
+                <div class="mt-3 text-sm">
+                    <p><span class="text-ink-soft">Amount:</span> <strong>${{ number_format((float) $order->amount_usd, 2) }} USD</strong></p>
+                    <p><span class="text-ink-soft">Reference (include on transfer):</span> <strong class="font-mono">{{ $order->order_no }}</strong></p>
+                </div>
+                <p class="text-xs text-ink-soft mt-3">Once the funds arrive we'll mark this order as paid and start processing. You can attach the payment receipt in the message thread below.</p>
+            </div>
+        @endif
+
         @if ($order->paid_at)
             <div class="bg-white border border-line rounded-sm p-5 text-sm space-y-1">
                 <p><span class="text-ink-soft">Paid:</span> {{ $order->paid_at->format('d M Y H:i') }}</p>

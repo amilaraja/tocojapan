@@ -54,6 +54,22 @@ class ViewOrder extends ViewRecord implements HasForms
         ];
 
         $actions = [];
+
+        // Confirm bank payment received — only for bank_transfer orders still pending.
+        if ($order->payment_provider === 'bank_transfer' && $order->status === 'pending') {
+            $actions[] = Action::make('status_paid')
+                ->label('Confirm payment received')
+                ->color('success')
+                ->icon('heroicon-o-banknotes')
+                ->requiresConfirmation()
+                ->modalDescription('This marks the bank transfer as received and notifies the customer that processing has begun.')
+                ->action(function () use ($order) {
+                    $order->transitionTo('paid');
+                    Notification::make()->title('Marked as paid — customer notified.')->success()->send();
+                    $this->dispatch('$refresh');
+                });
+        }
+
         foreach ($transitions as $status => $cfg) {
             if (! in_array($order->status, $cfg['from'], true)) {
                 continue;

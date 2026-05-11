@@ -214,26 +214,42 @@
                     </div>
                     <div class="p-5 space-y-2">
                         @php
+                            $payment = app(\App\Settings\PaymentSettings::class);
                             $paypalMode = config('paypal.mode', 'sandbox');
-                            $paypalReady = ! empty(config("paypal.{$paypalMode}.client_id"))
+                            $paypalReady = $payment->paypal_enabled
+                                && ! empty(config("paypal.{$paypalMode}.client_id"))
                                 && ! empty(config("paypal.{$paypalMode}.client_secret"));
+                            $bankReady = $payment->bank_transfer_enabled;
+                            $buyable = ! $vehicle->price_on_request && $vehicle->price_fob > 0;
                         @endphp
                         @auth
-                            @if (! $vehicle->price_on_request && $vehicle->price_fob > 0)
-                                @if ($paypalReady)
-                                    <form method="POST" action="{{ route('checkout.start', $vehicle->slug) }}">
-                                        @csrf
-                                        <button type="submit" class="w-full text-center bg-toco-navy hover:bg-toco-navy-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">
-                                            Buy now — @money($vehicle->price_fob)
-                                        </button>
-                                    </form>
-                                @else
-                                    <div class="w-full text-center bg-toco-silver-2 text-ink-soft border border-dashed border-line font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm" title="PayPal credentials not configured yet">
-                                        Buy now — coming soon
-                                    </div>
-                                @endif
+                            @if ($buyable && $paypalReady)
+                                <form method="POST" action="{{ route('checkout.start', $vehicle->slug) }}">
+                                    @csrf
+                                    <button type="submit" class="w-full text-center bg-toco-navy hover:bg-toco-navy-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm inline-flex items-center justify-center gap-2">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3zm0 2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H7z"/></svg>
+                                        Buy with PayPal — @money($vehicle->price_fob)
+                                    </button>
+                                </form>
+                            @endif
+                            @if ($buyable && $bankReady)
+                                <form method="POST" action="{{ route('checkout.bank.start', $vehicle->slug) }}">
+                                    @csrf
+                                    <button type="submit" class="w-full text-center bg-toco-navy hover:bg-toco-navy-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm inline-flex items-center justify-center gap-2">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
+                                        Buy with bank transfer
+                                    </button>
+                                </form>
+                            @endif
+                            @if ($buyable && ! $paypalReady && ! $bankReady)
+                                <div class="w-full text-center bg-toco-silver-2 text-ink-soft border border-dashed border-line font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">
+                                    Buy now — coming soon
+                                </div>
                             @endif
                             @error('paypal')
+                                <div class="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">{{ $message }}</div>
+                            @enderror
+                            @error('payment')
                                 <div class="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">{{ $message }}</div>
                             @enderror
                             @error('vehicle')

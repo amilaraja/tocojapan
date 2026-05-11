@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BankTransferController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CifController;
 use App\Http\Controllers\CurrencyController;
@@ -44,6 +45,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/checkout/{slug}', [CheckoutController::class, 'start'])->name('checkout.start');
     Route::get('/checkout/{order}/return', [CheckoutController::class, 'return'])->name('checkout.return');
     Route::get('/checkout/{order}/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
+
+    Route::post('/checkout/bank/{slug}', [BankTransferController::class, 'start'])->name('checkout.bank.start');
 });
 
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
