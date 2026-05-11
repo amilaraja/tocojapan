@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Listeners\ConvertVehiclePhotoOnUpload;
+use App\Services\CurrencyRates;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -26,6 +28,16 @@ class AppServiceProvider extends ServiceProvider
                 : []);
         });
 
+        View::composer('components.layouts.site', function ($view) {
+            $rates = app(CurrencyRates::class);
+            $view->with('currencyOptions', $rates->activeCurrencies());
+            $view->with('currentCurrency', $rates->userCurrencyCode());
+        });
+
         Event::listen(MediaHasBeenAddedEvent::class, ConvertVehiclePhotoOnUpload::class);
+
+        Blade::directive('money', function (string $expr) {
+            return "<?php echo app(\App\Services\CurrencyRates::class)->format((float) ({$expr}), app(\App\Services\CurrencyRates::class)->userCurrencyCode()); ?>";
+        });
     }
 }

@@ -27,7 +27,7 @@
                         @if ($vehicle->price_on_request)
                             On request
                         @else
-                            ${{ number_format((float) $vehicle->price_fob) }}
+                            @money($vehicle->price_fob)
                         @endif
                     </p>
                 </div>

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CifController;
+use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\PageController;
@@ -16,6 +17,8 @@ Route::get('/vehicles', [VehicleController::class, 'index'])->name('vehicles.ind
 Route::get('/vehicles/{slug}', [VehicleController::class, 'show'])->name('vehicles.show');
 
 Route::get('/cif', [CifController::class, 'index'])->name('cif.index');
+
+Route::post('/currency/{code}', [CurrencyController::class, 'set'])->name('currency.set');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');

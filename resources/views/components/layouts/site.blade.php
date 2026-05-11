@@ -26,7 +26,20 @@
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
                         <span id="google_translate_element" class="notranslate"></span>
                     </span>
-                    <span>USD ▾</span>
+                    @if (! empty($currencyOptions))
+                        <form method="POST" action="#" id="currencyForm" class="inline">
+                            @csrf
+                            <select
+                                name="code"
+                                onchange="document.getElementById('currencyForm').action = '/currency/' + this.value; document.getElementById('currencyForm').submit();"
+                                class="bg-transparent border-0 text-white/80 hover:text-white text-[12px] cursor-pointer focus:outline-none notranslate"
+                            >
+                                @foreach ($currencyOptions as $c)
+                                    <option value="{{ $c->code }}" {{ $c->code === $currentCurrency ? 'selected' : '' }} class="text-toco-navy">{{ $c->code }}</option>
+                                @endforeach
+                            </select>
+                        </form>
+                    @endif
                 @endisset
             </div>
             <div class="flex items-center gap-5">
