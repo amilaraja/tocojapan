@@ -274,8 +274,17 @@
     {{-- Featured grid with browse-by-make and browse-by-body-type sidebars --}}
     @include('partials.home-featured', ['featured' => $featured, 'makesWithCounts' => $makesWithCounts, 'bodyTypesWithCounts' => $bodyTypesWithCounts, 'totalPublished' => $totalPublished])
 
-    {{-- Why Toco + How it works --}}
+    {{-- Why Toco --}}
     @include('partials.home-why', ['content' => $content])
+
+    {{-- Stats — "By the numbers, since 2009." --}}
+    @include('partials.home-stats', ['content' => $content])
+
+    {{-- Customer testimonials — 6-column compact grid --}}
+    @include('partials.home-testimonials', ['content' => $content])
+
+    {{-- How it works --}}
+    @include('partials.home-how', ['content' => $content])
 
     {{-- CTA strip --}}
     @php

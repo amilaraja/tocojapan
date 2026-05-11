@@ -42,7 +42,7 @@ class HomeTemplate implements PageTemplate
                                 TextInput::make('label')->required(),
                                 TextInput::make('url')->placeholder('Optional'),
                             ])
-                            ->itemLabel(fn (array $s): ?string => $s['label'] ?? null)
+                            ->itemLabel(fn (array $state): ?string => $state['label'] ?? null)
                             ->collapsible()->defaultItems(0)->columnSpanFull(),
                         Repeater::make('data.top_bar_right')
                             ->label('Right items (live, track, phone)')
@@ -53,7 +53,7 @@ class HomeTemplate implements PageTemplate
                                     ->options(['plain' => 'Plain link', 'live' => 'Live red dot indicator'])
                                     ->default('plain'),
                             ])
-                            ->itemLabel(fn (array $s): ?string => $s['label'] ?? null)
+                            ->itemLabel(fn (array $state): ?string => $state['label'] ?? null)
                             ->collapsible()->defaultItems(0)->columnSpanFull(),
                     ]),
 
@@ -71,21 +71,21 @@ class HomeTemplate implements PageTemplate
                                         TextInput::make('alt')->label('Alt text')->maxLength(180),
                                     ])
                                     ->reorderable()->collapsible()->defaultItems(0)
-                                    ->itemLabel(fn (array $s): ?string => $s['alt'] ?? null)
+                                    ->itemLabel(fn (array $state): ?string => $state['alt'] ?? null)
                                     ->columnSpanFull(),
                             ]),
                         Section::make('Promo tiles — left column')
                             ->schema([
                                 Repeater::make('data.promo_left')
                                     ->schema(self::promoTileSchema())
-                                    ->itemLabel(fn (array $s): ?string => $s['title'] ?? null)
+                                    ->itemLabel(fn (array $state): ?string => $state['title'] ?? null)
                                     ->collapsible()->defaultItems(0)->columnSpanFull(),
                             ]),
                         Section::make('Promo tiles — right column')
                             ->schema([
                                 Repeater::make('data.promo_right')
                                     ->schema(self::promoTileSchema())
-                                    ->itemLabel(fn (array $s): ?string => $s['title'] ?? null)
+                                    ->itemLabel(fn (array $state): ?string => $state['title'] ?? null)
                                     ->collapsible()->defaultItems(0)->columnSpanFull(),
                             ]),
                     ]),
@@ -115,12 +115,15 @@ class HomeTemplate implements PageTemplate
                                     ->placeholder('?make=toyota&body_type=suv')
                                     ->helperText('Will be appended after /vehicles'),
                             ])
-                            ->itemLabel(fn (array $s): ?string => $s['label'] ?? null)
+                            ->itemLabel(fn (array $state): ?string => $state['label'] ?? null)
                             ->collapsible()->defaultItems(0)->columnSpanFull(),
                     ]),
 
                 Tab::make('Why Toco')
                     ->schema([
+                        TextInput::make('data.why_kicker')->label('Kicker')->default('Why Toco'),
+                        TextInput::make('data.why_headline')->label('Headline')
+                            ->default('A trusted partner from auction to your port.'),
                         Repeater::make('data.why_toco')
                             ->label('Feature cards (4 recommended)')
                             ->schema([
@@ -128,7 +131,46 @@ class HomeTemplate implements PageTemplate
                                 TextInput::make('title')->required(),
                                 Textarea::make('body')->required()->rows(3),
                             ])
-                            ->itemLabel(fn (array $s): ?string => $s['title'] ?? null)
+                            ->itemLabel(fn (array $state): ?string => $state['title'] ?? null)
+                            ->collapsible()->defaultItems(0)->columnSpanFull(),
+                    ]),
+
+                Tab::make('Stats')
+                    ->schema([
+                        Section::make('Lead text')->columns(2)->schema([
+                            TextInput::make('data.stats.lead_a')->label('Lead part A')
+                                ->default('By the numbers,'),
+                            TextInput::make('data.stats.lead_b')->label('Lead part B (red accent)')
+                                ->default('since 2009.'),
+                        ]),
+                        Repeater::make('data.stats.items')
+                            ->label('Stat cells (4 recommended)')
+                            ->schema([
+                                TextInput::make('n')->label('Number')->placeholder('14,200')->required(),
+                                TextInput::make('unit')->label('Unit')->placeholder('+, /5, %'),
+                                TextInput::make('label')->label('Label')->placeholder('Units shipped')->required(),
+                            ])
+                            ->itemLabel(fn (array $state): ?string => trim(($state['n'] ?? '').' '.($state['label'] ?? '')) ?: null)
+                            ->collapsible()->defaultItems(0)->columnSpanFull(),
+                    ]),
+
+                Tab::make('Testimonials')
+                    ->schema([
+                        TextInput::make('data.testimonials.kicker')->default('Worldwide deliveries'),
+                        TextInput::make('data.testimonials.headline')
+                            ->default('Customers in 90+ countries.'),
+                        Textarea::make('data.testimonials.body')->rows(2),
+                        Repeater::make('data.testimonials.items')
+                            ->label('Testimonial cards (6 recommended)')
+                            ->schema([
+                                FileUpload::make('image')
+                                    ->disk('public')->directory('home/testimonials')
+                                    ->image()->imageEditor()->required(),
+                                TextInput::make('name')->required()->placeholder('K. Muzinga'),
+                                TextInput::make('country')->required()->placeholder('Congo'),
+                                TextInput::make('flag')->label('Flag emoji')->placeholder('🇨🇩')->maxLength(8),
+                            ])
+                            ->itemLabel(fn (array $state): ?string => trim(($state['name'] ?? '').' — '.($state['country'] ?? '')) ?: null)
                             ->collapsible()->defaultItems(0)->columnSpanFull(),
                     ]),
 
@@ -144,7 +186,7 @@ class HomeTemplate implements PageTemplate
                                 TextInput::make('title')->required(),
                                 Textarea::make('body')->required()->rows(2),
                             ])
-                            ->itemLabel(fn (array $s): ?string => $s['title'] ?? null)
+                            ->itemLabel(fn (array $state): ?string => $state['title'] ?? null)
                             ->collapsible()->defaultItems(0)->columnSpanFull(),
                     ]),
 
