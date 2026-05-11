@@ -36,6 +36,29 @@
             </div>
         @endif
 
+        @if ($order->bl_number || $order->vessel_name)
+            <div class="bg-white border border-line rounded-sm p-5">
+                <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">Shipping details</p>
+                <h2 class="font-bold text-toco-navy text-base mt-1 mb-3">Vessel & B/L</h2>
+                <dl class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                    @if ($order->bl_number)<div><dt class="text-ink-soft text-[11px] uppercase tracking-widest">B/L number</dt><dd class="font-mono font-bold text-toco-navy">{{ $order->bl_number }}</dd></div>@endif
+                    @if ($order->vessel_name)<div><dt class="text-ink-soft text-[11px] uppercase tracking-widest">Vessel</dt><dd class="font-semibold">{{ $order->vessel_name }}</dd></div>@endif
+                    @if ($order->voyage_no)<div><dt class="text-ink-soft text-[11px] uppercase tracking-widest">Voyage</dt><dd class="font-semibold">{{ $order->voyage_no }}</dd></div>@endif
+                    @if ($order->eta_at)<div><dt class="text-ink-soft text-[11px] uppercase tracking-widest">ETA</dt><dd class="font-semibold">{{ $order->eta_at->format('d M Y') }}</dd></div>@endif
+                </dl>
+                @if ($order->carrier_tracking_url)
+                    <a href="{{ $order->carrier_tracking_url }}" target="_blank" class="inline-flex items-center gap-1.5 mt-3 text-xs text-toco-red hover:underline">
+                        Track vessel on carrier site
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M7 7h10v10"/></svg>
+                    </a>
+                @endif
+                <p class="text-[11px] text-ink-soft mt-3">
+                    Tip: search the vessel name on <a href="https://www.marinetraffic.com" target="_blank" class="underline">MarineTraffic</a> or
+                    <a href="https://www.vesselfinder.com" target="_blank" class="underline">VesselFinder</a> to see live position.
+                </p>
+            </div>
+        @endif
+
         <div class="bg-white border border-line rounded-sm p-5">
             <h2 class="font-bold text-toco-navy mb-3">Messages</h2>
 

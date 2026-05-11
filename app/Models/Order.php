@@ -13,6 +13,7 @@ class Order extends Model
         'order_no', 'user_id', 'vehicle_id', 'amount_usd', 'currency', 'status',
         'payment_provider', 'paypal_order_id', 'paypal_capture_id', 'payment_payload',
         'paid_at', 'shipped_at', 'delivered_at', 'cancelled_at', 'admin_notes',
+        'bl_number', 'vessel_name', 'voyage_no', 'eta_at', 'carrier_tracking_url',
     ];
 
     protected $casts = [
@@ -22,6 +23,7 @@ class Order extends Model
         'shipped_at' => 'datetime',
         'delivered_at' => 'datetime',
         'cancelled_at' => 'datetime',
+        'eta_at' => 'date',
     ];
 
     public const STATUSES = [

@@ -7,8 +7,10 @@ use App\Models\Order;
 use App\Models\OrderMessage;
 use App\Notifications\NewOrderMessage;
 use Filament\Actions\Action;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
@@ -47,7 +49,6 @@ class ViewOrder extends ViewRecord implements HasForms
 
         $transitions = [
             'processing' => ['label' => 'Mark as processing', 'color' => 'info', 'icon' => 'heroicon-o-cog-6-tooth', 'from' => ['paid']],
-            'shipped' => ['label' => 'Mark as shipped', 'color' => 'success', 'icon' => 'heroicon-o-truck', 'from' => ['paid', 'processing']],
             'delivered' => ['label' => 'Mark as delivered', 'color' => 'success', 'icon' => 'heroicon-o-check-badge', 'from' => ['shipped']],
             'cancelled' => ['label' => 'Cancel order', 'color' => 'danger', 'icon' => 'heroicon-o-x-circle', 'from' => ['pending', 'paid', 'processing']],
         ];
@@ -65,6 +66,40 @@ class ViewOrder extends ViewRecord implements HasForms
                 ->action(function () use ($order, $status, $cfg) {
                     $order->transitionTo($status);
                     Notification::make()->title($cfg['label'].' — customer notified.')->success()->send();
+                    $this->dispatch('$refresh');
+                });
+        }
+
+        // Mark as shipped — collects B/L, vessel + voyage + ETA + optional carrier link.
+        if (in_array($order->status, ['paid', 'processing'], true)) {
+            $actions[] = Action::make('status_shipped')
+                ->label('Mark as shipped')
+                ->color('success')
+                ->icon('heroicon-o-truck')
+                ->fillForm(fn () => [
+                    'bl_number' => $order->bl_number,
+                    'vessel_name' => $order->vessel_name,
+                    'voyage_no' => $order->voyage_no,
+                    'eta_at' => $order->eta_at?->toDateString(),
+                    'carrier_tracking_url' => $order->carrier_tracking_url,
+                ])
+                ->schema([
+                    TextInput::make('bl_number')->label('B/L number')->required()->maxLength(64),
+                    TextInput::make('vessel_name')->label('Vessel name')->required()->maxLength(120),
+                    TextInput::make('voyage_no')->label('Voyage no.')->maxLength(64),
+                    DatePicker::make('eta_at')->label('ETA at destination port')->required(),
+                    TextInput::make('carrier_tracking_url')->label('Carrier tracking URL (optional)')->url()->maxLength(255),
+                ])
+                ->action(function (array $data) use ($order) {
+                    $order->fill([
+                        'bl_number' => $data['bl_number'],
+                        'vessel_name' => $data['vessel_name'],
+                        'voyage_no' => $data['voyage_no'] ?: null,
+                        'eta_at' => $data['eta_at'],
+                        'carrier_tracking_url' => $data['carrier_tracking_url'] ?: null,
+                    ])->save();
+                    $order->transitionTo('shipped');
+                    Notification::make()->title('Marked as shipped — customer notified with B/L details.')->success()->send();
                     $this->dispatch('$refresh');
                 });
         }

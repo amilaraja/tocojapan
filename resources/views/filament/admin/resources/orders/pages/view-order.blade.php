@@ -28,6 +28,19 @@
                     @if ($order->paid_at)<div class="flex justify-between"><dt class="text-gray-500">Paid</dt><dd>{{ $order->paid_at->format('d M Y H:i') }}</dd></div>@endif
                     @if ($order->paypal_capture_id)<div class="flex justify-between"><dt class="text-gray-500">PayPal capture</dt><dd class="font-mono text-xs">{{ $order->paypal_capture_id }}</dd></div>@endif
                 </dl>
+
+                @if ($order->bl_number || $order->vessel_name)
+                    <div class="mt-4 pt-4 border-t">
+                        <p class="text-[11px] uppercase tracking-widest font-mono text-gray-400 mb-2">Shipping</p>
+                        <dl class="space-y-1.5 text-sm">
+                            @if ($order->bl_number)<div class="flex justify-between"><dt class="text-gray-500">B/L</dt><dd class="font-mono font-medium">{{ $order->bl_number }}</dd></div>@endif
+                            @if ($order->vessel_name)<div class="flex justify-between"><dt class="text-gray-500">Vessel</dt><dd class="font-medium">{{ $order->vessel_name }}</dd></div>@endif
+                            @if ($order->voyage_no)<div class="flex justify-between"><dt class="text-gray-500">Voyage</dt><dd class="font-medium">{{ $order->voyage_no }}</dd></div>@endif
+                            @if ($order->eta_at)<div class="flex justify-between"><dt class="text-gray-500">ETA</dt><dd class="font-medium">{{ $order->eta_at->format('d M Y') }}</dd></div>@endif
+                            @if ($order->carrier_tracking_url)<div class="pt-1"><a href="{{ $order->carrier_tracking_url }}" target="_blank" class="text-blue-600 hover:underline text-xs">Carrier tracking →</a></div>@endif
+                        </dl>
+                    </div>
+                @endif
             </div>
 
             <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-5">

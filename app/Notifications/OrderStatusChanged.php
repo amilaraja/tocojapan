@@ -25,8 +25,16 @@ class OrderStatusChanged extends Notification
             ->greeting("Hi {$notifiable->name},")
             ->line("Your order {$this->order->order_no} for {$this->order->vehicle->title} is now {$this->order->statusLabel()}.");
 
-        if ($this->order->shipped_at && $this->order->status === 'shipped') {
-            $msg->line('Shipping documents and tracking details are available in your order messages.');
+        if ($this->order->status === 'shipped' && $this->order->bl_number) {
+            $msg->line('Shipping details:')
+                ->line('• B/L number: '.$this->order->bl_number)
+                ->line('• Vessel: '.$this->order->vessel_name.($this->order->voyage_no ? ' (voyage '.$this->order->voyage_no.')' : ''))
+                ->line('• ETA: '.$this->order->eta_at?->format('d M Y'));
+            if ($this->order->carrier_tracking_url) {
+                $msg->line('Track vessel: '.$this->order->carrier_tracking_url);
+            } else {
+                $msg->line('Track the vessel live on MarineTraffic or VesselFinder by name.');
+            }
         }
 
         return $msg
