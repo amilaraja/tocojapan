@@ -47,4 +47,12 @@
     .mono {
         font-family: var(--font-mono);
     }
+    /* Native form controls inherit body font; Safari/Chrome default to
+       Helvetica at 13px which clashes with Montserrat surroundings. */
+    input,
+    select,
+    textarea,
+    button {
+        font-family: inherit;
+    }
 }
