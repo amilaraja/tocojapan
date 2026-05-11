@@ -1,7 +1,10 @@
 @php
     $title = $vehicle->title.' — Toco Japan';
     $photos = $vehicle->getMedia('photos');
-    $heroPhoto = $photos->first()?->getUrl() ?: '/img/v5/car-'.((($vehicle->id % 4) + 1)).'.jpg';
+    $photoUrls = $photos->map(fn ($m) => $m->getUrl())->values();
+    if ($photoUrls->isEmpty()) {
+        $photoUrls = collect(['/img/v5/car-'.((($vehicle->id % 4) + 1)).'.jpg']);
+    }
 @endphp
 
 <x-layouts.site :title="$title">
@@ -22,19 +25,118 @@
         <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
             <div class="space-y-4">
                 {{-- Photo gallery --}}
-                <div class="bg-white border border-line rounded-sm overflow-hidden" x-data="{ active: '{{ $heroPhoto }}' }">
-                    <div class="aspect-[16/10] bg-toco-silver-2 grid place-items-center">
-                        <img :src="active" alt="{{ $vehicle->title }}" class="w-full h-full object-cover">
+                <div
+                    class="bg-white border border-line rounded-sm overflow-hidden"
+                    x-data="vehicleGallery({{ $photoUrls->toJson() }})"
+                    x-effect="document.body.style.overflow = lightbox ? 'hidden' : ''"
+                    @keydown.window.left.prevent="prev()"
+                    @keydown.window.right.prevent="next()"
+                    @keydown.window.escape="lightbox = false"
+                >
+                    {{-- Hero image with overlay nav --}}
+                    <div class="relative aspect-[16/10] bg-toco-silver-2 group">
+                        <img
+                            :src="photos[index]"
+                            alt="{{ $vehicle->title }}"
+                            class="w-full h-full object-cover cursor-zoom-in"
+                            @click="lightbox = true"
+                        >
+
+                        @if (count($photoUrls) > 1)
+                            <button
+                                type="button"
+                                @click.stop="prev()"
+                                aria-label="Previous photo"
+                                class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/45 hover:bg-black/70 text-white grid place-items-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition"
+                            >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
+                            </button>
+                            <button
+                                type="button"
+                                @click.stop="next()"
+                                aria-label="Next photo"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/45 hover:bg-black/70 text-white grid place-items-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition"
+                            >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+                            </button>
+                            <div class="absolute bottom-3 right-3 bg-black/55 text-white text-[11px] font-mono tracking-widest px-2 py-1 rounded">
+                                <span x-text="index + 1"></span> / <span x-text="photos.length"></span>
+                            </div>
+                        @endif
+
+                        <button
+                            type="button"
+                            @click.stop="lightbox = true"
+                            aria-label="Open fullscreen"
+                            class="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/45 hover:bg-black/70 text-white grid place-items-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition"
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                        </button>
                     </div>
-                    @if ($photos->count() > 1)
+
+                    @if (count($photoUrls) > 1)
                         <div class="grid grid-cols-6 gap-1 p-1 border-t border-line">
-                            @foreach ($photos as $media)
-                                <button type="button" @click="active = '{{ $media->getUrl() }}'" class="aspect-[4/3] bg-toco-silver-2 overflow-hidden border border-transparent hover:border-toco-red">
-                                    <img src="{{ $media->getUrl() }}" alt="" class="w-full h-full object-cover">
+                            @foreach ($photoUrls as $i => $url)
+                                <button
+                                    type="button"
+                                    @click="goTo({{ $i }})"
+                                    :class="index === {{ $i }} ? 'border-toco-red' : 'border-transparent hover:border-toco-red'"
+                                    class="aspect-[4/3] bg-toco-silver-2 overflow-hidden border-2 transition"
+                                >
+                                    <img src="{{ $url }}" alt="" class="w-full h-full object-cover">
                                 </button>
                             @endforeach
                         </div>
                     @endif
+
+                    {{-- Lightbox --}}
+                    <div
+                        x-show="lightbox"
+                        x-cloak
+                        x-transition.opacity
+                        @click.self="lightbox = false"
+                        class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+                        style="display: none;"
+                    >
+                        <button
+                            type="button"
+                            @click="lightbox = false"
+                            aria-label="Close"
+                            class="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white grid place-items-center"
+                        >
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                        </button>
+
+                        <img
+                            :src="photos[index]"
+                            alt="{{ $vehicle->title }}"
+                            class="max-w-full max-h-[88vh] object-contain shadow-2xl"
+                            @click.stop
+                        >
+
+                        @if (count($photoUrls) > 1)
+                            <button
+                                type="button"
+                                @click.stop="prev()"
+                                aria-label="Previous photo"
+                                class="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/25 text-white grid place-items-center"
+                            >
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
+                            </button>
+                            <button
+                                type="button"
+                                @click.stop="next()"
+                                aria-label="Next photo"
+                                class="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/25 text-white grid place-items-center"
+                            >
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+                            </button>
+
+                            <div class="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/90 text-sm font-mono tracking-widest">
+                                <span x-text="index + 1"></span> / <span x-text="photos.length"></span>
+                            </div>
+                        @endif
+                    </div>
                 </div>
 
                 {{-- Description --}}
