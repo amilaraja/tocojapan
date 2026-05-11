@@ -120,13 +120,23 @@
                 </ul>
             </div>
         </div>
-        <div class="border-t border-white/10 bg-white/95">
-            <div class="max-w-[1440px] mx-auto px-6 py-5 flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
-                <img src="{{ asset('img/footer-logos/toco.png') }}" alt="Toco Japan" class="h-10 w-auto" loading="lazy">
-                <img src="{{ asset('img/footer-logos/cert-1.webp') }}" alt="Certification" class="h-12 w-auto" loading="lazy">
-                <img src="{{ asset('img/footer-logos/cert-2.webp') }}" alt="Certification" class="h-12 w-auto" loading="lazy">
+        @php($footerLogos = app(\App\Settings\GeneralSettings::class)->footer_logos ?? [])
+        @if (! empty($footerLogos))
+            <div class="border-t border-white/10 bg-white/95">
+                <div class="max-w-[1440px] mx-auto px-6 py-5 flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
+                    @foreach ($footerLogos as $logo)
+                        @php($src = \Illuminate\Support\Facades\Storage::disk('public')->url($logo['image']))
+                        @if (! empty($logo['link']))
+                            <a href="{{ $logo['link'] }}" target="_blank" rel="noopener">
+                                <img src="{{ $src }}" alt="{{ $logo['alt'] ?? '' }}" class="h-12 w-auto" loading="lazy">
+                            </a>
+                        @else
+                            <img src="{{ $src }}" alt="{{ $logo['alt'] ?? '' }}" class="h-12 w-auto" loading="lazy">
+                        @endif
+                    @endforeach
+                </div>
             </div>
-        </div>
+        @endif
         <div class="border-t border-white/10">
             <div class="max-w-[1440px] mx-auto px-6 py-4 text-[11px] text-white/55 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <span>&copy; {{ date('Y') }} Toco Japan Co., Ltd. All rights reserved.</span>

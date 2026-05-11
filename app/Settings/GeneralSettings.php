@@ -14,6 +14,8 @@ class GeneralSettings extends Settings
 
     public ?string $whatsapp_number;
 
+    public array $footer_logos;
+
     public static function group(): string
     {
         return 'general';

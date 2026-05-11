@@ -8,6 +8,7 @@ use App\Settings\ImageSettings;
 use App\Settings\SocialSettings;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -49,6 +50,7 @@ class Settings extends Page implements HasForms
                 'contact_email' => $general->contact_email,
                 'contact_phone' => $general->contact_phone,
                 'whatsapp_number' => $general->whatsapp_number,
+                'footer_logos' => $general->footer_logos,
             ],
             'cif' => [
                 'insurance_pct_display' => $cif->insurance_pct * 100, // shown as %
@@ -91,6 +93,35 @@ class Settings extends Page implements HasForms
                                         TextInput::make('general.contact_email')->label('Contact email')->email()->required(),
                                         TextInput::make('general.contact_phone')->label('Contact phone'),
                                         TextInput::make('general.whatsapp_number')->label('WhatsApp number'),
+                                    ]),
+                                Section::make('Footer logos')
+                                    ->description('Brand and certification logos shown in the site footer. Drag to reorder.')
+                                    ->schema([
+                                        Repeater::make('general.footer_logos')
+                                            ->label('')
+                                            ->reorderable()
+                                            ->reorderableWithDragAndDrop()
+                                            ->columns(3)
+                                            ->itemLabel(fn (array $state): ?string => $state['alt'] ?? null)
+                                            ->schema([
+                                                FileUpload::make('image')
+                                                    ->label('Image')
+                                                    ->image()
+                                                    ->disk('public')
+                                                    ->directory('footer-logos')
+                                                    ->maxSize(1024)
+                                                    ->columnSpan(1)
+                                                    ->required(),
+                                                TextInput::make('alt')
+                                                    ->label('Alt text')
+                                                    ->columnSpan(1),
+                                                TextInput::make('link')
+                                                    ->label('Link (optional)')
+                                                    ->url()
+                                                    ->columnSpan(1),
+                                            ])
+                                            ->addActionLabel('Add a logo')
+                                            ->defaultItems(0),
                                     ]),
                             ]),
                         Tab::make('CIF calculator')
@@ -220,6 +251,10 @@ class Settings extends Page implements HasForms
         $general->contact_email = $state['general']['contact_email'];
         $general->contact_phone = $state['general']['contact_phone'] ?? null;
         $general->whatsapp_number = $state['general']['whatsapp_number'] ?? null;
+        $general->footer_logos = array_values(array_filter(
+            $state['general']['footer_logos'] ?? [],
+            fn ($l) => ! empty($l['image'])
+        ));
         $general->save();
 
         $cif = app(CifSettings::class);
