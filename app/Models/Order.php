@@ -67,4 +67,36 @@ class Order extends Model
     {
         return in_array($this->status, ['paid', 'processing', 'shipped', 'delivered'], true);
     }
+
+    /**
+     * Transition the order to the given status, stamp the matching
+     * timestamp, and fire the customer notification (best-effort — mailer
+     * failures are logged, not surfaced to the admin user).
+     */
+    public function transitionTo(string $status): void
+    {
+        if (! array_key_exists($status, self::STATUSES)) {
+            return;
+        }
+        $previous = $this->status;
+        if ($previous === $status) {
+            return;
+        }
+
+        $this->status = $status;
+        match ($status) {
+            'paid' => $this->paid_at ??= now(),
+            'shipped' => $this->shipped_at = now(),
+            'delivered' => $this->delivered_at = now(),
+            'cancelled' => $this->cancelled_at = now(),
+            default => null,
+        };
+        $this->save();
+
+        try {
+            $this->user->notify(new \App\Notifications\OrderStatusChanged($this, $previous));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('OrderStatusChanged notify failed: '.$e->getMessage());
+        }
+    }
 }

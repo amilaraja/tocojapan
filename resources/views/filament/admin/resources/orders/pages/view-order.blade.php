@@ -30,8 +30,16 @@
                 </dl>
             </div>
 
-            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-800">
-                Status transitions (Mark as shipped, delivered etc.) and email notifications ship in Sprint 5.
+            <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 p-5">
+                <h3 class="text-sm font-semibold text-gray-900 mb-3">Timeline</h3>
+                <ol class="space-y-2 text-xs">
+                    <li class="flex justify-between"><span class="text-gray-500">Created</span><span class="font-medium">{{ $order->created_at->format('d M Y H:i') }}</span></li>
+                    @if ($order->paid_at)<li class="flex justify-between"><span class="text-gray-500">Paid</span><span class="font-medium">{{ $order->paid_at->format('d M Y H:i') }}</span></li>@endif
+                    @if ($order->shipped_at)<li class="flex justify-between"><span class="text-gray-500">Shipped</span><span class="font-medium">{{ $order->shipped_at->format('d M Y H:i') }}</span></li>@endif
+                    @if ($order->delivered_at)<li class="flex justify-between"><span class="text-gray-500">Delivered</span><span class="font-medium">{{ $order->delivered_at->format('d M Y H:i') }}</span></li>@endif
+                    @if ($order->cancelled_at)<li class="flex justify-between"><span class="text-gray-500">Cancelled</span><span class="font-medium text-red-600">{{ $order->cancelled_at->format('d M Y H:i') }}</span></li>@endif
+                </ol>
+                <p class="text-[11px] text-gray-400 mt-3">Use the header actions above to transition the order. The customer is emailed on every status change.</p>
             </div>
         </div>
 

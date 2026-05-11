@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Resources\Orders\Pages;
 use App\Filament\Admin\Resources\Orders\OrderResource;
 use App\Models\Order;
 use App\Models\OrderMessage;
+use App\Notifications\NewOrderMessage;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Textarea;
@@ -13,6 +14,7 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Log;
 
 class ViewOrder extends ViewRecord implements HasForms
 {
@@ -40,7 +42,34 @@ class ViewOrder extends ViewRecord implements HasForms
 
     protected function getHeaderActions(): array
     {
-        return [];
+        /** @var Order $order */
+        $order = $this->record;
+
+        $transitions = [
+            'processing' => ['label' => 'Mark as processing', 'color' => 'info', 'icon' => 'heroicon-o-cog-6-tooth', 'from' => ['paid']],
+            'shipped' => ['label' => 'Mark as shipped', 'color' => 'success', 'icon' => 'heroicon-o-truck', 'from' => ['paid', 'processing']],
+            'delivered' => ['label' => 'Mark as delivered', 'color' => 'success', 'icon' => 'heroicon-o-check-badge', 'from' => ['shipped']],
+            'cancelled' => ['label' => 'Cancel order', 'color' => 'danger', 'icon' => 'heroicon-o-x-circle', 'from' => ['pending', 'paid', 'processing']],
+        ];
+
+        $actions = [];
+        foreach ($transitions as $status => $cfg) {
+            if (! in_array($order->status, $cfg['from'], true)) {
+                continue;
+            }
+            $actions[] = Action::make("status_{$status}")
+                ->label($cfg['label'])
+                ->color($cfg['color'])
+                ->icon($cfg['icon'])
+                ->requiresConfirmation()
+                ->action(function () use ($order, $status, $cfg) {
+                    $order->transitionTo($status);
+                    Notification::make()->title($cfg['label'].' — customer notified.')->success()->send();
+                    $this->dispatch('$refresh');
+                });
+        }
+
+        return $actions;
     }
 
     public function replyForm(Schema $schema): Schema
@@ -96,9 +125,15 @@ class ViewOrder extends ViewRecord implements HasForms
             }
         }
 
+        try {
+            $order->user->notify(new NewOrderMessage($message, forAdmin: false));
+        } catch (\Throwable $e) {
+            Log::warning('Customer notify failed: '.$e->getMessage());
+        }
+
         $this->replyData = ['body' => '', 'attachments' => []];
         $this->replyForm->fill($this->replyData);
 
-        Notification::make()->title('Reply sent.')->success()->send();
+        Notification::make()->title('Reply sent — customer notified.')->success()->send();
     }
 }

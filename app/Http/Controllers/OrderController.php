@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\OrderMessage;
+use App\Models\User;
+use App\Notifications\NewOrderMessage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
@@ -65,6 +68,18 @@ class OrderController extends Controller
 
         foreach ($request->file('attachments') ?? [] as $file) {
             $message->addMedia($file)->toMediaCollection('attachments');
+        }
+
+        // Notify any admin/super_admin/sales user — keeps it simple; refine later.
+        try {
+            $recipients = User::query()
+                ->whereHas('roles', fn ($q) => $q->whereIn('name', ['super_admin', 'admin', 'sales']))
+                ->get();
+            foreach ($recipients as $admin) {
+                $admin->notify(new NewOrderMessage($message, forAdmin: true));
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Admin notify on customer message failed: '.$e->getMessage());
         }
 
         return redirect()->route('orders.show', $order)->with('status', 'Message sent.');
