@@ -24,7 +24,7 @@
                 @else
                     <span class="inline-flex items-center gap-1.5">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
-                        EN / JP / ES / FR
+                        <span id="google_translate_element" class="notranslate"></span>
                     </span>
                     <span>USD ▾</span>
                 @endisset
@@ -47,9 +47,14 @@
     {{-- Sticky header --}}
     <header class="sticky top-0 z-30 bg-white border-b border-line">
         <div class="max-w-[1600px] mx-auto px-6 2xl:px-8 h-16 flex items-center justify-between gap-6">
+            @php($headerLogo = app(\App\Settings\GeneralSettings::class)->header_logo ?? null)
             <a href="{{ route('home') }}" class="inline-flex items-center gap-2.5 shrink-0">
-                <span class="inline-flex items-center justify-center w-9 h-9 rounded-sm bg-toco-red text-white font-bold text-sm font-mono">TJ</span>
-                <span class="font-extrabold tracking-tight text-toco-navy text-lg">Toco Japan</span>
+                @if ($headerLogo)
+                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($headerLogo) }}" alt="{{ config('app.name', 'Toco Japan') }}" class="h-10 w-auto">
+                @else
+                    <span class="inline-flex items-center justify-center w-9 h-9 rounded-sm bg-toco-red text-white font-bold text-sm font-mono">TJ</span>
+                    <span class="font-extrabold tracking-tight text-toco-navy text-lg">Toco Japan</span>
+                @endif
             </a>
             <nav class="hidden lg:flex items-center gap-7 text-[13px] font-semibold text-ink">
                 <a href="{{ route('home') }}" class="hover:text-toco-red">Home</a>
@@ -144,5 +149,24 @@
             </div>
         </div>
     </footer>
+
+    {{-- Google Translate widget for the header language picker --}}
+    <style>
+        #google_translate_element select { background: transparent; color: currentColor; border: 0; padding: 0 4px; font: inherit; cursor: pointer; }
+        #google_translate_element select option { color: #1a1a1a; }
+        .goog-te-banner-frame.skiptranslate, .goog-te-gadget-icon { display: none !important; }
+        body { top: 0 !important; }
+    </style>
+    <script>
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'en,ja,es,fr,zh-CN,ru,ar,de,ko,th,vi,sw',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false,
+            }, 'google_translate_element');
+        }
+    </script>
+    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async></script>
 </body>
 </html>

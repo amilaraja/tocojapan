@@ -50,6 +50,7 @@ class Settings extends Page implements HasForms
                 'contact_email' => $general->contact_email,
                 'contact_phone' => $general->contact_phone,
                 'whatsapp_number' => $general->whatsapp_number,
+                'header_logo' => $general->header_logo,
                 'footer_logos' => $general->footer_logos,
             ],
             'cif' => [
@@ -93,6 +94,18 @@ class Settings extends Page implements HasForms
                                         TextInput::make('general.contact_email')->label('Contact email')->email()->required(),
                                         TextInput::make('general.contact_phone')->label('Contact phone'),
                                         TextInput::make('general.whatsapp_number')->label('WhatsApp number'),
+                                    ]),
+                                Section::make('Header logo')
+                                    ->description('Logo shown in the sticky site header. Leave empty to fall back to the TJ chip + wordmark.')
+                                    ->schema([
+                                        FileUpload::make('general.header_logo')
+                                            ->label('Header logo')
+                                            ->image()
+                                            ->disk('public')
+                                            ->directory('branding')
+                                            ->maxSize(1024)
+                                            ->acceptedFileTypes(['image/png', 'image/webp', 'image/svg+xml'])
+                                            ->helperText('PNG/WebP/SVG. ~40-48px tall renders well.'),
                                     ]),
                                 Section::make('Footer logos')
                                     ->description('Brand and certification logos shown in the site footer. Drag to reorder.')
@@ -251,6 +264,7 @@ class Settings extends Page implements HasForms
         $general->contact_email = $state['general']['contact_email'];
         $general->contact_phone = $state['general']['contact_phone'] ?? null;
         $general->whatsapp_number = $state['general']['whatsapp_number'] ?? null;
+        $general->header_logo = $state['general']['header_logo'] ?: null;
         $general->footer_logos = array_values(array_filter(
             $state['general']['footer_logos'] ?? [],
             fn ($l) => ! empty($l['image'])
