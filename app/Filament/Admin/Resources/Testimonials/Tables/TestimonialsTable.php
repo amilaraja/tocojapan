@@ -27,10 +27,16 @@ class TestimonialsTable
                     ->label(''),
                 TextColumn::make('name')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('—'),
+                TextColumn::make('vehicle_label')
+                    ->label('Vehicle')
+                    ->searchable()
+                    ->placeholder('—'),
                 TextColumn::make('country')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('—'),
                 TextColumn::make('flag')
                     ->label('')
                     ->toggleable(),

@@ -43,7 +43,7 @@ class VehicleController extends Controller
             ->with('media')
             ->orderBy('sort_order')
             ->orderByDesc('created_at')
-            ->limit(8)
+            ->limit(12)
             ->get();
 
         // Resolve the editable Home page content from the CMS, if present.

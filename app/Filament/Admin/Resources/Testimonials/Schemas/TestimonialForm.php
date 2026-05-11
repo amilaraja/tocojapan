@@ -21,11 +21,10 @@ class TestimonialForm
                     ->columns(3)
                     ->schema([
                         TextInput::make('name')
-                            ->required()
                             ->placeholder('K. Muzinga')
+                            ->helperText('Leave blank for anonymous')
                             ->columnSpan(1),
                         TextInput::make('country')
-                            ->required()
                             ->placeholder('Congo')
                             ->columnSpan(1),
                         TextInput::make('flag')
@@ -33,6 +32,12 @@ class TestimonialForm
                             ->placeholder('🇨🇩')
                             ->maxLength(8)
                             ->columnSpan(1),
+                        TextInput::make('vehicle_label')
+                            ->label('Vehicle (free text)')
+                            ->placeholder('2024 Honda Vezel')
+                            ->maxLength(120)
+                            ->helperText('Year / make / model as a label. Use this when you do not link a specific stock vehicle below.')
+                            ->columnSpan(3),
                     ]),
 
                 Section::make('Photo')
