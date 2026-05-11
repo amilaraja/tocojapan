@@ -31,6 +31,7 @@ class Vehicle extends Model implements HasMedia
         'height_cm' => 'decimal:2',
         'price_on_request' => 'bool',
         'published_at' => 'datetime',
+        'fb_shared_at' => 'datetime',
         'year_first_reg' => 'integer',
         'mileage_km' => 'integer',
         'engine_cc' => 'integer',
