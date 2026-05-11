@@ -2,6 +2,8 @@
 
 namespace App\Filament\Admin\Resources\Vehicles\Schemas;
 
+use App\Models\BodyType;
+use App\Models\Make;
 use App\Models\VehicleModel;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
@@ -50,7 +52,17 @@ class VehicleForm
                             ->preload()
                             ->required()
                             ->live()
-                            ->afterStateUpdated(fn (Set $set) => $set('vehicle_model_id', null)),
+                            ->afterStateUpdated(fn (Set $set) => $set('vehicle_model_id', null))
+                            ->createOptionForm([
+                                TextInput::make('name')
+                                    ->required()
+                                    ->maxLength(80)
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug((string) $state))),
+                                TextInput::make('slug')->required()->maxLength(80),
+                                Toggle::make('is_active')->default(true),
+                            ])
+                            ->createOptionUsing(fn (array $data) => Make::create($data + ['is_active' => true, 'sort_order' => 0])->id),
                         Select::make('vehicle_model_id')
                             ->label('Model')
                             ->options(fn (Get $get) => VehicleModel::query()
@@ -58,10 +70,40 @@ class VehicleForm
                                 ->orderBy('name')
                                 ->pluck('name', 'id'))
                             ->searchable()
-                            ->required(),
+                            ->required()
+                            ->createOptionForm([
+                                TextInput::make('name')
+                                    ->required()
+                                    ->maxLength(80)
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug((string) $state))),
+                                TextInput::make('slug')->required()->maxLength(80),
+                            ])
+                            ->createOptionUsing(function (array $data, Get $get) {
+                                $makeId = $get('make_id');
+                                abort_if(! $makeId, 422, 'Pick a make first.');
+
+                                return VehicleModel::create($data + [
+                                    'make_id' => $makeId,
+                                    'is_active' => true,
+                                    'sort_order' => 0,
+                                ])->id;
+                            })
+                            ->disabled(fn (Get $get) => ! $get('make_id'))
+                            ->helperText(fn (Get $get) => $get('make_id') ? null : 'Pick a make first to enable model selection / creation.'),
                         Select::make('body_type_id')
                             ->relationship('bodyType', 'name')
-                            ->searchable(),
+                            ->searchable()
+                            ->createOptionForm([
+                                TextInput::make('name')
+                                    ->required()
+                                    ->maxLength(80)
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug((string) $state))),
+                                TextInput::make('slug')->required()->maxLength(80),
+                                Toggle::make('is_active')->default(true),
+                            ])
+                            ->createOptionUsing(fn (array $data) => BodyType::create($data + ['is_active' => true, 'sort_order' => 0])->id),
                         TextInput::make('year_first_reg')
                             ->label('Year (first reg.)')
                             ->required()
