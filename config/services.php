@@ -35,4 +35,16 @@ return [
         ],
     ],
 
+    'google' => [
+        // Google Search Console API integration for the admin dashboard.
+        //   site_url: the verified property, e.g. "sc-domain:tocojapan.com" or
+        //     "https://tocojapan.com/"
+        //   credentials_path: relative to storage_path(). Drop the service
+        //     account JSON at storage/app/google-credentials.json by default.
+        'search_console' => [
+            'site_url' => env('GOOGLE_SEARCH_CONSOLE_SITE_URL'),
+            'credentials_path' => env('GOOGLE_SEARCH_CONSOLE_CREDENTIALS', 'app/google-credentials.json'),
+        ],
+    ],
+
 ];
