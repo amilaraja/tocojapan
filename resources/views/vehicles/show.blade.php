@@ -31,7 +31,7 @@
                     x-effect="document.body.style.overflow = lightbox ? 'hidden' : ''"
                     @keydown.window.left.prevent="prev()"
                     @keydown.window.right.prevent="next()"
-                    @keydown.window.escape="lightbox = false"
+                    @keydown.window.escape="closeLightbox()"
                 >
                     {{-- Hero image with overlay nav --}}
                     <div class="relative aspect-[16/10] bg-toco-silver-2 group">
@@ -39,7 +39,7 @@
                             :src="photos[index]"
                             alt="{{ $vehicle->title }}"
                             class="w-full h-full object-cover cursor-zoom-in"
-                            @click="lightbox = true"
+                            @click="openLightbox()"
                         >
 
                         @if (count($photoUrls) > 1)
@@ -66,7 +66,7 @@
 
                         <button
                             type="button"
-                            @click.stop="lightbox = true"
+                            @click.stop="openLightbox()"
                             aria-label="Open fullscreen"
                             class="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/45 hover:bg-black/70 text-white grid place-items-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition"
                         >
@@ -94,24 +94,46 @@
                         x-show="lightbox"
                         x-cloak
                         x-transition.opacity
-                        @click.self="lightbox = false"
-                        class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+                        @click.self="closeLightbox()"
+                        @wheel.prevent="onWheel($event)"
+                        @pointermove.window="onDrag($event)"
+                        @pointerup.window="endDrag()"
+                        class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 overflow-hidden select-none"
                         style="display: none;"
                     >
                         <button
                             type="button"
-                            @click="lightbox = false"
+                            @click="closeLightbox()"
                             aria-label="Close"
-                            class="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white grid place-items-center"
+                            class="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white grid place-items-center z-10"
                         >
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
                         </button>
 
+                        {{-- Zoom controls --}}
+                        <div class="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white/10 backdrop-blur rounded-full p-1 z-10">
+                            <button type="button" @click.stop="zoomOut()" :disabled="zoom <= minZoom" aria-label="Zoom out" class="w-9 h-9 rounded-full text-white hover:bg-white/15 disabled:opacity-30 disabled:cursor-not-allowed grid place-items-center">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
+                            </button>
+                            <span class="text-white/90 text-xs font-mono tracking-widest w-12 text-center" x-text="Math.round(zoom * 100) + '%'"></span>
+                            <button type="button" @click.stop="zoomIn()" :disabled="zoom >= maxZoom" aria-label="Zoom in" class="w-9 h-9 rounded-full text-white hover:bg-white/15 disabled:opacity-30 disabled:cursor-not-allowed grid place-items-center">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                            </button>
+                            <button type="button" @click.stop="resetZoom()" :disabled="zoom === 1 && panX === 0 && panY === 0" aria-label="Reset zoom" class="w-9 h-9 rounded-full text-white hover:bg-white/15 disabled:opacity-30 disabled:cursor-not-allowed grid place-items-center">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg>
+                            </button>
+                        </div>
+
                         <img
+                            x-ref="zoomImage"
                             :src="photos[index]"
                             alt="{{ $vehicle->title }}"
-                            class="max-w-full max-h-[88vh] object-contain shadow-2xl"
+                            class="max-w-full max-h-[88vh] object-contain shadow-2xl will-change-transform transition-transform duration-150"
+                            :style="{ transform: transform, cursor: zoom > 1 ? (dragging ? 'grabbing' : 'grab') : 'zoom-in', transitionDuration: dragging ? '0ms' : '150ms' }"
+                            draggable="false"
                             @click.stop
+                            @dblclick.stop="toggleZoom($event)"
+                            @pointerdown.stop="startDrag($event)"
                         >
 
                         @if (count($photoUrls) > 1)
@@ -119,7 +141,7 @@
                                 type="button"
                                 @click.stop="prev()"
                                 aria-label="Previous photo"
-                                class="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/25 text-white grid place-items-center"
+                                class="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/25 text-white grid place-items-center z-10"
                             >
                                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
                             </button>
@@ -127,7 +149,7 @@
                                 type="button"
                                 @click.stop="next()"
                                 aria-label="Next photo"
-                                class="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/25 text-white grid place-items-center"
+                                class="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/25 text-white grid place-items-center z-10"
                             >
                                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
                             </button>
