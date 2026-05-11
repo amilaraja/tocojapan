@@ -16,7 +16,7 @@
             <div class="bg-toco-silver-2 border border-toco-navy/20 text-toco-navy px-4 py-2 rounded-sm text-sm mb-4 font-mono">{{ session('flash') }}</div>
         @endif
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <a href="{{ route('favorites.index') }}" class="bg-white border border-line hover:border-toco-red rounded-sm p-5 transition">
                 <p class="font-mono text-[10px] uppercase tracking-widest text-ink-soft">Saved vehicles</p>
                 <p class="text-3xl font-extrabold text-toco-navy mt-1">{{ $favoritesCount }}</p>
@@ -26,6 +26,11 @@
                 <p class="font-mono text-[10px] uppercase tracking-widest text-ink-soft">Open quotes</p>
                 <p class="text-3xl font-extrabold text-toco-navy mt-1">{{ $openQuotesCount }}</p>
                 <p class="text-xs text-toco-red font-bold mt-3">View quotes →</p>
+            </a>
+            <a href="{{ route('orders.index') }}" class="bg-white border border-line hover:border-toco-red rounded-sm p-5 transition">
+                <p class="font-mono text-[10px] uppercase tracking-widest text-ink-soft">My orders</p>
+                <p class="text-3xl font-extrabold text-toco-navy mt-1">{{ Auth::user()->orders()->count() }}</p>
+                <p class="text-xs text-toco-red font-bold mt-3">View orders →</p>
             </a>
             <a href="{{ route('vehicles.index') }}" class="bg-toco-navy text-white border border-toco-navy hover:bg-toco-navy-deep rounded-sm p-5 transition">
                 <p class="font-mono text-[10px] uppercase tracking-widest text-white/70">Browse</p>

@@ -46,7 +46,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/checkout/{order}/return', [CheckoutController::class, 'return'])->name('checkout.return');
     Route::get('/checkout/{order}/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
 
-    Route::post('/checkout/bank/{slug}', [BankTransferController::class, 'start'])->name('checkout.bank.start');
+    Route::get('/checkout/bank/{slug}', [BankTransferController::class, 'show'])->name('checkout.bank.show');
+    Route::post('/checkout/bank/{slug}', [BankTransferController::class, 'store'])->name('checkout.bank.store');
 });
 
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');

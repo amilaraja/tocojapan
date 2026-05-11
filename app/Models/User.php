@@ -62,6 +62,12 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         return $this->hasMany(Quote::class);
     }
 
+    /** @return HasMany<\App\Models\Order, $this> */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(\App\Models\Order::class);
+    }
+
     public function hasFavorited(Vehicle $vehicle): bool
     {
         return $this->favorites()->where('vehicle_id', $vehicle->id)->exists();

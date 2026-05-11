@@ -233,13 +233,12 @@
                                 </form>
                             @endif
                             @if ($buyable && $bankReady)
-                                <form method="POST" action="{{ route('checkout.bank.start', $vehicle->slug) }}">
-                                    @csrf
-                                    <button type="submit" class="w-full text-center bg-toco-navy hover:bg-toco-navy-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm inline-flex items-center justify-center gap-2">
+                                <a href="{{ route('checkout.bank.show', $vehicle->slug) }}" class="block w-full text-center bg-toco-navy hover:bg-toco-navy-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">
+                                    <span class="inline-flex items-center justify-center gap-2">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
                                         Buy with bank transfer
-                                    </button>
-                                </form>
+                                    </span>
+                                </a>
                             @endif
                             @if ($buyable && ! $paypalReady && ! $bankReady)
                                 <div class="w-full text-center bg-toco-silver-2 text-ink-soft border border-dashed border-line font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">

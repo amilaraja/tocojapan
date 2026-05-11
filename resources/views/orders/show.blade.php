@@ -28,6 +28,31 @@
             </div>
         </div>
 
+        @if ($order->ship_to_name || $order->destPort)
+            <div class="bg-white border border-line rounded-sm p-5 grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                <div>
+                    <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold mb-1">Ship to</p>
+                    @if ($order->ship_to_name)<p class="font-bold text-toco-navy">{{ $order->ship_to_name }}</p>@endif
+                    @if ($order->ship_to_address_line1)<p>{{ $order->ship_to_address_line1 }}</p>@endif
+                    @if ($order->ship_to_address_line2)<p>{{ $order->ship_to_address_line2 }}</p>@endif
+                    <p>{{ collect([$order->ship_to_city, $order->ship_to_state, $order->ship_to_postcode])->filter()->implode(', ') }}</p>
+                    @if ($order->destCountry)<p>{{ $order->destCountry->name }}</p>@endif
+                    @if ($order->ship_to_phone)<p class="text-ink-soft mt-1">{{ $order->ship_to_phone }}</p>@endif
+                </div>
+                @if ($order->cif_total)
+                    <div>
+                        <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold mb-1">CIF to {{ $order->destPort?->name }}</p>
+                        <dl class="space-y-1">
+                            <div class="flex justify-between"><dt class="text-ink-soft">FOB</dt><dd class="tabular-nums">${{ number_format((float) max(0, $order->amount_usd - $order->cif_freight - $order->cif_insurance), 2) }}</dd></div>
+                            <div class="flex justify-between"><dt class="text-ink-soft">Freight</dt><dd class="tabular-nums">${{ number_format((float) $order->cif_freight, 2) }}</dd></div>
+                            <div class="flex justify-between"><dt class="text-ink-soft">Insurance</dt><dd class="tabular-nums">${{ number_format((float) $order->cif_insurance, 2) }}</dd></div>
+                            <div class="flex justify-between border-t pt-1 font-bold"><dt>CIF total</dt><dd class="tabular-nums">${{ number_format((float) $order->cif_total, 2) }}</dd></div>
+                        </dl>
+                    </div>
+                @endif
+            </div>
+        @endif
+
         @if ($order->payment_provider === 'bank_transfer' && $order->status === 'pending')
             <div class="bg-amber-50 border border-amber-200 rounded-sm p-5">
                 <p class="font-mono text-[10px] uppercase tracking-widest text-amber-800 font-bold">Bank transfer instructions</p>

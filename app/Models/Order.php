@@ -14,10 +14,16 @@ class Order extends Model
         'payment_provider', 'paypal_order_id', 'paypal_capture_id', 'payment_payload',
         'paid_at', 'shipped_at', 'delivered_at', 'cancelled_at', 'admin_notes',
         'bl_number', 'vessel_name', 'voyage_no', 'eta_at', 'carrier_tracking_url',
+        'dest_country_id', 'dest_port_id', 'ship_to_name', 'ship_to_phone',
+        'ship_to_address_line1', 'ship_to_address_line2', 'ship_to_city', 'ship_to_state', 'ship_to_postcode',
+        'cif_freight', 'cif_insurance', 'cif_total',
     ];
 
     protected $casts = [
         'amount_usd' => 'decimal:2',
+        'cif_freight' => 'decimal:2',
+        'cif_insurance' => 'decimal:2',
+        'cif_total' => 'decimal:2',
         'payment_payload' => 'array',
         'paid_at' => 'datetime',
         'shipped_at' => 'datetime',
@@ -53,6 +59,16 @@ class Order extends Model
     public function vehicle(): BelongsTo
     {
         return $this->belongsTo(Vehicle::class);
+    }
+
+    public function destCountry(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Country::class, 'dest_country_id');
+    }
+
+    public function destPort(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Port::class, 'dest_port_id');
     }
 
     public function messages(): HasMany
