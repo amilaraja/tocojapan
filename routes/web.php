@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CifController;
 use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FavoriteController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuoteController;
@@ -34,6 +36,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/quotes/{quote}', [QuoteController::class, 'show'])->name('quotes.show');
     Route::post('/vehicles/{slug}/quote', [QuoteController::class, 'store'])->name('quotes.store');
     Route::post('/quotes/{quote}/messages', [QuoteController::class, 'reply'])->name('quotes.reply');
+
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+
+    Route::post('/checkout/{slug}', [CheckoutController::class, 'start'])->name('checkout.start');
+    Route::get('/checkout/{order}/return', [CheckoutController::class, 'return'])->name('checkout.return');
+    Route::get('/checkout/{order}/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
 });
 
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');

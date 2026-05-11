@@ -214,9 +214,17 @@
                     </div>
                     <div class="p-5 space-y-2">
                         @auth
+                            @if (! $vehicle->price_on_request && $vehicle->price_fob > 0)
+                                <form method="POST" action="{{ route('checkout.start', $vehicle->slug) }}">
+                                    @csrf
+                                    <button type="submit" class="w-full text-center bg-toco-navy hover:bg-toco-navy-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">
+                                        Buy now — @money($vehicle->price_fob)
+                                    </button>
+                                </form>
+                            @endif
                             <a href="#quote-form" class="block text-center bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">Request a quote</a>
                         @else
-                            <a href="{{ route('login') }}" class="block text-center bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">Sign in to request a quote</a>
+                            <a href="{{ route('login') }}" class="block text-center bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">Sign in to buy or quote</a>
                         @endauth
                     </div>
                 </div>
