@@ -213,15 +213,32 @@
                         </p>
                     </div>
                     <div class="p-5 space-y-2">
+                        @php
+                            $paypalMode = config('paypal.mode', 'sandbox');
+                            $paypalReady = ! empty(config("paypal.{$paypalMode}.client_id"))
+                                && ! empty(config("paypal.{$paypalMode}.client_secret"));
+                        @endphp
                         @auth
                             @if (! $vehicle->price_on_request && $vehicle->price_fob > 0)
-                                <form method="POST" action="{{ route('checkout.start', $vehicle->slug) }}">
-                                    @csrf
-                                    <button type="submit" class="w-full text-center bg-toco-navy hover:bg-toco-navy-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">
-                                        Buy now — @money($vehicle->price_fob)
-                                    </button>
-                                </form>
+                                @if ($paypalReady)
+                                    <form method="POST" action="{{ route('checkout.start', $vehicle->slug) }}">
+                                        @csrf
+                                        <button type="submit" class="w-full text-center bg-toco-navy hover:bg-toco-navy-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">
+                                            Buy now — @money($vehicle->price_fob)
+                                        </button>
+                                    </form>
+                                @else
+                                    <div class="w-full text-center bg-toco-silver-2 text-ink-soft border border-dashed border-line font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm" title="PayPal credentials not configured yet">
+                                        Buy now — coming soon
+                                    </div>
+                                @endif
                             @endif
+                            @error('paypal')
+                                <div class="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">{{ $message }}</div>
+                            @enderror
+                            @error('vehicle')
+                                <div class="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">{{ $message }}</div>
+                            @enderror
                             <a href="#quote-form" class="block text-center bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">Request a quote</a>
                         @else
                             <a href="{{ route('login') }}" class="block text-center bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">Sign in to buy or quote</a>
