@@ -55,6 +55,9 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
+Route::get('/sitemap-static.xml', [SitemapController::class, 'staticPages'])->name('sitemap.static');
+Route::get('/sitemap-pages.xml', [SitemapController::class, 'pages'])->name('sitemap.pages');
+Route::get('/sitemap-vehicles.xml', [SitemapController::class, 'vehicles'])->name('sitemap.vehicles');
 Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
 
 require __DIR__.'/auth.php';
