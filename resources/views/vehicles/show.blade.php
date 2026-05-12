@@ -45,7 +45,68 @@
     $title = $seoTitle;
 @endphp
 
-<x-layouts.site :title="$title" :description="$seoDescription">
+<x-layouts.site :title="$title" :description="$seoDescription" :ogImage="$photoUrls->first()">
+    @push('head')
+        @php
+            $vehicleSchema = [
+                '@context' => 'https://schema.org',
+                '@type' => ['Vehicle', 'Product'],
+                'name' => $vehTitleNice,
+                'sku' => $vehicle->ref_no,
+                'image' => $photoUrls->take(10)->values()->all(),
+                'description' => $seoDescription,
+                'url' => url()->current(),
+                'brand' => ['@type' => 'Brand', 'name' => $vehicle->make->name ?? null],
+                'manufacturer' => ['@type' => 'Organization', 'name' => $vehicle->make->name ?? null],
+                'model' => $vehicle->vehicleModel->name ?? null,
+                'modelDate' => $vehicle->year_first_reg,
+                'vehicleModelDate' => $vehicle->year_first_reg,
+                'productionDate' => $vehicle->year_first_reg ? (string) $vehicle->year_first_reg : null,
+                'bodyType' => $vehicle->bodyType->name ?? null,
+                'numberOfDoors' => $vehicle->doors ?: null,
+                'seatingCapacity' => $vehicle->seats ?: null,
+                'color' => $vehicle->exterior_color ?: null,
+                'vehicleInteriorColor' => $vehicle->interior_color ?: null,
+                'fuelType' => $vehicle->fuel ?: null,
+                'vehicleTransmission' => $vehicle->transmission ?: null,
+                'driveWheelConfiguration' => $vehicle->drive ?: null,
+                'steeringPosition' => $vehicle->steering_side ?: null,
+                'itemCondition' => 'https://schema.org/UsedCondition',
+                'mileageFromOdometer' => $vehicle->mileage_km ? [
+                    '@type' => 'QuantitativeValue',
+                    'value' => (int) $vehicle->mileage_km,
+                    'unitCode' => 'KMT',
+                ] : null,
+                'vehicleEngine' => $vehicle->engine_cc ? [
+                    '@type' => 'EngineSpecification',
+                    'engineDisplacement' => [
+                        '@type' => 'QuantitativeValue',
+                        'value' => (int) $vehicle->engine_cc,
+                        'unitCode' => 'CMQ',
+                    ],
+                ] : null,
+                'offers' => ($vehicle->price_on_request || ! $vehicle->price_fob)
+                    ? null
+                    : [
+                        '@type' => 'Offer',
+                        'price' => (float) $vehicle->price_fob,
+                        'priceCurrency' => 'USD',
+                        'availability' => $isSold ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
+                        'itemCondition' => 'https://schema.org/UsedCondition',
+                        'seller' => [
+                            '@type' => 'AutoDealer',
+                            'name' => config('app.name', 'Toco Japan'),
+                            'url' => url('/'),
+                        ],
+                    ],
+            ];
+            $vehicleSchema = array_filter($vehicleSchema, fn ($v) => $v !== null && $v !== '' && $v !== []);
+        @endphp
+        <script type="application/ld+json">
+        {!! json_encode($vehicleSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) !!}
+        </script>
+    @endpush
+
     {{-- Breadcrumb --}}
     <div class="bg-toco-silver-2 border-b border-line">
         <div class="max-w-[1600px] mx-auto px-6 2xl:px-8 py-3 text-[12px] font-mono uppercase tracking-widest text-ink-soft">
