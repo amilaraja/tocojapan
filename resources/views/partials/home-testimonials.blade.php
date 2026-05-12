@@ -21,20 +21,25 @@
                     $line2 = trim(($r->flag ? $r->flag.' ' : '').($r->country ?? ''));
                 @endphp
                 <figure class="bg-white border border-line rounded-sm overflow-hidden flex flex-col">
-                    <div class="aspect-[4/3] bg-toco-silver-2 overflow-hidden">
-                        @if ($r->getPhotoUrl())
+                    @if ($r->getPhotoUrl())
+                        <div class="aspect-[4/3] bg-toco-silver-2 overflow-hidden">
                             <img src="{{ $r->getPhotoUrl() }}" alt="Delivery: {{ $r->vehicle_label ?: $displayName }}" class="w-full h-full object-cover block">
-                        @endif
-                    </div>
-                    <figcaption class="px-3 pt-2.5 pb-3 flex flex-col gap-0.5">
+                        </div>
+                    @endif
+                    <figcaption class="px-3 pt-2.5 pb-3 flex flex-col gap-1 flex-1">
                         @if ($r->vehicle_label)
                             <div class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">{{ $r->vehicle_label }}</div>
                         @endif
-                        <div class="text-[13px] font-bold text-ink leading-tight">{{ $displayName }}</div>
-                        @if ($line2 !== '')
-                            <div class="text-[11px] text-ink-soft font-medium">{!! $line2 !!}</div>
+                        <div class="text-[11px] text-amber-500 tracking-[0.12em]">{{ str_repeat('★', $r->stars).str_repeat('☆', 5 - $r->stars) }}</div>
+                        @if ($r->quote)
+                            <blockquote class="text-[12px] text-ink-soft leading-snug mt-1 line-clamp-6">“{{ $r->quote }}”</blockquote>
                         @endif
-                        <div class="text-[11px] text-amber-500 tracking-[0.12em] mt-0.5">{{ str_repeat('★', $r->stars).str_repeat('☆', 5 - $r->stars) }}</div>
+                        <div class="mt-auto pt-2">
+                            <div class="text-[12px] font-bold text-toco-navy leading-tight">{{ $displayName }}</div>
+                            @if ($line2 !== '')
+                                <div class="text-[10px] text-ink-soft">{!! $line2 !!}</div>
+                            @endif
+                        </div>
                     </figcaption>
                 </figure>
             @endforeach
