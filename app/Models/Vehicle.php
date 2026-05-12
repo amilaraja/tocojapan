@@ -31,6 +31,7 @@ class Vehicle extends Model implements HasMedia
         'height_cm' => 'decimal:2',
         'price_on_request' => 'bool',
         'published_at' => 'datetime',
+        'sold_at' => 'datetime',
         'fb_shared_at' => 'datetime',
         'year_first_reg' => 'integer',
         'mileage_km' => 'integer',
@@ -72,10 +73,22 @@ class Vehicle extends Model implements HasMedia
      */
     public function scopePublished($query): void
     {
-        $query->where('status', 'published')
-            ->where(function ($q) {
-                $q->whereNull('published_at')->orWhere('published_at', '<=', now());
-            });
+        // Visible if status='published' OR status='sold' within the last 90 days.
+        // Sold vehicles auto-hide after 3 months without a manual archive step.
+        $query->where(function ($q) {
+            $q->where('status', 'published')
+                ->orWhere(function ($qq) {
+                    $qq->where('status', 'sold')
+                        ->where('sold_at', '>=', now()->subDays(90));
+                });
+        })->where(function ($q) {
+            $q->whereNull('published_at')->orWhere('published_at', '<=', now());
+        });
+    }
+
+    public function isSold(): bool
+    {
+        return $this->status === 'sold';
     }
 
     /**

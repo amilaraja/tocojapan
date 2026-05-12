@@ -14,7 +14,8 @@
         && ! empty(config("paypal.{$paypalMode}.client_id"))
         && ! empty(config("paypal.{$paypalMode}.client_secret"));
     $bankReady = $payment->bank_transfer_enabled;
-    $buyable = ! $vehicle->price_on_request && $vehicle->price_fob > 0;
+    $isSold = $vehicle->status === 'sold';
+    $buyable = ! $isSold && ! $vehicle->price_on_request && $vehicle->price_fob > 0;
 @endphp
 
 <x-layouts.site :title="$title">
@@ -34,6 +35,12 @@
     <section class="max-w-[1600px] mx-auto px-6 2xl:px-8 py-8">
         <div class="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6">
             <div class="space-y-4">
+                @if ($isSold)
+                    <div class="bg-toco-navy text-white text-center font-mono uppercase tracking-[0.3em] text-sm font-bold py-3 rounded-sm">
+                        SOLD · this vehicle is no longer available
+                    </div>
+                @endif
+
                 {{-- Photo gallery --}}
                 <div
                     class="bg-white border border-line rounded-sm overflow-hidden"
@@ -242,6 +249,11 @@
                         @endif
                     </div>
                     <div class="p-5 space-y-2">
+                        @if ($isSold)
+                            <div class="w-full text-center bg-toco-navy/5 border border-toco-navy/20 text-toco-navy font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">
+                                Sold — view our available stock <a href="{{ route('vehicles.index') }}" class="underline">here</a>
+                            </div>
+                        @else
                         @auth
                             @if ($buyable && $paypalReady)
                                 <form method="POST" action="{{ route('checkout.start', $vehicle->slug) }}">
@@ -278,6 +290,7 @@
                         @else
                             <a href="{{ route('login') }}" class="block text-center bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">Sign in to buy or quote</a>
                         @endauth
+                        @endif
                     </div>
                 </div>
 
@@ -375,6 +388,7 @@
         </div>
 
         @auth
+        @if (! $isSold)
             {{-- Request-a-quote form --}}
             <div id="quote-form" class="bg-white border border-line border-t-4 border-t-toco-red rounded-sm p-6 mt-8 max-w-3xl"
                 x-data="{
@@ -436,6 +450,7 @@
                     </div>
                 </form>
             </div>
+        @endif
         @endauth
     </section>
 </x-layouts.site>

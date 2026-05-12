@@ -114,6 +114,29 @@ class VehiclesTable
                                 ->send();
                         }
                     }),
+                Action::make('markSold')
+                    ->label('Mark as sold')
+                    ->icon('heroicon-o-banknotes')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Mark this vehicle as sold?')
+                    ->modalDescription('It will show a SOLD badge on the public site for 90 days and then auto-hide. Buy and quote actions are removed immediately.')
+                    ->visible(fn (Vehicle $r) => $r->status !== 'sold')
+                    ->action(function (Vehicle $r) {
+                        $r->forceFill(['status' => 'sold', 'sold_at' => now()])->save();
+                        Notification::make()->title('Marked as sold.')->success()->send();
+                    }),
+                Action::make('unmarkSold')
+                    ->label('Restore')
+                    ->icon('heroicon-o-arrow-uturn-left')
+                    ->color('gray')
+                    ->requiresConfirmation()
+                    ->modalHeading('Restore this vehicle to published?')
+                    ->visible(fn (Vehicle $r) => $r->status === 'sold')
+                    ->action(function (Vehicle $r) {
+                        $r->forceFill(['status' => 'published', 'sold_at' => null])->save();
+                        Notification::make()->title('Restored to published.')->success()->send();
+                    }),
                 EditAction::make(),
             ])
             ->toolbarActions([
