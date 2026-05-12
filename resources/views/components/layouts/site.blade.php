@@ -263,7 +263,10 @@
         @endif
         <div class="border-t border-white/10">
             <div class="max-w-[1440px] mx-auto px-6 py-4 text-[11px] text-white/55 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <span>&copy; {{ date('Y') }} Toco Japan Co., Ltd. All rights reserved.</span>
+                <span>
+                    &copy; {{ date('Y') }} Toco Japan Co., Ltd. All rights reserved. · Web design by
+                    <a href="https://mobiz.lk" target="_blank" rel="noopener" class="text-white/80 hover:text-white underline">Mobiz</a>
+                </span>
                 <span class="font-mono uppercase tracking-widest">JUMVEA · JEVIC · JAAI member</span>
             </div>
         </div>
