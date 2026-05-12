@@ -200,9 +200,22 @@
             {{-- Sticky aside --}}
             <aside class="space-y-4 md:sticky md:top-20 self-start">
                 <div class="bg-white border border-line rounded-sm">
-                    <div class="border-b-4 border-toco-red px-5 py-5">
+                    <div class="border-b-4 border-toco-red px-5 py-5 relative">
+                        @php($isFavorited = in_array($vehicle->id, $favoritedIds ?? [], true))
+                        <form method="POST" action="{{ route('favorites.toggle', $vehicle->slug) }}" class="absolute top-4 right-4">
+                            @auth @csrf @endauth
+                            <button type="{{ Auth::check() ? 'submit' : 'button' }}"
+                                @guest onclick="window.location='{{ route('login') }}'" @endguest
+                                aria-label="{{ $isFavorited ? 'Remove from wishlist' : 'Save to wishlist' }}"
+                                title="{{ $isFavorited ? 'Saved to your wishlist' : 'Save to wishlist' }}"
+                                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm border text-[11px] font-bold uppercase tracking-widest transition
+                                    {{ $isFavorited ? 'bg-toco-red text-white border-toco-red' : 'bg-white text-toco-navy border-line hover:border-toco-red hover:text-toco-red' }}">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="{{ $isFavorited ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.7A4 4 0 0 1 19 11c0 5.5-7 10-7 10Z"/></svg>
+                                {{ $isFavorited ? 'Saved' : 'Wishlist' }}
+                            </button>
+                        </form>
                         <p class="font-mono text-[10px] uppercase tracking-widest text-ink-soft">{{ $vehicle->ref_no }}</p>
-                        <h1 class="text-xl font-extrabold text-toco-navy leading-tight mt-1">{{ $vehicle->title }}</h1>
+                        <h1 class="text-xl font-extrabold text-toco-navy leading-tight mt-1 pr-24">{{ $vehicle->title }}</h1>
                         <p class="font-mono text-[11px] uppercase tracking-widest text-ink-soft mt-2">FOB Yokohama</p>
                         <p class="font-extrabold text-3xl text-toco-red mt-1">
                             @if ($vehicle->price_on_request)

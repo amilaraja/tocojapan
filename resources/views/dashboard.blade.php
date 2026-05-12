@@ -18,9 +18,9 @@
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <a href="{{ route('favorites.index') }}" class="bg-white border border-line hover:border-toco-red rounded-sm p-5 transition">
-                <p class="font-mono text-[10px] uppercase tracking-widest text-ink-soft">Saved vehicles</p>
+                <p class="font-mono text-[10px] uppercase tracking-widest text-ink-soft">Wishlist</p>
                 <p class="text-3xl font-extrabold text-toco-navy mt-1">{{ $favoritesCount }}</p>
-                <p class="text-xs text-toco-red font-bold mt-3">View saved →</p>
+                <p class="text-xs text-toco-red font-bold mt-3">View wishlist →</p>
             </a>
             <a href="{{ route('quotes.index') }}" class="bg-white border border-line hover:border-toco-red rounded-sm p-5 transition">
                 <p class="font-mono text-[10px] uppercase tracking-widest text-ink-soft">Open quotes</p>

@@ -1,13 +1,13 @@
 @php
-    $title = 'Saved vehicles — Toco Japan';
+    $title = 'My wishlist — Toco Japan';
 @endphp
 
 <x-layouts.site :title="$title">
     <section class="bg-gradient-to-b from-toco-navy to-toco-navy-deep text-white">
         <div class="max-w-[1600px] mx-auto px-6 2xl:px-8 py-8 md:py-10">
             <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-toco-red font-bold">My Toco</p>
-            <h1 class="text-2xl md:text-3xl font-extrabold mt-1">Saved vehicles</h1>
-            <p class="text-white/70 text-sm mt-1">{{ $vehicles->total() }} saved</p>
+            <h1 class="text-2xl md:text-3xl font-extrabold mt-1">My wishlist</h1>
+            <p class="text-white/70 text-sm mt-1">{{ $vehicles->total() }} vehicle{{ $vehicles->total() === 1 ? '' : 's' }} saved</p>
         </div>
     </section>
 

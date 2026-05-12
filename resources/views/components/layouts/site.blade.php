@@ -96,6 +96,13 @@
                 <a href="#contact" class="hover:text-toco-red">Contact</a>
             </nav>
             <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+                @php($wishlistCount = count($favoritedIds ?? []))
+                <a href="{{ Auth::check() ? route('favorites.index') : route('login') }}" class="relative inline-flex items-center text-ink hover:text-toco-red" title="My wishlist">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="{{ $wishlistCount ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.7A4 4 0 0 1 19 11c0 5.5-7 10-7 10Z"/></svg>
+                    @if ($wishlistCount > 0)
+                        <span class="absolute -top-1 -right-1.5 min-w-[16px] h-[16px] px-1 bg-toco-red text-white text-[10px] font-bold rounded-full grid place-items-center">{{ $wishlistCount }}</span>
+                    @endif
+                </a>
                 @auth
                     <a href="{{ route('orders.index') }}" class="relative inline-flex items-center text-ink hover:text-toco-red" title="My orders & messages">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -139,7 +146,7 @@
                     @auth
                         <li><a href="{{ route('dashboard') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Dashboard</a></li>
                         <li><a href="{{ route('orders.index') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">My orders @if (($unreadMessageCount ?? 0) > 0)<span class="ml-2 inline-block bg-toco-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ $unreadMessageCount }}</span>@endif</a></li>
-                        <li><a href="{{ route('favorites.index') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Favorites</a></li>
+                        <li><a href="{{ route('favorites.index') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">My wishlist @if ($wishlistCount > 0)<span class="ml-2 inline-block bg-toco-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ $wishlistCount }}</span>@endif</a></li>
                     @else
                         <li><a href="{{ route('login') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Sign in</a></li>
                     @endauth
