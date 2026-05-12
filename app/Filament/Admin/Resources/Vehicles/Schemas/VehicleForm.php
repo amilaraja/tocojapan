@@ -11,6 +11,7 @@ use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -170,14 +171,13 @@ class VehicleForm
                             ->columnSpanFull(),
                     ]),
 
-                Tab::make('Description & Features')
+                Tab::make('Description')
                     ->schema([
                         Textarea::make('description')->rows(8)->columnSpanFull(),
-                        Textarea::make('features')
-                            ->helperText('JSON of feature groups (comfort, safety, sound_system, seats, windows, other).')
-                            ->rows(8)
-                            ->columnSpanFull(),
                     ]),
+
+                Tab::make('Vehicle options')
+                    ->schema(self::vehicleOptionsSchema()),
 
                 Tab::make('SEO')
                     ->schema([
@@ -200,5 +200,38 @@ class VehicleForm
                 $set('m3', round(($l * $w * $h) / 1_000_000, 4));
             }
         };
+    }
+
+    /**
+     * Render the vehicle-options tab as one Fieldset per group with a
+     * Toggle per option. Reads + writes through synthetic feature.{group}.{key}
+     * paths backed by accessors on Vehicle::features (JSON).
+     */
+    private static function vehicleOptionsSchema(): array
+    {
+        $schema = config('vehicle_features');
+        $components = [];
+        foreach ($schema as $groupKey => $group) {
+            $toggles = [];
+            foreach ($group['options'] as $opt) {
+                $optKey = $opt['key'];
+                $label = $opt['label'];
+                $toggles[] = Toggle::make("features.{$groupKey}.{$optKey}")
+                    ->label($label)
+                    ->inline(false)
+                    ->dehydrateStateUsing(fn ($state) => $state ? $label : null)
+                    ->afterStateHydrated(function (Toggle $component, $state) {
+                        // Persisted format is ['key' => 'Label'] — toggle on if the key exists.
+                        $component->state(! empty($state));
+                    });
+            }
+
+            $components[] = Fieldset::make($group['label'])
+                ->columns(3)
+                ->schema($toggles)
+                ->columnSpanFull();
+        }
+
+        return $components;
     }
 }

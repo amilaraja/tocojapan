@@ -233,16 +233,17 @@
                     </div>
                 @endif
 
-                {{-- Features --}}
+                {{-- Vehicle Options --}}
                 @if (! empty($vehicle->features))
+                    @php($featureSchema = config('vehicle_features'))
                     <div class="bg-white border border-line rounded-sm p-5">
                         <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">Equipment</p>
-                        <h2 class="font-bold text-toco-navy text-lg mt-1 mb-3">Features</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                        <h2 class="font-bold text-toco-navy text-lg mt-1 mb-3">Vehicle Options</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
                             @foreach ($vehicle->features as $group => $items)
-                                @if (is_array($items))
+                                @if (is_array($items) && count($items) > 0)
                                     <div>
-                                        <p class="font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-2">{{ str_replace('_', ' ', (string) $group) }}</p>
+                                        <p class="font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-2">{{ $featureSchema[$group]['label'] ?? str_replace('_', ' ', \Illuminate\Support\Str::title((string) $group)) }}</p>
                                         <ul class="space-y-1 text-sm">
                                             @foreach ($items as $item)
                                                 <li class="flex items-center gap-2">

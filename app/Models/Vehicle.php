@@ -92,6 +92,33 @@ class Vehicle extends Model implements HasMedia
     }
 
     /**
+     * Strip empty/false/null entries from the features JSON before persisting.
+     * Filament's Toggle dehydrate returns null when off; cleaning here means
+     * the stored shape stays `{group: {key: 'Label'}}` without no-op nulls.
+     *
+     * @param  array<string, array<string, mixed>>|null  $value
+     */
+    public function setFeaturesAttribute($value): void
+    {
+        if (! is_array($value)) {
+            $this->attributes['features'] = $value;
+
+            return;
+        }
+        $cleaned = [];
+        foreach ($value as $group => $items) {
+            if (! is_array($items)) {
+                continue;
+            }
+            $kept = array_filter($items, fn ($v) => $v !== null && $v !== false && $v !== '');
+            if ($kept) {
+                $cleaned[$group] = $kept;
+            }
+        }
+        $this->attributes['features'] = $cleaned ? json_encode($cleaned, JSON_UNESCAPED_UNICODE) : null;
+    }
+
+    /**
      * @param  Builder<Vehicle>  $query
      * @param  array<string, mixed>  $filters
      */
