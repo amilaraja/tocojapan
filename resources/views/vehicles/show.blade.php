@@ -405,7 +405,8 @@
 
                 {{-- Specs --}}
                 <div class="bg-white border border-line rounded-sm p-5 text-sm">
-                    <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold mb-3">Specifications</p>
+                    <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">At a glance</p>
+                    <h2 class="font-bold text-toco-navy text-lg mt-1 mb-3">Specifications</h2>
                     <dl class="grid grid-cols-2 gap-y-1.5">
                         @foreach ([
                             ['Make', $vehicle->make->name ?? '—'],
@@ -447,7 +448,7 @@
                     }
                 }">
                 <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">Request a quote</p>
-                <h3 class="font-extrabold text-toco-navy text-xl mt-1">Get a CIF estimate for {{ $vehicle->title }}</h3>
+                <h2 class="font-extrabold text-toco-navy text-xl mt-1">Get a CIF estimate for {{ $vehicle->title }}</h2>
                 <p class="text-sm text-ink-soft mt-1">Tell us where you'd like it delivered. We'll come back with a final figure within one business day.</p>
 
                 <form method="POST" action="{{ route('quotes.store', $vehicle->slug) }}" class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-5 text-sm">
