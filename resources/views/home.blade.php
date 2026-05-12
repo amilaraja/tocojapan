@@ -103,6 +103,103 @@
                             <img src="{{ $sxImg }}" alt="{{ $sxAlt }}" class="block w-full h-auto">
                         </a>
                     @endif
+
+                    {{-- Search panel — inline under the seasonal strip --}}
+                    <div class="bg-white text-ink border border-line rounded-sm shadow-[0_10px_30px_rgba(16,20,58,.18)] p-4 md:p-5 mt-3"
+                        x-data="{
+                            tab: 'make',
+                            makeSlug: '', modelSlug: '', yearFrom: '', priceTo: '', transmission: '', bodyType: '', stockRef: '',
+                            models: [], loadingModels: false,
+                            async loadModels(slug) {
+                                this.modelSlug = ''; this.models = [];
+                                if (!slug) return;
+                                this.loadingModels = true;
+                                try {
+                                    const r = await fetch(`/api/v1/makes/${slug}/models`, { headers: { Accept: 'application/json' } });
+                                    const j = await r.json();
+                                    this.models = j.data || [];
+                                } finally { this.loadingModels = false; }
+                            },
+                            submit() {
+                                const p = new URLSearchParams();
+                                if (this.tab === 'make') {
+                                    if (this.makeSlug) p.set('make', this.makeSlug);
+                                    if (this.modelSlug) p.set('vehicle_model', this.modelSlug);
+                                    if (this.yearFrom) p.set('year_from', this.yearFrom);
+                                    if (this.priceTo) p.set('price_to', this.priceTo);
+                                    if (this.transmission) p.set('transmission', this.transmission);
+                                } else if (this.tab === 'body') {
+                                    if (this.bodyType) p.set('body_type', this.bodyType);
+                                } else if (this.tab === 'budget') {
+                                    if (this.priceTo) p.set('price_to', this.priceTo);
+                                } else if (this.tab === 'ref') {
+                                    if (this.stockRef) p.set('q', this.stockRef);
+                                }
+                                window.location = '{{ route('vehicles.index') }}?' + p.toString();
+                            }
+                        }"
+                    >
+                        <div class="flex flex-wrap gap-1 border-b border-line -mt-1 mb-3">
+                            @foreach (['make' => 'Make & Model', 'body' => 'Body', 'budget' => 'Budget', 'ref' => 'Ref'] as $key => $label)
+                                <button type="button" @click="tab = '{{ $key }}'"
+                                    :class="tab === '{{ $key }}' ? 'text-toco-red border-toco-red' : 'text-ink-soft border-transparent hover:text-ink'"
+                                    class="text-[11px] font-bold uppercase tracking-widest px-2.5 py-2 border-b-2 -mb-px transition">
+                                    {{ $label }}
+                                </button>
+                            @endforeach
+                        </div>
+
+                        <form @submit.prevent="submit()" x-show="tab === 'make'" class="grid grid-cols-2 gap-2">
+                            <select x-model="makeSlug" @change="loadModels(makeSlug)" class="w-full text-sm">
+                                <option value="">Any make</option>
+                                @foreach ($allMakes as $m)
+                                    <option value="{{ $m->slug }}">{{ $m->name }}</option>
+                                @endforeach
+                            </select>
+                            <select x-model="modelSlug" :disabled="loadingModels || !makeSlug" class="w-full text-sm disabled:bg-toco-silver-2">
+                                <option value="">Any model</option>
+                                <template x-for="m in models" :key="m.slug">
+                                    <option :value="m.slug" x-text="m.name"></option>
+                                </template>
+                            </select>
+                            <select x-model="yearFrom" class="w-full text-sm">
+                                <option value="">Any year</option>
+                                @for ($y = (int) date('Y'); $y >= 1990; $y--)<option value="{{ $y }}">{{ $y }}+</option>@endfor
+                            </select>
+                            <select x-model="priceTo" class="w-full text-sm">
+                                <option value="">Any price</option>
+                                @foreach ([3000, 5000, 8000, 12000, 20000, 35000, 60000] as $p)<option value="{{ $p }}">≤ ${{ number_format($p) }}</option>@endforeach
+                            </select>
+                            <button type="submit" class="col-span-2 bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-2.5 rounded-sm inline-flex items-center justify-center gap-2">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                                Search
+                            </button>
+                        </form>
+
+                        <form @submit.prevent="submit()" x-show="tab === 'body'" x-cloak class="grid grid-cols-3 gap-2">
+                            @foreach ($allBodyTypes as $bt)
+                                <button type="button" @click="bodyType = '{{ $bt->slug }}'; submit()" class="border border-line hover:border-toco-navy hover:bg-toco-silver-2 px-2 py-2 text-[11px] font-semibold text-ink rounded-sm flex flex-col items-center gap-1">
+                                    @if ($bt->getLogoUrl())
+                                        <img src="{{ $bt->getLogoUrl() }}" alt="" class="h-7 w-auto" loading="lazy">
+                                    @endif
+                                    <span>{{ $bt->name }}</span>
+                                </button>
+                            @endforeach
+                        </form>
+
+                        <form @submit.prevent="submit()" x-show="tab === 'budget'" x-cloak class="grid grid-cols-2 gap-2">
+                            @foreach ([3000, 5000, 8000, 12000, 20000, 35000, 60000] as $p)
+                                <button type="button" @click="priceTo = {{ $p }}; submit()" class="border border-line hover:border-toco-navy hover:bg-toco-silver-2 px-2 py-2 text-[12px] font-semibold text-ink rounded-sm">
+                                    ≤ ${{ number_format($p) }}
+                                </button>
+                            @endforeach
+                        </form>
+
+                        <form @submit.prevent="submit()" x-show="tab === 'ref'" x-cloak class="flex gap-2">
+                            <input x-model="stockRef" type="text" placeholder="TJ-LUY908" class="flex-1 text-sm">
+                            <button type="submit" class="bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-3 py-2 rounded-sm">Find</button>
+                        </form>
+                    </div>
                 </div>
 
                 {{-- Right promo tiles --}}
@@ -125,150 +222,6 @@
         </div>
     </section>
 
-    {{-- Search panel — overlaps hero with negative margin --}}
-    <section class="relative -mt-14">
-        <div class="max-w-[1600px] mx-auto px-6 2xl:px-8">
-            <div class="bg-white border border-line shadow-[0_10px_30px_rgba(16,20,58,.08)] p-5 md:p-6"
-                x-data="{
-                    tab: 'make',
-                    makeSlug: '', modelSlug: '', yearFrom: '', priceTo: '', transmission: '', bodyType: '', stockRef: '',
-                    models: [], loadingModels: false,
-                    async loadModels(slug) {
-                        this.modelSlug = ''; this.models = [];
-                        if (!slug) return;
-                        this.loadingModels = true;
-                        try {
-                            const r = await fetch(`/api/v1/makes/${slug}/models`, { headers: { Accept: 'application/json' } });
-                            const j = await r.json();
-                            this.models = j.data || [];
-                        } finally { this.loadingModels = false; }
-                    },
-                    submit() {
-                        const p = new URLSearchParams();
-                        if (this.tab === 'make') {
-                            if (this.makeSlug) p.set('make', this.makeSlug);
-                            if (this.modelSlug) p.set('vehicle_model', this.modelSlug);
-                            if (this.yearFrom) p.set('year_from', this.yearFrom);
-                            if (this.priceTo) p.set('price_to', this.priceTo);
-                            if (this.transmission) p.set('transmission', this.transmission);
-                        } else if (this.tab === 'body') {
-                            if (this.bodyType) p.set('body_type', this.bodyType);
-                        } else if (this.tab === 'budget') {
-                            if (this.priceTo) p.set('price_to', this.priceTo);
-                        } else if (this.tab === 'ref') {
-                            if (this.stockRef) p.set('q', this.stockRef);
-                        }
-                        window.location = '/vehicles?' + p.toString();
-                    }
-                }"
-            >
-                {{-- Tabs --}}
-                <div class="flex flex-wrap gap-1 border-b border-line -mt-1 mb-4">
-                    @foreach (['make' => 'By Make & Model', 'body' => 'By Body Type', 'budget' => 'By Budget', 'ref' => 'Stock Reference'] as $key => $label)
-                        <button type="button" @click="tab = '{{ $key }}'"
-                            :class="tab === '{{ $key }}' ? 'text-toco-red border-toco-red' : 'text-ink-soft border-transparent hover:text-ink'"
-                            class="text-[12px] font-bold uppercase tracking-widest px-3 py-2.5 border-b-2 -mb-px transition">
-                            {{ $label }}
-                        </button>
-                    @endforeach
-                </div>
-
-                {{-- By Make & Model --}}
-                <form @submit.prevent="submit()" x-show="tab === 'make'" class="grid grid-cols-1 md:grid-cols-6 gap-2">
-                    <div>
-                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Make</label>
-                        <select x-model="makeSlug" @change="loadModels(makeSlug)" class="w-full border-line text-sm rounded-sm">
-                            <option value="">Any make</option>
-                            @foreach ($allMakes as $m)
-                                <option value="{{ $m->slug }}">{{ $m->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Model</label>
-                        <select x-model="modelSlug" :disabled="loadingModels || !makeSlug" class="w-full border-line text-sm rounded-sm disabled:bg-toco-silver-2">
-                            <option value="">Any model</option>
-                            <template x-for="m in models" :key="m.slug">
-                                <option :value="m.slug" x-text="m.name"></option>
-                            </template>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Year from</label>
-                        <select x-model="yearFrom" class="w-full border-line text-sm rounded-sm">
-                            <option value="">Any</option>
-                            @for ($y = (int) date('Y'); $y >= 1990; $y--)<option value="{{ $y }}">{{ $y }}</option>@endfor
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Price USD</label>
-                        <select x-model="priceTo" class="w-full border-line text-sm rounded-sm">
-                            <option value="">Any</option>
-                            @foreach ([3000, 5000, 8000, 12000, 20000, 35000, 60000] as $p)<option value="{{ $p }}">Up to ${{ number_format($p) }}</option>@endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Transmission</label>
-                        <select x-model="transmission" class="w-full border-line text-sm rounded-sm">
-                            <option value="">Any</option>
-                            <option value="automatic">Automatic</option>
-                            <option value="manual">Manual</option>
-                            <option value="cvt">CVT</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-2.5 rounded-sm inline-flex items-center justify-center gap-2 mt-auto">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-                        Search
-                    </button>
-                </form>
-
-                {{-- By Body Type --}}
-                <form @submit.prevent="submit()" x-show="tab === 'body'" x-cloak class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
-                    @foreach ($allBodyTypes as $bt)
-                        <button type="button" @click="bodyType = '{{ $bt->slug }}'; submit()" class="border border-line hover:border-toco-navy hover:bg-toco-silver-2 px-3 py-3 text-[12px] font-semibold text-ink rounded-sm flex flex-col items-center gap-1.5">
-                            @if ($bt->getLogoUrl())
-                                <img src="{{ $bt->getLogoUrl() }}" alt="" class="h-9 w-auto" loading="lazy">
-                            @endif
-                            <span>{{ $bt->name }}</span>
-                        </button>
-                    @endforeach
-                </form>
-
-                {{-- By Budget --}}
-                <form @submit.prevent="submit()" x-show="tab === 'budget'" x-cloak class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
-                    @foreach ([3000, 5000, 8000, 12000, 20000, 35000, 60000] as $p)
-                        <button type="button" @click="priceTo = {{ $p }}; submit()" class="border border-line hover:border-toco-navy hover:bg-toco-silver-2 px-3 py-3 text-[12px] font-semibold text-ink rounded-sm">
-                            Up to ${{ number_format($p) }}
-                        </button>
-                    @endforeach
-                </form>
-
-                {{-- Stock Reference --}}
-                <form @submit.prevent="submit()" x-show="tab === 'ref'" x-cloak class="flex gap-2">
-                    <input x-model="stockRef" type="text" placeholder="e.g. TJ-LUY908" class="flex-1 border-line text-sm rounded-sm">
-                    <button type="submit" class="bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-2.5 rounded-sm">Find</button>
-                </form>
-
-                {{-- Popular chips --}}
-                @php
-                    $popularChips = $content['popular_chips'] ?? [
-                        ['label' => 'Hilux Surf',          'query_string' => '?make=toyota&q=Hilux'],
-                        ['label' => 'Land Cruiser Prado',  'query_string' => '?make=toyota&vehicle_model=land-cruiser-prado'],
-                        ['label' => 'Alphard Hybrid',      'query_string' => '?make=toyota&vehicle_model=alphard&fuel=hybrid'],
-                        ['label' => 'Kei trucks',          'query_string' => '?body_type=mini-truck'],
-                        ['label' => 'RHD SUVs',            'query_string' => '?body_type=suv&steering=right'],
-                        ['label' => 'Under $5,000',        'query_string' => '?price_to=5000'],
-                    ];
-                @endphp
-                <div class="mt-5 pt-4 border-t border-line flex items-center flex-wrap gap-2 text-[12px]">
-                    <span class="font-mono text-[10px] uppercase tracking-widest text-ink-soft mr-1">Popular</span>
-                    @foreach ($popularChips as $chip)
-                        <a href="{{ route('vehicles.index') }}{{ $chip['query_string'] ?? '' }}" class="border border-line hover:border-toco-navy px-2.5 py-1 rounded-sm">{{ $chip['label'] ?? '' }}</a>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-    </section>
 
     {{-- Featured grid with browse-by-make and browse-by-body-type sidebars --}}
     @include('partials.home-featured', ['featured' => $featured, 'makesWithCounts' => $makesWithCounts, 'bodyTypesWithCounts' => $bodyTypesWithCounts, 'totalPublished' => $totalPublished])
