@@ -53,7 +53,7 @@
         </script>
     @endpush
     {{-- Hero band --}}
-    <section class="bg-gradient-to-b from-toco-navy to-toco-navy-deep text-white pt-4 pb-24">
+    <section class="bg-gradient-to-b from-toco-navy to-toco-navy-deep text-white py-6">
         <div class="max-w-[1600px] mx-auto px-6 2xl:px-8">
             <div class="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)_220px] gap-4">
                 {{-- Left promo tiles --}}
