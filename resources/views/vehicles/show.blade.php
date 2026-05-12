@@ -1,5 +1,4 @@
 @php
-    $title = $vehicle->title.' — Toco Japan';
     $photos = $vehicle->getMedia('photos');
     $photoUrls = $photos->map(fn ($m) => $m->getUrl())->values();
     if ($photoUrls->isEmpty()) {
@@ -16,9 +15,37 @@
     $bankReady = $payment->bank_transfer_enabled;
     $isSold = $vehicle->status === 'sold';
     $buyable = ! $isSold && ! $vehicle->price_on_request && $vehicle->price_fob > 0;
+
+    // --- SEO meta ---
+    // Title format: "{Year} {Make} {Model} for sale — Toco Japan"
+    // Description packs the distinguishing facts (body, mileage, transmission,
+    // fuel, engine, ref, price) so it scores higher on long-tail queries.
+    $vehTitleNice = trim(($vehicle->year_first_reg ? $vehicle->year_first_reg.' ' : '').\Illuminate\Support\Str::title((string) ($vehicle->make->name ?? '')).' '.\Illuminate\Support\Str::title((string) ($vehicle->vehicleModel->name ?? '')));
+    $vehTitleNice = $vehTitleNice !== '' ? $vehTitleNice : $vehicle->title;
+
+    $seoTitle = ($vehicle->seo['title'] ?? null) ?: ($vehTitleNice.' for sale — Toco Japan');
+
+    $descBits = [];
+    if ($vehicle->bodyType?->name) $descBits[] = $vehicle->bodyType->name;
+    if ($vehicle->mileage_km) $descBits[] = number_format((int) $vehicle->mileage_km).'km';
+    if ($vehicle->transmission) $descBits[] = strtolower($vehicle->transmission);
+    if ($vehicle->fuel) $descBits[] = strtolower($vehicle->fuel);
+    if ($vehicle->engine_cc) $descBits[] = ((int) $vehicle->engine_cc).'cc';
+    $descCore = $descBits ? ' — '.implode(', ', $descBits).'.' : '.';
+    $descPrice = ! $vehicle->price_on_request && $vehicle->price_fob > 0
+        ? ' FOB Yokohama from $'.number_format((float) $vehicle->price_fob).'.'
+        : '';
+    $descRef = $vehicle->ref_no ? ' Ref '.$vehicle->ref_no.'.' : '';
+
+    $seoDescription = ($vehicle->seo['description'] ?? null) ?: \Illuminate\Support\Str::limit(
+        $vehTitleNice.$descCore.$descPrice.$descRef.' Buy + ship worldwide with CIF to your port.',
+        155
+    );
+
+    $title = $seoTitle;
 @endphp
 
-<x-layouts.site :title="$title">
+<x-layouts.site :title="$title" :description="$seoDescription">
     {{-- Breadcrumb --}}
     <div class="bg-toco-silver-2 border-b border-line">
         <div class="max-w-[1600px] mx-auto px-6 2xl:px-8 py-3 text-[12px] font-mono uppercase tracking-widest text-ink-soft">
@@ -32,7 +59,25 @@
         </div>
     </div>
 
-    <section class="max-w-[1600px] mx-auto px-6 2xl:px-8 py-8">
+    <section class="max-w-[1600px] mx-auto px-6 2xl:px-8 pt-6 pb-2">
+        <p class="font-mono text-[10px] uppercase tracking-widest text-ink-soft">{{ $vehicle->ref_no }}</p>
+        <h1 class="text-2xl md:text-3xl font-extrabold text-toco-navy leading-tight mt-1">
+            {{ $vehTitleNice }} for sale
+            @if ($vehicle->bodyType?->name)<span class="text-ink-soft font-semibold"> — {{ $vehicle->bodyType->name }}</span>@endif
+        </h1>
+        @if ($vehicle->mileage_km || $vehicle->transmission || $vehicle->fuel)
+            <p class="text-sm text-ink-soft mt-1">
+                {{ collect([
+                    $vehicle->mileage_km ? number_format((int) $vehicle->mileage_km).' km' : null,
+                    $vehicle->transmission ? \Illuminate\Support\Str::title($vehicle->transmission) : null,
+                    $vehicle->fuel ? \Illuminate\Support\Str::title($vehicle->fuel) : null,
+                    $vehicle->engine_cc ? ((int) $vehicle->engine_cc).'cc' : null,
+                ])->filter()->implode(' · ') }}
+            </p>
+        @endif
+    </section>
+
+    <section class="max-w-[1600px] mx-auto px-6 2xl:px-8 pb-8">
         <div class="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6">
             <div class="space-y-4">
                 @if ($isSold)
@@ -232,7 +277,7 @@
                             </button>
                         </form>
                         <p class="font-mono text-[10px] uppercase tracking-widest text-ink-soft">{{ $vehicle->ref_no }}</p>
-                        <h1 class="text-xl font-extrabold text-toco-navy leading-tight mt-1 pr-24">{{ $vehicle->title }}</h1>
+                        <p class="text-xl font-extrabold text-toco-navy leading-tight mt-1 pr-24">{{ $vehicle->title }}</p>
                         <p class="font-mono text-[11px] uppercase tracking-widest text-ink-soft mt-2">FOB Yokohama</p>
                         <p class="font-extrabold text-3xl text-toco-red mt-1">
                             @if ($vehicle->price_on_request)
@@ -401,7 +446,7 @@
                     }
                 }">
                 <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">Request a quote</p>
-                <h2 class="font-extrabold text-toco-navy text-xl mt-1">Get a CIF estimate for {{ $vehicle->title }}</h2>
+                <h3 class="font-extrabold text-toco-navy text-xl mt-1">Get a CIF estimate for {{ $vehicle->title }}</h3>
                 <p class="text-sm text-ink-soft mt-1">Tell us where you'd like it delivered. We'll come back with a final figure within one business day.</p>
 
                 <form method="POST" action="{{ route('quotes.store', $vehicle->slug) }}" class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-5 text-sm">
