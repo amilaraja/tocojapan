@@ -51,6 +51,21 @@ class VehicleController extends Controller
     }
 
     /**
+     * Live count for the homepage / listing search form — returns just the
+     * matching vehicle count for the supplied filter combination so the UI
+     * can show "42 vehicles match" without paging the whole list.
+     */
+    public function count(VehicleListRequest $request): JsonResponse
+    {
+        $count = Vehicle::query()
+            ->published()
+            ->filter($request->validated())
+            ->count();
+
+        return ApiResponse::ok(['count' => $count]);
+    }
+
+    /**
      * @return array{0: string, 1: string}
      */
     private static function sortColumns(string $sort): array

@@ -58,8 +58,13 @@ class VehicleController extends Controller
             'featured' => $featured,
             'makesWithCounts' => $makesWithCounts,
             'bodyTypesWithCounts' => $bodyTypesWithCounts,
-            'allMakes' => Make::where('is_active', true)->orderBy('name')->get(['id', 'slug', 'name']),
-            'allBodyTypes' => BodyType::where('is_active', true)->with('media')->orderBy('name')->get(),
+            'allMakes' => Make::where('is_active', true)
+                ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
+                ->orderBy('name')->get(['id', 'slug', 'name']),
+            'allBodyTypes' => BodyType::where('is_active', true)
+                ->with('media')
+                ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
+                ->orderBy('name')->get(),
             'totalPublished' => Vehicle::query()->published()->count(),
             'testimonials' => $testimonials,
         ];
@@ -89,8 +94,12 @@ class VehicleController extends Controller
         return view('vehicles.index', [
             'vehicles' => $vehicles,
             'filters' => $filters,
-            'makes' => Make::where('is_active', true)->orderBy('name')->get(['id', 'slug', 'name']),
-            'bodyTypes' => BodyType::where('is_active', true)->orderBy('name')->get(['id', 'slug', 'name']),
+            'makes' => Make::where('is_active', true)
+                ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
+                ->orderBy('name')->get(['id', 'slug', 'name']),
+            'bodyTypes' => BodyType::where('is_active', true)
+                ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
+                ->orderBy('name')->get(['id', 'slug', 'name']),
             'models' => isset($filters['make'])
                 ? VehicleModel::whereHas('make', fn ($q) => $q->where('slug', $filters['make']))
                     ->orderBy('name')->get(['id', 'slug', 'name', 'make_id'])

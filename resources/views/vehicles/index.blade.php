@@ -49,7 +49,7 @@
                         <select name="make" class="w-full border-line rounded-sm">
                             <option value="">Any make</option>
                             @foreach ($makes as $m)
-                                <option value="{{ $m->slug }}" @selected(($filters['make'] ?? '') === $m->slug)>{{ $m->name }}</option>
+                                <option value="{{ $m->slug }}" @selected(($filters['make'] ?? '') === $m->slug) {{ ($m->published_count ?? 0) === 0 ? 'disabled' : '' }}>{{ $m->name }} ({{ $m->published_count ?? 0 }})</option>
                             @endforeach
                         </select>
                     </div>
@@ -69,7 +69,7 @@
                         <select name="body_type" class="w-full border-line rounded-sm">
                             <option value="">Any</option>
                             @foreach ($bodyTypes as $b)
-                                <option value="{{ $b->slug }}" @selected(($filters['body_type'] ?? '') === $b->slug)>{{ $b->name }}</option>
+                                <option value="{{ $b->slug }}" @selected(($filters['body_type'] ?? '') === $b->slug) {{ ($b->published_count ?? 0) === 0 ? 'disabled' : '' }}>{{ $b->name }} ({{ $b->published_count ?? 0 }})</option>
                             @endforeach
                         </select>
                     </div>

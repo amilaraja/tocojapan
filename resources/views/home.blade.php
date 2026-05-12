@@ -129,6 +129,40 @@
                             tab: 'make',
                             makeSlug: '', modelSlug: '', yearFrom: '', priceTo: '', transmission: '', bodyType: '', stockRef: '',
                             models: [], loadingModels: false,
+                            matchCount: {{ (int) $totalPublished }},
+                            countLoading: false,
+                            recountDebounce: null,
+                            init() {
+                                this.$watch('makeSlug',     () => this.queueRecount());
+                                this.$watch('modelSlug',    () => this.queueRecount());
+                                this.$watch('yearFrom',     () => this.queueRecount());
+                                this.$watch('priceTo',      () => this.queueRecount());
+                                this.$watch('transmission', () => this.queueRecount());
+                                this.$watch('bodyType',     () => this.queueRecount());
+                            },
+                            queueRecount() {
+                                clearTimeout(this.recountDebounce);
+                                this.recountDebounce = setTimeout(() => this.recount(), 220);
+                            },
+                            async recount() {
+                                const p = this.filterParams();
+                                this.countLoading = true;
+                                try {
+                                    const r = await fetch('/api/v1/vehicles/count?' + p.toString(), { headers: { Accept: 'application/json' } });
+                                    const j = await r.json();
+                                    this.matchCount = j.data?.count ?? this.matchCount;
+                                } finally { this.countLoading = false; }
+                            },
+                            filterParams() {
+                                const p = new URLSearchParams();
+                                if (this.makeSlug)     p.set('make', this.makeSlug);
+                                if (this.modelSlug)    p.set('vehicle_model', this.modelSlug);
+                                if (this.yearFrom)     p.set('year_from', this.yearFrom);
+                                if (this.priceTo)      p.set('price_to', this.priceTo);
+                                if (this.transmission) p.set('transmission', this.transmission);
+                                if (this.bodyType)     p.set('body_type', this.bodyType);
+                                return p;
+                            },
                             async loadModels(slug) {
                                 this.modelSlug = ''; this.models = [];
                                 if (!slug) return;
@@ -172,7 +206,7 @@
                             <select x-model="makeSlug" @change="loadModels(makeSlug)" class="w-full text-sm">
                                 <option value="">Any make</option>
                                 @foreach ($allMakes as $m)
-                                    <option value="{{ $m->slug }}">{{ $m->name }}</option>
+                                    <option value="{{ $m->slug }}" {{ ($m->published_count ?? 0) === 0 ? 'disabled' : '' }}>{{ $m->name }} ({{ $m->published_count ?? 0 }})</option>
                                 @endforeach
                             </select>
                             <select x-model="modelSlug" :disabled="loadingModels || !makeSlug" class="w-full text-sm disabled:bg-toco-silver-2">
@@ -189,19 +223,19 @@
                                 <option value="">Any price</option>
                                 @foreach ([3000, 5000, 8000, 12000, 20000, 35000, 60000] as $p)<option value="{{ $p }}">≤ ${{ number_format($p) }}</option>@endforeach
                             </select>
-                            <button type="submit" class="col-span-2 bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-2.5 rounded-sm inline-flex items-center justify-center gap-2">
+                            <button type="submit" :disabled="matchCount === 0" class="col-span-2 bg-toco-red hover:bg-toco-red-deep disabled:bg-toco-silver-2 disabled:text-ink-soft disabled:cursor-not-allowed text-white font-bold uppercase tracking-widest text-xs px-4 py-2.5 rounded-sm inline-flex items-center justify-center gap-2">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-                                Search
+                                <span x-text="countLoading ? 'Counting…' : ('Search ' + matchCount.toLocaleString() + ' vehicles')"></span>
                             </button>
                         </form>
 
                         <form @submit.prevent="submit()" x-show="tab === 'body'" x-cloak class="grid grid-cols-3 gap-2">
                             @foreach ($allBodyTypes as $bt)
-                                <button type="button" @click="bodyType = '{{ $bt->slug }}'; submit()" class="border border-line hover:border-toco-navy hover:bg-toco-silver-2 px-2 py-2 text-[11px] font-semibold text-ink rounded-sm flex flex-col items-center gap-1">
+                                <button type="button" @click="bodyType = '{{ $bt->slug }}'; submit()" {{ ($bt->published_count ?? 0) === 0 ? 'disabled' : '' }} class="border border-line hover:border-toco-navy hover:bg-toco-silver-2 disabled:opacity-40 disabled:cursor-not-allowed px-2 py-2 text-[11px] font-semibold text-ink rounded-sm flex flex-col items-center gap-1">
                                     @if ($bt->getLogoUrl())
                                         <img src="{{ $bt->getLogoUrl() }}" alt="" class="h-7 w-auto" loading="lazy">
                                     @endif
-                                    <span>{{ $bt->name }}</span>
+                                    <span>{{ $bt->name }} ({{ $bt->published_count ?? 0 }})</span>
                                 </button>
                             @endforeach
                         </form>

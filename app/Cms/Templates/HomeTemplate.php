@@ -227,8 +227,13 @@ class HomeTemplate implements PageTemplate
             'featured' => $featured,
             'makesWithCounts' => $makesWithCounts,
             'bodyTypesWithCounts' => $bodyTypesWithCounts,
-            'allMakes' => Make::where('is_active', true)->orderBy('name')->get(['id', 'slug', 'name']),
-            'allBodyTypes' => BodyType::where('is_active', true)->with('media')->orderBy('name')->get(),
+            'allMakes' => Make::where('is_active', true)
+                ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
+                ->orderBy('name')->get(['id', 'slug', 'name']),
+            'allBodyTypes' => BodyType::where('is_active', true)
+                ->with('media')
+                ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
+                ->orderBy('name')->get(),
             'totalPublished' => Vehicle::query()->published()->count(),
             'testimonials' => Testimonial::query()
                 ->featured()->with('media')->orderBy('sort_order')->orderByDesc('created_at')->limit(12)->get(),
