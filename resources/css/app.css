@@ -55,4 +55,34 @@
     button {
         font-family: inherit;
     }
+
+    /* Tailwind v4 ships without forms plugin defaults — give every native
+       text/select/textarea a 1px border so utilities like `border-line`
+       (which only sets color) actually render. */
+    input[type='text'],
+    input[type='email'],
+    input[type='password'],
+    input[type='number'],
+    input[type='tel'],
+    input[type='url'],
+    input[type='date'],
+    input[type='search'],
+    input:not([type]),
+    select,
+    textarea {
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        padding: 0.5rem 0.625rem;
+    }
+    input[type='checkbox'],
+    input[type='radio'] {
+        border: 1px solid var(--color-line);
+    }
+    input:focus,
+    select:focus,
+    textarea:focus {
+        outline: 2px solid var(--color-toco-red);
+        outline-offset: -1px;
+        border-color: var(--color-toco-red);
+    }
 }
