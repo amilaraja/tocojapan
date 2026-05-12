@@ -5,6 +5,16 @@
     if ($photoUrls->isEmpty()) {
         $photoUrls = collect(['/img/v5/car-'.((($vehicle->id % 4) + 1)).'.jpg']);
     }
+
+    // Buy-now state — hoisted to top so it's in scope regardless of any
+    // x-component closures further down in the view.
+    $payment = app(\App\Settings\PaymentSettings::class);
+    $paypalMode = config('paypal.mode', 'sandbox');
+    $paypalReady = $payment->paypal_enabled
+        && ! empty(config("paypal.{$paypalMode}.client_id"))
+        && ! empty(config("paypal.{$paypalMode}.client_secret"));
+    $bankReady = $payment->bank_transfer_enabled;
+    $buyable = ! $vehicle->price_on_request && $vehicle->price_fob > 0;
 @endphp
 
 <x-layouts.site :title="$title">
@@ -226,15 +236,6 @@
                         </p>
                     </div>
                     <div class="p-5 space-y-2">
-                        @php
-                            $payment = app(\App\Settings\PaymentSettings::class);
-                            $paypalMode = config('paypal.mode', 'sandbox');
-                            $paypalReady = $payment->paypal_enabled
-                                && ! empty(config("paypal.{$paypalMode}.client_id"))
-                                && ! empty(config("paypal.{$paypalMode}.client_secret"));
-                            $bankReady = $payment->bank_transfer_enabled;
-                            $buyable = ! $vehicle->price_on_request && $vehicle->price_fob > 0;
-                        @endphp
                         @auth
                             @if ($buyable && $paypalReady)
                                 <form method="POST" action="{{ route('checkout.start', $vehicle->slug) }}">
