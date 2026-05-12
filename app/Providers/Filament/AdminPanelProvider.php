@@ -3,7 +3,8 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Admin\Auth\Pages\Login;
-use App\Filament\Admin\Widgets\LatestQuotes;
+use App\Filament\Admin\Widgets\QuotesAndOrders;
+use App\Filament\Admin\Widgets\SearchConsoleChart;
 use App\Filament\Admin\Widgets\StatsOverview;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Support\Facades\FilamentView;
@@ -51,7 +52,8 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 AccountWidget::class,
                 StatsOverview::class,
-                LatestQuotes::class,
+                SearchConsoleChart::class,
+                QuotesAndOrders::class,
             ])
             ->middleware([
                 EncryptCookies::class,
