@@ -18,7 +18,7 @@
         @endphp
         <div
             class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6"
-            x-data="bankCheckout(@js($countryPayload), {{ (float) $vehicle->price_fob }}, {{ (float) ($vehicle->m3 ?: 0) }}, {{ (float) (app(\App\Settings\CifSettings::class)->insurance_pct ?: 0) }})"
+            x-data="bankCheckout(@js($countryPayload), {{ (float) $vehicle->price_fob }}, {{ (float) ($vehicle->m3 ?: 0) }}, {{ (float) (app(\App\Settings\CifSettings::class)->insurance_pct ?: 0) }}, {{ $destPort?->country_id ? (int) $destPort->country_id : 0 }}, {{ $destPort?->id ? (int) $destPort->id : 0 }})"
         >
             <form method="POST" action="{{ route('checkout.bank.store', $vehicle->slug) }}" class="space-y-6">
                 @csrf
@@ -137,14 +137,14 @@
 
     @push('scripts')
     <script>
-        function bankCheckout(countries, fob, m3, defaultInsurancePct) {
+        function bankCheckout(countries, fob, m3, defaultInsurancePct, presetCountryId, presetPortId) {
             return {
                 countries,
                 fob,
                 m3,
                 defaultInsurancePct,
-                countryId: '',
-                portId: '',
+                countryId: presetCountryId ? String(presetCountryId) : '',
+                portId: presetPortId ? String(presetPortId) : '',
                 get selectedCountry() { return this.countries.find(c => c.id == this.countryId); },
                 get availablePorts() { return this.selectedCountry ? this.selectedCountry.ports : []; },
                 get selectedPort() { return this.availablePorts.find(p => p.id == this.portId); },
