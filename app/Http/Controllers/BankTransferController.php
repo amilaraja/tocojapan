@@ -110,6 +110,7 @@ class BankTransferController extends Controller
         ]);
 
         return redirect()->route('orders.show', $order)
-            ->with('status', 'Order created. Please use the bank details below to complete payment.');
+            ->with('status', 'Order created. Please use the bank details below to complete payment.')
+            ->withCookie(cookie('toco_port', (string) $port->id, 60 * 24 * 365));
     }
 }

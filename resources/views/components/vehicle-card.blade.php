@@ -30,6 +30,11 @@
                             @money($vehicle->price_fob)
                         @endif
                     </p>
+                    @if (! $vehicle->price_on_request && $vehicle->price_fob > 0 && ($destPort ?? null) && $vehicle->m3 > 0)
+                        <p class="text-[10px] text-ink-soft mt-1 leading-tight">
+                            CIF {{ $destPort->name }}: <span class="font-semibold text-toco-navy">@cif($vehicle, $destPort)</span>
+                        </p>
+                    @endif
                 </div>
                 <span class="text-[12px] font-bold text-toco-navy group-hover:text-toco-red inline-flex items-center gap-1">
                     View <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 6 6 6-6 6"/></svg>

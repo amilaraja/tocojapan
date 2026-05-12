@@ -46,6 +46,22 @@ class AppServiceProvider extends ServiceProvider
             $view->with('unreadMessageCount', $unread);
         });
 
+        View::composer('*', function ($view) {
+            // Resolve the visitor's preferred destination port (cookie-driven)
+            // and share it + a list of all countries+ports so the picker can
+            // render without repeated DB queries.
+            $portId = (int) request()->cookie('toco_port');
+            $destPort = null;
+            if ($portId > 0) {
+                $destPort = \App\Models\Port::query()
+                    ->with('country')
+                    ->where('id', $portId)
+                    ->where('is_active', true)
+                    ->first();
+            }
+            $view->with('destPort', $destPort);
+        });
+
         Event::listen(MediaHasBeenAddedEvent::class, ConvertVehiclePhotoOnUpload::class);
 
         Mail::extend('gmail-api', function () {
@@ -58,6 +74,22 @@ class AppServiceProvider extends ServiceProvider
 
         Blade::directive('money', function (string $expr) {
             return "<?php echo app(\App\Services\CurrencyRates::class)->format((float) ({$expr}), app(\App\Services\CurrencyRates::class)->userCurrencyCode()); ?>";
+        });
+
+        // @cif($vehicle, $port) → small inline CIF label for the visitor's
+        // chosen currency. Returns nothing if vehicle has no m3 or no port.
+        Blade::directive('cif', function (string $expr) {
+            return "<?php
+                [\$__cifVeh, \$__cifPort] = [{$expr}];
+                if (\$__cifVeh && \$__cifPort && (float) \$__cifVeh->price_fob > 0 && (float) \$__cifVeh->m3 > 0) {
+                    \$__cifBreak = app(\App\Services\CifCalculator::class)->calculate(
+                        priceFob: (float) \$__cifVeh->price_fob,
+                        m3: (float) \$__cifVeh->m3,
+                        port: \$__cifPort,
+                    );
+                    echo app(\App\Services\CurrencyRates::class)->format((float) \$__cifBreak['cif_total'], app(\App\Services\CurrencyRates::class)->userCurrencyCode());
+                }
+            ?>";
         });
     }
 }

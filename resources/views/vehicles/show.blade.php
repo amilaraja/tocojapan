@@ -234,6 +234,12 @@
                                 @money($vehicle->price_fob)
                             @endif
                         </p>
+                        @if (! $vehicle->price_on_request && $vehicle->price_fob > 0 && ($destPort ?? null) && $vehicle->m3 > 0)
+                            <p class="text-[12px] text-ink-soft mt-2 leading-tight">
+                                CIF to <span class="font-semibold text-toco-navy">{{ $destPort->name }}</span>:
+                                <span class="font-bold text-toco-navy">@cif($vehicle, $destPort)</span>
+                            </p>
+                        @endif
                     </div>
                     <div class="p-5 space-y-2">
                         @auth

@@ -58,6 +58,27 @@
                             </select>
                         </form>
                     @endif
+
+                    {{-- Destination port picker — drives CIF on listing + detail --}}
+                    <form method="POST" action="{{ route('destination.set') }}" id="destForm" class="inline-flex items-center gap-1">
+                        @csrf
+                        <span class="hidden md:inline">📍</span>
+                        <select
+                            name="port_id"
+                            onchange="document.getElementById('destForm').submit()"
+                            class="bg-transparent border-0 text-white/80 hover:text-white text-[12px] cursor-pointer focus:outline-none notranslate max-w-[140px]"
+                            title="Set destination port for CIF prices"
+                        >
+                            <option value="">Set destination</option>
+                            @foreach (\App\Models\Country::query()->where('is_active', true)->with(['ports' => fn($q) => $q->where('is_active', true)->orderBy('sort_order')])->orderBy('sort_order')->orderBy('name')->get() as $__c)
+                                <optgroup label="{{ $__c->name }}">
+                                    @foreach ($__c->ports as $__p)
+                                        <option value="{{ $__p->id }}" class="text-toco-navy" {{ $destPort && $destPort->id === $__p->id ? 'selected' : '' }}>{{ $__p->name }}</option>
+                                    @endforeach
+                                </optgroup>
+                            @endforeach
+                        </select>
+                    </form>
                 @endisset
             </div>
             <div class="flex items-center gap-3 sm:gap-5">

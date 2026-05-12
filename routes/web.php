@@ -4,6 +4,7 @@ use App\Http\Controllers\BankTransferController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CifController;
 use App\Http\Controllers\CurrencyController;
+use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\OrderController;
@@ -22,6 +23,9 @@ Route::get('/vehicles/{slug}', [VehicleController::class, 'show'])->name('vehicl
 Route::get('/cif', [CifController::class, 'index'])->name('cif.index');
 
 Route::post('/currency/{code}', [CurrencyController::class, 'set'])->name('currency.set');
+
+Route::post('/destination', [DestinationController::class, 'set'])->name('destination.set');
+Route::delete('/destination', [DestinationController::class, 'clear'])->name('destination.clear');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
