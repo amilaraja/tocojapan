@@ -70,26 +70,26 @@ class HomeTemplate implements PageTemplate
                                     ->schema([
                                         FileUpload::make('image')
                                             ->disk('public')->directory('home/hero')
-                                            ->image()->imageEditor()
+                                            ->image()->imageEditor()->imagePreviewHeight('120')
                                             ->required(),
                                         TextInput::make('alt')->label('Alt text')->maxLength(180),
                                     ])
                                     ->reorderable()->collapsible()->defaultItems(0)
-                                    ->itemLabel(fn (array $state): ?string => $state['alt'] ?? null)
+                                    ->itemLabel(fn (array $state): ?string => self::repeaterItemLabel($state, 'home/hero', 'alt'))
                                     ->columnSpanFull(),
                             ]),
                         Section::make('Promo tiles — left column')
                             ->schema([
                                 Repeater::make('data.promo_left')
                                     ->schema(self::promoTileSchema())
-                                    ->itemLabel(fn (array $state): ?string => $state['title'] ?? null)
+                                    ->itemLabel(fn (array $state): ?string => self::repeaterItemLabel($state, 'home/promos', 'title'))
                                     ->collapsible()->defaultItems(0)->columnSpanFull(),
                             ]),
                         Section::make('Promo tiles — right column')
                             ->schema([
                                 Repeater::make('data.promo_right')
                                     ->schema(self::promoTileSchema())
-                                    ->itemLabel(fn (array $state): ?string => $state['title'] ?? null)
+                                    ->itemLabel(fn (array $state): ?string => self::repeaterItemLabel($state, 'home/promos', 'title'))
                                     ->collapsible()->defaultItems(0)->columnSpanFull(),
                             ]),
                     ]),
@@ -238,6 +238,27 @@ class HomeTemplate implements PageTemplate
     /**
      * @return array<int, mixed>
      */
+    /**
+     * Repeater item label: prepend the image's basename so users can see
+     * which uploaded file a collapsed row holds, alongside the title/alt.
+     *
+     * @param  array<string, mixed>  $state
+     */
+    private static function repeaterItemLabel(array $state, string $dir, string $textKey): ?string
+    {
+        $img = is_string($state['image'] ?? null) ? $state['image'] : null;
+        $text = is_string($state[$textKey] ?? null) ? trim($state[$textKey]) : '';
+        $bits = [];
+        if ($img !== null && $img !== '') {
+            $bits[] = '📷 '.basename($img);
+        }
+        if ($text !== '') {
+            $bits[] = $text;
+        }
+
+        return $bits ? implode(' — ', $bits) : null;
+    }
+
     private static function promoTileSchema(): array
     {
         return [
@@ -245,6 +266,7 @@ class HomeTemplate implements PageTemplate
                 ->label('Image')
                 ->image()
                 ->imageEditor()
+                ->imagePreviewHeight('140')
                 ->disk('public')
                 ->directory('home/promos')
                 ->maxSize(2048)
