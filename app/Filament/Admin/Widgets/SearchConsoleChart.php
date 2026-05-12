@@ -47,19 +47,17 @@ class SearchConsoleChart extends ChartWidget
                 [
                     'label' => 'Clicks',
                     'data' => $clicks,
+                    'backgroundColor' => '#E30613',
                     'borderColor' => '#E30613',
-                    'backgroundColor' => 'rgba(227, 6, 19, 0.12)',
-                    'fill' => true,
-                    'tension' => 0.35,
+                    'borderWidth' => 0,
                     'yAxisID' => 'y',
                 ],
                 [
                     'label' => 'Impressions',
                     'data' => $impressions,
+                    'backgroundColor' => '#1F2356',
                     'borderColor' => '#1F2356',
-                    'backgroundColor' => 'transparent',
-                    'borderDash' => [4, 4],
-                    'tension' => 0.35,
+                    'borderWidth' => 0,
                     'yAxisID' => 'y1',
                 ],
             ],
@@ -69,7 +67,7 @@ class SearchConsoleChart extends ChartWidget
 
     protected function getType(): string
     {
-        return 'line';
+        return 'bar';
     }
 
     protected function getOptions(): array
