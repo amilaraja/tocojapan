@@ -3,7 +3,11 @@
 namespace App\Cms\Templates;
 
 use App\Cms\PageTemplate;
+use App\Models\BodyType;
+use App\Models\Make;
 use App\Models\Page;
+use App\Models\Testimonial;
+use App\Models\Vehicle;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -201,7 +205,34 @@ class HomeTemplate implements PageTemplate
 
     public static function render(Page $page): View
     {
-        return view('home', ['content' => $page->data ?? []]);
+        $featured = Vehicle::query()
+            ->published()
+            ->with(['make', 'vehicleModel', 'bodyType', 'media'])
+            ->orderByDesc('published_at')
+            ->limit(8)
+            ->get();
+
+        $makesWithCounts = Make::where('is_active', true)
+            ->with('media')
+            ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
+            ->orderByDesc('published_count')->orderBy('name')->limit(12)->get();
+
+        $bodyTypesWithCounts = BodyType::where('is_active', true)
+            ->with('media')
+            ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
+            ->orderByDesc('published_count')->orderBy('name')->limit(8)->get();
+
+        return view('home', [
+            'content' => $page->data ?? [],
+            'featured' => $featured,
+            'makesWithCounts' => $makesWithCounts,
+            'bodyTypesWithCounts' => $bodyTypesWithCounts,
+            'allMakes' => Make::where('is_active', true)->orderBy('name')->get(['id', 'slug', 'name']),
+            'allBodyTypes' => BodyType::where('is_active', true)->with('media')->orderBy('name')->get(),
+            'totalPublished' => Vehicle::query()->published()->count(),
+            'testimonials' => Testimonial::query()
+                ->featured()->with('media')->orderBy('sort_order')->orderByDesc('created_at')->limit(12)->get(),
+        ]);
     }
 
     /**
@@ -210,13 +241,23 @@ class HomeTemplate implements PageTemplate
     private static function promoTileSchema(): array
     {
         return [
-            Select::make('tone')
-                ->options(['red' => 'Red', 'navy' => 'Navy', 'silver' => 'Silver'])
-                ->default('navy')
+            FileUpload::make('image')
+                ->label('Image')
+                ->image()
+                ->imageEditor()
+                ->disk('public')
+                ->directory('home/promos')
+                ->maxSize(2048)
+                ->required()
+                ->columnSpanFull(),
+            TextInput::make('url')
+                ->label('Link URL')
+                ->placeholder('https://… or /vehicles?make=toyota')
                 ->required(),
-            TextInput::make('title')->required(),
-            TextInput::make('sub')->label('Sub-text (mono)')->placeholder('660cc · RHD'),
-            TextInput::make('url')->placeholder('Optional'),
+            TextInput::make('title')
+                ->label('Link title (shown on hover, used for alt text)')
+                ->placeholder('Browse kei trucks')
+                ->required(),
         ];
     }
 }

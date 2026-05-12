@@ -41,18 +41,16 @@
                 <div class="hidden lg:flex flex-col gap-3">
                     @foreach ($promoLeft as $tile)
                         @php
-                            $iconBg = match($tile['tone'] ?? 'navy') { 'red' => 'bg-toco-red text-white', 'navy' => 'bg-toco-navy text-white', default => 'bg-toco-silver text-toco-navy' };
+                            $img = $tile['image'] ?? '';
+                            if ($img !== '' && ! str_starts_with($img, '/') && ! str_starts_with($img, 'http')) {
+                                $img = '/storage/'.$img;
+                            }
                         @endphp
-                        <a href="{{ $tile['url'] ?? '#' }}" class="bg-white text-ink rounded-sm border border-line hover:border-ink hover:translate-x-[-2px] transition flex items-center gap-3 px-3.5 py-3 min-h-[76px]">
-                            <span class="w-9 h-9 grid place-items-center {{ $iconBg }} rounded-sm shrink-0">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
-                            </span>
-                            <span class="flex-1 min-w-0">
-                                <span class="block font-bold text-[13px] leading-tight">{{ $tile['title'] ?? '' }}</span>
-                                <span class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mt-0.5">{{ $tile['sub'] ?? '' }}</span>
-                            </span>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-ink-soft shrink-0"><path d="m9 6 6 6-6 6"/></svg>
-                        </a>
+                        @if ($img !== '')
+                            <a href="{{ $tile['url'] ?? '#' }}" title="{{ $tile['title'] ?? '' }}" class="block rounded-sm overflow-hidden border border-line hover:border-toco-red hover:-translate-x-[2px] transition">
+                                <img src="{{ $img }}" alt="{{ $tile['title'] ?? '' }}" class="w-full h-auto block" loading="lazy">
+                            </a>
+                        @endif
                     @endforeach
                 </div>
 
@@ -111,18 +109,16 @@
                 <div class="hidden lg:flex flex-col gap-3">
                     @foreach ($promoRight as $tile)
                         @php
-                            $iconBg = match($tile['tone'] ?? 'navy') { 'red' => 'bg-toco-red text-white', 'navy' => 'bg-toco-navy text-white', default => 'bg-toco-silver text-toco-navy' };
+                            $img = $tile['image'] ?? '';
+                            if ($img !== '' && ! str_starts_with($img, '/') && ! str_starts_with($img, 'http')) {
+                                $img = '/storage/'.$img;
+                            }
                         @endphp
-                        <a href="{{ $tile['url'] ?? '#' }}" class="bg-white text-ink rounded-sm border border-line hover:border-ink hover:translate-x-[2px] transition flex items-center gap-3 px-3.5 py-3 min-h-[76px]">
-                            <span class="w-9 h-9 grid place-items-center {{ $iconBg }} rounded-sm shrink-0">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
-                            </span>
-                            <span class="flex-1 min-w-0">
-                                <span class="block font-bold text-[13px] leading-tight">{{ $tile['title'] ?? '' }}</span>
-                                <span class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mt-0.5">{{ $tile['sub'] ?? '' }}</span>
-                            </span>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-ink-soft shrink-0"><path d="m9 6 6 6-6 6"/></svg>
-                        </a>
+                        @if ($img !== '')
+                            <a href="{{ $tile['url'] ?? '#' }}" title="{{ $tile['title'] ?? '' }}" class="block rounded-sm overflow-hidden border border-line hover:border-toco-red hover:translate-x-[2px] transition">
+                                <img src="{{ $img }}" alt="{{ $tile['title'] ?? '' }}" class="w-full h-auto block" loading="lazy">
+                            </a>
+                        @endif
                     @endforeach
                 </div>
             </div>
