@@ -1,5 +1,8 @@
 @php
-    $title = 'Toco Japan — Japanese cars, delivered worldwide';
+    $title = 'Used Japanese cars for export — Toco Japan';
+    $description = ($totalPublished ?? 0) > 0
+        ? number_format($totalPublished).' used Japanese vehicles ready to export — RHD/LHD, RoRo & container shipping worldwide. FOB Yokohama from $1,500. CIF quote to your port in minutes.'
+        : 'Used Japanese vehicles for export to your country — RHD/LHD, RoRo & container shipping worldwide. FOB Yokohama, transparent CIF quotes to your port.';
 
     // Defaults — used whenever the CMS data hasn't been set yet (or falls
     // back to the v5 sample content for a freshly-seeded site).
@@ -32,7 +35,23 @@
     })->all();
 @endphp
 
-<x-layouts.site :title="$title">
+<x-layouts.site :title="$title" :description="$description">
+    @push('head')
+        <script type="application/ld+json">
+        {!! json_encode([
+            '@context' => 'https://schema.org',
+            '@type' => 'AutoDealer',
+            'name' => config('app.name', 'Toco Japan'),
+            'url' => url('/'),
+            'logo' => asset('img/footer-logos/toco.png'),
+            'description' => 'Japanese used-car exporter. Yokohama-based, shipping worldwide since 2009.',
+            'address' => ['@type' => 'PostalAddress', 'addressCountry' => 'JP', 'addressLocality' => 'Yokohama'],
+            'sameAs' => array_values(array_filter([
+                app(\App\Settings\SocialSettings::class)->facebook_page_id ? 'https://facebook.com/'.app(\App\Settings\SocialSettings::class)->facebook_page_id : null,
+            ])),
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+        </script>
+    @endpush
     {{-- Hero band --}}
     <section class="bg-gradient-to-b from-toco-navy to-toco-navy-deep text-white pt-4 pb-24">
         <div class="max-w-[1600px] mx-auto px-6 2xl:px-8">

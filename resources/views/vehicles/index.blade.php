@@ -1,8 +1,16 @@
 @php
-    $title = 'Vehicles for export — Toco Japan';
+    $activeMake = ($filters['make'] ?? '') ? ($makes->firstWhere('slug', $filters['make'])?->name) : null;
+    $activeBody = ($filters['body_type'] ?? '') ? \Illuminate\Support\Str::title(str_replace('-', ' ', $filters['body_type'])) : null;
+    $facet = trim(($activeMake ?? '').' '.($activeBody ?? '')) ?: null;
+    $title = $facet
+        ? "Used Japanese {$facet} for export — Toco Japan"
+        : 'Used Japanese cars for export — Toco Japan';
+    $description = $facet
+        ? number_format($vehicles->total()).' used '.$facet.' vehicles ready to ship from Yokohama. RHD/LHD, RoRo & container, FOB or CIF to your port.'
+        : number_format($vehicles->total()).' used Japanese vehicles in stock — Toyota, Honda, Nissan, Mazda and more. Yokohama FOB, worldwide CIF.';
 @endphp
 
-<x-layouts.site :title="$title">
+<x-layouts.site :title="$title" :description="$description">
     {{-- Page header band --}}
     <section class="bg-gradient-to-b from-toco-navy to-toco-navy-deep text-white">
         <div class="max-w-[1600px] mx-auto px-6 2xl:px-8 py-8 md:py-10">

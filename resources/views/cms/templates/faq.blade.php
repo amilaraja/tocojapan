@@ -1,4 +1,25 @@
 <x-layouts.cms :page="$page">
+    @php
+        $faqItems = collect($page->data['groups'] ?? [])
+            ->flatMap(fn ($g) => collect($g['items'] ?? [])->filter(fn ($i) => ! empty($i['question']) && ! empty($i['answer'])))
+            ->map(fn ($i) => [
+                '@type' => 'Question',
+                'name' => $i['question'],
+                'acceptedAnswer' => ['@type' => 'Answer', 'text' => $i['answer']],
+            ])->values()->all();
+    @endphp
+    @if (! empty($faqItems))
+        @push('head')
+            <script type="application/ld+json">
+            {!! json_encode([
+                '@context' => 'https://schema.org',
+                '@type' => 'FAQPage',
+                'mainEntity' => $faqItems,
+            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+            </script>
+        @endpush
+    @endif
+
     <section class="bg-gradient-to-b from-toco-navy to-toco-navy-deep text-white">
         <div class="max-w-[1100px] mx-auto px-6 py-12 md:py-16">
             @if (! empty($page->data['kicker']))

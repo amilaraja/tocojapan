@@ -4,8 +4,25 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? config('app.name', 'Toco Japan') }}</title>
-    <meta name="description" content="{{ $description ?? 'Toco Japan — quality Japanese vehicles, exported worldwide. Browse stock, get a CIF quote, and import with confidence.' }}">
+    @php
+        $resolvedTitle = $title ?? config('app.name', 'Toco Japan');
+        $resolvedDescription = $description ?? 'Toco Japan — quality Japanese vehicles, exported worldwide. Browse stock, get a CIF quote, and import with confidence.';
+        $resolvedOgImage = $ogImage ?? asset('img/footer-logos/toco.png');
+        $resolvedCanonical = $canonical ?? url()->current();
+    @endphp
+    <title>{{ $resolvedTitle }}</title>
+    <meta name="description" content="{{ $resolvedDescription }}">
+    <link rel="canonical" href="{{ $resolvedCanonical }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ config('app.name', 'Toco Japan') }}">
+    <meta property="og:title" content="{{ $resolvedTitle }}">
+    <meta property="og:description" content="{{ $resolvedDescription }}">
+    <meta property="og:url" content="{{ $resolvedCanonical }}">
+    <meta property="og:image" content="{{ $resolvedOgImage }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $resolvedTitle }}">
+    <meta name="twitter:description" content="{{ $resolvedDescription }}">
+    <meta name="twitter:image" content="{{ $resolvedOgImage }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('head')
 </head>

@@ -1,8 +1,9 @@
 @php
-    $title = 'CIF calculator — Toco Japan';
+    $title = 'CIF shipping calculator — Toco Japan';
+    $description = 'Calculate the CIF total from any Japanese vehicle\'s FOB price, m³ volume and destination port. Live freight rates, insurance pre-applied. Free, no signup.';
 @endphp
 
-<x-layouts.site :title="$title">
+<x-layouts.site :title="$title" :description="$description">
     {{-- Page header --}}
     <section class="bg-gradient-to-b from-toco-navy to-toco-navy-deep text-white">
         <div class="max-w-[1600px] mx-auto px-6 2xl:px-8 py-10">
