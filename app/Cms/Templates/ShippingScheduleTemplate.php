@@ -5,7 +5,7 @@ namespace App\Cms\Templates;
 use App\Cms\PageTemplate;
 use App\Models\Page;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\RichEditor;
+use App\Cms\Editor;
 use Filament\Forms\Components\TextInput;
 use Illuminate\Contracts\View\View;
 
@@ -29,7 +29,7 @@ class ShippingScheduleTemplate implements PageTemplate
         return [
             TextInput::make('data.headline')->label('Headline')->maxLength(180),
             TextInput::make('data.kicker')->label('Kicker')->maxLength(60),
-            RichEditor::make('data.intro')->label('Intro text (optional)')->columnSpanFull(),
+            Editor::make('data.intro', 'Intro text (optional)'),
             FileUpload::make('data.image')
                 ->label('Shipping schedule image')
                 ->image()

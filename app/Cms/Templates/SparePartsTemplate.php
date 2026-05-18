@@ -5,7 +5,7 @@ namespace App\Cms\Templates;
 use App\Cms\PageTemplate;
 use App\Models\Country;
 use App\Models\Page;
-use Filament\Forms\Components\RichEditor;
+use App\Cms\Editor;
 use Filament\Forms\Components\TextInput;
 use Illuminate\Contracts\View\View;
 
@@ -29,7 +29,7 @@ class SparePartsTemplate implements PageTemplate
         return [
             TextInput::make('data.headline')->label('Headline')->maxLength(180),
             TextInput::make('data.kicker')->label('Kicker')->maxLength(60),
-            RichEditor::make('data.body')->label('Intro / ordering steps')->columnSpanFull(),
+            Editor::make('data.body', 'Intro / ordering steps'),
         ];
     }
 

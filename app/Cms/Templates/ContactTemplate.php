@@ -6,7 +6,7 @@ use App\Cms\PageTemplate;
 use App\Models\Page;
 use App\Settings\GeneralSettings;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\RichEditor;
+use App\Cms\Editor;
 use Filament\Forms\Components\TextInput;
 use Illuminate\Contracts\View\View;
 
@@ -30,7 +30,7 @@ class ContactTemplate implements PageTemplate
         return [
             TextInput::make('data.headline')->label('Headline')->maxLength(180),
             TextInput::make('data.kicker')->label('Kicker')->maxLength(60),
-            RichEditor::make('data.intro')->label('Intro paragraph')->columnSpanFull(),
+            Editor::make('data.intro', 'Intro paragraph'),
             TextInput::make('data.company_name')->label('Registered company name'),
             TextInput::make('data.fax')->label('Fax number'),
             TextInput::make('data.office_hours')->label('Office hours')->placeholder('9:00 am – 6:00 pm'),

@@ -6,7 +6,7 @@ use App\Cms\PageTemplate;
 use App\Models\Country;
 use App\Models\Page;
 use App\Models\Vehicle;
-use Filament\Forms\Components\RichEditor;
+use App\Cms\Editor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
@@ -38,10 +38,10 @@ class CountryLandingTemplate implements PageTemplate
             TextInput::make('data.headline')->label('Headline')->maxLength(180)
                 ->helperText('e.g. "Japanese cars to Sri Lanka"'),
             TextInput::make('data.kicker')->label('Kicker')->maxLength(60),
-            RichEditor::make('data.intro')->label('Intro paragraph')->columnSpanFull(),
+            Editor::make('data.intro', 'Intro paragraph'),
             Section::make('Body sections')
                 ->schema([
-                    RichEditor::make('data.body')->label('Body')->columnSpanFull(),
+                    Editor::make('data.body', 'Body'),
                 ]),
         ];
     }

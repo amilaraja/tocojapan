@@ -7,6 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "amidesfahani/filament-tinyeditor": "^4.0",
         "filament/filament": "^5.6",
         "filament/spatie-laravel-media-library-plugin": "^5.6",
         "google/apiclient": "^2.19",

@@ -2,9 +2,9 @@
 
 namespace App\Cms\Templates;
 
+use App\Cms\Editor;
 use App\Cms\PageTemplate;
 use App\Models\Page;
-use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\TextInput;
 use Illuminate\Contracts\View\View;
 
@@ -28,7 +28,7 @@ class DefaultTemplate implements PageTemplate
         return [
             TextInput::make('data.headline')->label('Headline')->maxLength(180),
             TextInput::make('data.kicker')->label('Kicker')->maxLength(60)->helperText('Small uppercase line above the headline.'),
-            RichEditor::make('data.body')->label('Body')->columnSpanFull(),
+            Editor::make('data.body', 'Body'),
         ];
     }
 

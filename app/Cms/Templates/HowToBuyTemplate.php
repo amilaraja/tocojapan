@@ -6,7 +6,7 @@ use App\Cms\PageTemplate;
 use App\Models\Page;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\RichEditor;
+use App\Cms\Editor;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Illuminate\Contracts\View\View;
@@ -46,7 +46,7 @@ class HowToBuyTemplate implements PageTemplate
                 ->reorderable()
                 ->collapsible()
                 ->itemLabel(fn (array $state): ?string => $state['title'] ?? null),
-            RichEditor::make('data.intro')->label('Intro text (below the steps)')->columnSpanFull(),
+            Editor::make('data.intro', 'Intro text (below the steps)'),
         ];
     }
 
