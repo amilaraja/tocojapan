@@ -4,6 +4,7 @@ namespace App\Cms;
 
 use App\Cms\Templates\ContactTemplate;
 use App\Cms\Templates\CountryLandingTemplate;
+use App\Cms\Templates\CustomerReviewsTemplate;
 use App\Cms\Templates\DefaultTemplate;
 use App\Cms\Templates\FaqTemplate;
 use App\Cms\Templates\HomeTemplate;
@@ -29,6 +30,7 @@ class PageTemplateRegistry
             ImportRegulationsTemplate::class,
             HowToBuyTemplate::class,
             ShippingScheduleTemplate::class,
+            CustomerReviewsTemplate::class,
         ];
     }
 
