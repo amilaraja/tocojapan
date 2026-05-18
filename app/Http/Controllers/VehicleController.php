@@ -43,9 +43,9 @@ class VehicleController extends Controller
         $testimonials = Testimonial::query()
             ->featured()
             ->with('media')
-            ->orderBy('sort_order')
             ->orderByDesc('created_at')
-            ->limit(12)
+            ->orderBy('sort_order')
+            ->limit(10)
             ->get();
 
         // Resolve the editable Home page content from the CMS, if present.

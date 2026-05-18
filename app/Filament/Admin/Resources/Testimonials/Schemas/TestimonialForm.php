@@ -51,6 +51,7 @@ class TestimonialForm
                     ->schema([
                         SpatieMediaLibraryFileUpload::make('photo')
                             ->collection('photo')
+                            ->disk('public')
                             ->image()
                             ->required()
                             ->columnSpanFull(),
