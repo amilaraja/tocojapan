@@ -3,15 +3,18 @@
 use App\Http\Controllers\BankTransferController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CifController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FavoriteController;
+use App\Http\Controllers\NewsController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\SparePartController;
 use App\Http\Controllers\VehicleController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +24,13 @@ Route::get('/vehicles', [VehicleController::class, 'index'])->name('vehicles.ind
 Route::get('/vehicles/{slug}', [VehicleController::class, 'show'])->name('vehicles.show');
 
 Route::get('/cif', [CifController::class, 'index'])->name('cif.index');
+
+Route::get('/news', [NewsController::class, 'index'])->name('news.index');
+Route::get('/news/{slug}', [NewsController::class, 'show'])->name('news.show');
+
+Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
+
+Route::post('/order-spareparts', [SparePartController::class, 'submit'])->name('spareparts.submit');
 
 Route::post('/currency/{code}', [CurrencyController::class, 'set'])->name('currency.set');
 
@@ -58,6 +68,7 @@ Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap')
 Route::get('/sitemap-static.xml', [SitemapController::class, 'staticPages'])->name('sitemap.static');
 Route::get('/sitemap-pages.xml', [SitemapController::class, 'pages'])->name('sitemap.pages');
 Route::get('/sitemap-vehicles.xml', [SitemapController::class, 'vehicles'])->name('sitemap.vehicles');
+Route::get('/sitemap-news.xml', [SitemapController::class, 'news'])->name('sitemap.news');
 Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
 
 require __DIR__.'/auth.php';

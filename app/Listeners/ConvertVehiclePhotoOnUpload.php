@@ -55,7 +55,7 @@ class ConvertVehiclePhotoOnUpload
         $newRelative = $media->id.'/'.$newFileName;
         $newAbsolute = $disk->path($newRelative);
 
-        $refNo = $media->model?->ref_no;
+        $refNo = $media->model?->stock_no ?: $media->model?->ref_no;
 
         if ($newAbsolute === $originalAbsolute && $media->mime_type === 'image/webp') {
             // Already a webp at the right path — still resize/watermark in place.

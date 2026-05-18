@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\Testimonials\Schemas;
 
+use App\Models\Country;
 use App\Models\Vehicle;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
@@ -27,10 +28,16 @@ class TestimonialForm
                         TextInput::make('country')
                             ->placeholder('Congo')
                             ->columnSpan(1),
-                        TextInput::make('flag')
-                            ->label('Flag emoji')
-                            ->placeholder('🇨🇩')
-                            ->maxLength(8)
+                        Select::make('flag')
+                            ->label('Flag')
+                            ->placeholder('Pick a country flag')
+                            ->options(fn () => Country::orderBy('name')
+                                ->get()
+                                ->mapWithKeys(fn ($c) => [$c->flagEmoji() => $c->flagEmoji().'  '.$c->name])
+                                ->filter(fn ($label, $emoji) => $emoji !== '')
+                                ->all())
+                            ->searchable()
+                            ->native(false)
                             ->columnSpan(1),
                         TextInput::make('vehicle_label')
                             ->label('Vehicle (free text)')
@@ -45,7 +52,6 @@ class TestimonialForm
                         SpatieMediaLibraryFileUpload::make('photo')
                             ->collection('photo')
                             ->image()
-                            ->imageEditor()
                             ->required()
                             ->columnSpanFull(),
                     ]),

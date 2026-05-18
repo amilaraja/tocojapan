@@ -17,6 +17,7 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\Width;
 use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -35,6 +36,7 @@ class AdminPanelProvider extends PanelProvider
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->login(Login::class)
             ->brandName('Toco Japan Admin')
+            ->maxContentWidth(Width::Full)
             ->renderHook(PanelsRenderHook::HEAD_END, fn (): string => Blade::render('@include("filament.admin.auth.head")'))
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn (): string => Blade::render('@include("filament.admin.auth.turnstile")'))
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_BEFORE, fn (): string => Blade::render('@include("filament.admin.auth.brand")'))

@@ -20,6 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
+
+        // Runs on every request (public + Filament admin) so a CMS save
+        // in the admin panel can emit the LiteSpeed purge header.
+        $middleware->append(\App\Http\Middleware\PurgeLiteSpeedCache::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

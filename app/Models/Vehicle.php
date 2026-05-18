@@ -141,6 +141,7 @@ class Vehicle extends Model implements HasMedia
                 $term = '%'.$filters['q'].'%';
                 $q->where('title', 'like', $term)
                     ->orWhere('ref_no', 'like', $term)
+                    ->orWhere('stock_no', 'like', $term)
                     ->orWhereHas('make', fn ($q) => $q->where('name', 'like', $term))
                     ->orWhereHas('vehicleModel', fn ($q) => $q->where('name', 'like', $term));
             }));
@@ -158,5 +159,16 @@ class Vehicle extends Model implements HasMedia
     {
         $this->addMediaCollection('photos');
         $this->addMediaCollection('documents')->singleFile();
+        $this->addMediaCollection('video')
+            ->singleFile()
+            ->acceptsMimeTypes(['video/mp4', 'video/webm', 'video/quicktime']);
+    }
+
+    /** Public URL of the vehicle's walkaround video, or null when none. */
+    public function videoUrl(): ?string
+    {
+        $url = $this->getFirstMediaUrl('video');
+
+        return $url ?: null;
     }
 }

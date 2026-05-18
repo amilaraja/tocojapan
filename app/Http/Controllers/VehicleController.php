@@ -21,13 +21,13 @@ class VehicleController extends Controller
             ->published()
             ->with(['make', 'vehicleModel', 'bodyType', 'media'])
             ->orderByDesc('published_at')
-            ->limit(8)
+            ->limit(16)
             ->get();
 
         $makesWithCounts = Make::where('is_active', true)
             ->with('media')
             ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
-            ->orderByDesc('published_count')
+            ->orderBy('sort_order')
             ->orderBy('name')
             ->limit(12)
             ->get();
@@ -60,7 +60,7 @@ class VehicleController extends Controller
             'bodyTypesWithCounts' => $bodyTypesWithCounts,
             'allMakes' => Make::where('is_active', true)
                 ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
-                ->orderBy('name')->get(['id', 'slug', 'name']),
+                ->orderBy('sort_order')->orderBy('name')->get(['id', 'slug', 'name']),
             'allBodyTypes' => BodyType::where('is_active', true)
                 ->with('media')
                 ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
@@ -81,7 +81,7 @@ class VehicleController extends Controller
     {
         $filters = $request->validated();
         $sort = $filters['sort'] ?? 'latest';
-        $perPage = (int) ($filters['per_page'] ?? 12);
+        $perPage = (int) ($filters['per_page'] ?? 20);
 
         $vehicles = Vehicle::query()
             ->published()
@@ -96,7 +96,7 @@ class VehicleController extends Controller
             'filters' => $filters,
             'makes' => Make::where('is_active', true)
                 ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
-                ->orderBy('name')->get(['id', 'slug', 'name']),
+                ->orderBy('sort_order')->orderBy('name')->get(['id', 'slug', 'name']),
             'bodyTypes' => BodyType::where('is_active', true)
                 ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
                 ->orderBy('name')->get(['id', 'slug', 'name']),

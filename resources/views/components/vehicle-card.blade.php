@@ -13,19 +13,24 @@
         <div class="relative aspect-[4/3] bg-toco-silver-2 overflow-hidden">
             <img src="{{ $photo ?: $fallbackPhoto }}" alt="{{ $vehicle->title }}" class="w-full h-full object-cover transition group-hover:scale-[1.02] {{ $isSold ? 'grayscale' : '' }}">
             @if ($isSold)
-                <span class="absolute top-2 left-2 bg-toco-navy text-white text-[11px] font-bold uppercase tracking-widest px-2.5 py-1 font-mono rounded-sm shadow">SOLD</span>
+                <span class="absolute top-2 left-2 bg-toco-red text-white text-[11px] font-bold uppercase tracking-widest px-2.5 py-1 font-mono rounded-sm shadow">SOLD</span>
             @elseif ($isNew)
                 <span class="absolute top-2 left-2 bg-toco-red text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1 font-mono">New</span>
             @endif
         </div>
         <div class="p-3">
-            <p class="font-mono text-[10px] tracking-widest uppercase text-ink-soft">
-                {{ $vehicle->year_first_reg }} · {{ number_format((int) $vehicle->mileage_km) }}km · {{ strtoupper((string) $vehicle->transmission) }}
-            </p>
+            <div class="flex items-center justify-between gap-2">
+                <p class="font-mono text-[10px] tracking-widest uppercase text-ink-soft">
+                    {{ $vehicle->year_first_reg }} · {{ number_format((int) $vehicle->mileage_km) }}km · {{ strtoupper((string) $vehicle->transmission) }}
+                </p>
+                @if ($vehicle->stock_no)
+                    <p class="font-mono text-[10px] tracking-widest font-bold text-toco-red shrink-0">#{{ $vehicle->stock_no }}</p>
+                @endif
+            </div>
             <h3 class="font-bold text-toco-navy mt-1 leading-tight line-clamp-2">{{ $vehicle->title }}</h3>
             <div class="mt-3 flex items-end justify-between">
                 <div>
-                    <p class="font-mono text-[10px] tracking-widest uppercase text-ink-soft">FOB Yokohama</p>
+                    <p class="font-mono text-[10px] tracking-widest uppercase text-ink-soft">FOB</p>
                     <p class="font-extrabold text-toco-red text-lg leading-none mt-0.5">
                         @if ($vehicle->price_on_request)
                             On request

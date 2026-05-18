@@ -1,4 +1,5 @@
 @php
+    $showStockCounts = app(\App\Settings\GeneralSettings::class)->show_stock_counts;
     $title = 'Used Japanese cars for export — Toco Japan';
     $description = ($totalPublished ?? 0) > 0
         ? number_format($totalPublished).' used Japanese vehicles ready to export — RHD/LHD, RoRo & container shipping worldwide. FOB Yokohama from $1,500. CIF quote to your port in minutes.'
@@ -78,6 +79,24 @@
                     x-data="{ idx: 0, slides: @js(array_map(fn($s) => $s['image'] ?? '', $heroSlides)), next() { this.idx = (this.idx + 1) % this.slides.length }, prev() { this.idx = (this.idx - 1 + this.slides.length) % this.slides.length } }"
                     x-init="setInterval(() => next(), 6000)"
                 >
+                    {{-- Seasonal strip — image-only, links to the CTA URL. Sits above the slider. --}}
+                    @if (! empty($content['seasonal']['enabled'] ?? true))
+                        @php
+                            $sx = $content['seasonal'] ?? [];
+                            $sxImg = $sx['image'] ?? '/img/v5/seasonal-banner.jpg';
+                            $sxUrl = $sx['cta_url'] ?? route('vehicles.index');
+                            $sxAlt = $sx['tag'] ?? 'Seasonal promotion';
+                            // FileUpload paths are relative — prefix /storage/ if so.
+                            if ($sxImg !== '' && ! str_starts_with($sxImg, '/') && ! str_starts_with($sxImg, 'http')) {
+                                $sxImg = '/storage/'.$sxImg;
+                            }
+                        @endphp
+                        <a href="{{ $sxUrl }}" aria-label="{{ $sxAlt }}"
+                           class="mb-3 block overflow-hidden border border-white/10 rounded-sm">
+                            <img src="{{ $sxImg }}" alt="{{ $sxAlt }}" class="block w-full h-auto">
+                        </a>
+                    @endif
+
                     {{-- Slider auto-sizes to the natural image height. The
                          first image (rendered statically, opacity-0 if not
                          active) sets the box height; the others overlay
@@ -105,25 +124,7 @@
                         </div>
                     </div>
 
-                    {{-- Seasonal strip — image-only, links to the CTA URL. --}}
-                    @if (! empty($content['seasonal']['enabled'] ?? true))
-                        @php
-                            $sx = $content['seasonal'] ?? [];
-                            $sxImg = $sx['image'] ?? '/img/v5/seasonal-banner.jpg';
-                            $sxUrl = $sx['cta_url'] ?? route('vehicles.index');
-                            $sxAlt = $sx['tag'] ?? 'Seasonal promotion';
-                            // FileUpload paths are relative — prefix /storage/ if so.
-                            if ($sxImg !== '' && ! str_starts_with($sxImg, '/') && ! str_starts_with($sxImg, 'http')) {
-                                $sxImg = '/storage/'.$sxImg;
-                            }
-                        @endphp
-                        <a href="{{ $sxUrl }}" aria-label="{{ $sxAlt }}"
-                           class="mt-3 block overflow-hidden border border-white/10 rounded-sm">
-                            <img src="{{ $sxImg }}" alt="{{ $sxAlt }}" class="block w-full h-auto">
-                        </a>
-                    @endif
-
-                    {{-- Search panel — inline under the seasonal strip --}}
+                    {{-- Search panel --}}
                     <div class="bg-white text-ink border border-line rounded-sm shadow-[0_10px_30px_rgba(16,20,58,.18)] p-4 md:p-5 mt-3"
                         x-data="{
                             tab: 'make',
@@ -202,11 +203,11 @@
                             @endforeach
                         </div>
 
-                        <form @submit.prevent="submit()" x-show="tab === 'make'" class="grid grid-cols-2 gap-2">
+                        <form @submit.prevent="submit()" x-show="tab === 'make'" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
                             <select x-model="makeSlug" @change="loadModels(makeSlug)" class="w-full text-sm">
                                 <option value="">Any make</option>
                                 @foreach ($allMakes as $m)
-                                    <option value="{{ $m->slug }}" {{ ($m->published_count ?? 0) === 0 ? 'disabled' : '' }}>{{ $m->name }} ({{ $m->published_count ?? 0 }})</option>
+                                    <option value="{{ $m->slug }}" {{ ($m->published_count ?? 0) === 0 ? 'disabled' : '' }}>{{ $m->name }}@if ($showStockCounts) ({{ $m->published_count ?? 0 }})@endif</option>
                                 @endforeach
                             </select>
                             <select x-model="modelSlug" :disabled="loadingModels || !makeSlug" class="w-full text-sm disabled:bg-toco-silver-2">
@@ -223,9 +224,10 @@
                                 <option value="">Any price</option>
                                 @foreach ([3000, 5000, 8000, 12000, 20000, 35000, 60000] as $p)<option value="{{ $p }}">≤ ${{ number_format($p) }}</option>@endforeach
                             </select>
-                            <button type="submit" :disabled="matchCount === 0" class="col-span-2 bg-toco-red hover:bg-toco-red-deep disabled:bg-toco-silver-2 disabled:text-ink-soft disabled:cursor-not-allowed text-white font-bold uppercase tracking-widest text-xs px-4 py-2.5 rounded-sm inline-flex items-center justify-center gap-2">
+                            <button type="submit" :disabled="matchCount === 0" class="col-span-2 md:col-span-2 lg:col-span-1 bg-toco-red hover:bg-toco-red-deep disabled:bg-toco-silver-2 disabled:text-ink-soft disabled:cursor-not-allowed text-white font-bold uppercase tracking-widest text-xs px-3 py-2.5 rounded-sm inline-flex items-center justify-center gap-1.5 whitespace-nowrap">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-                                <span x-text="countLoading ? 'Counting…' : ('Search ' + matchCount.toLocaleString() + ' vehicles')"></span>
+                                <span class="lg:hidden" x-text="countLoading ? 'Counting…' : ('Search ' + matchCount.toLocaleString() + ' vehicles')"></span>
+                                <span class="hidden lg:inline" x-text="countLoading ? '…' : ('Search · ' + matchCount.toLocaleString())"></span>
                             </button>
                         </form>
 
@@ -235,7 +237,7 @@
                                     @if ($bt->getLogoUrl())
                                         <img src="{{ $bt->getLogoUrl() }}" alt="" class="h-7 w-auto" loading="lazy">
                                     @endif
-                                    <span>{{ $bt->name }} ({{ $bt->published_count ?? 0 }})</span>
+                                    <span>{{ $bt->name }}@if ($showStockCounts) ({{ $bt->published_count ?? 0 }})@endif</span>
                                 </button>
                             @endforeach
                         </form>
@@ -248,9 +250,12 @@
                             @endforeach
                         </form>
 
-                        <form @submit.prevent="submit()" x-show="tab === 'ref'" x-cloak class="flex gap-2">
-                            <input x-model="stockRef" type="text" placeholder="TJ-LUY908" class="flex-1 text-sm">
-                            <button type="submit" class="bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-3 py-2 rounded-sm">Find</button>
+                        <form @submit.prevent="submit()" x-show="tab === 'ref'" x-cloak class="flex flex-col gap-1.5">
+                            <label class="font-mono text-[10px] uppercase tracking-widest text-ink-soft">Search by stock number</label>
+                            <div class="flex gap-2">
+                                <input x-model="stockRef" type="text" placeholder="e.g. E01888" class="flex-1 text-sm">
+                                <button type="submit" class="bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-3 py-2 rounded-sm">Find</button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -290,6 +295,9 @@
 
     {{-- How it works --}}
     @include('partials.home-how', ['content' => $content])
+
+    {{-- Buyer FAQ (with FAQPage JSON-LD for rich results) --}}
+    @include('partials.home-faq', ['content' => $content])
 
     {{-- CTA strip --}}
     @php

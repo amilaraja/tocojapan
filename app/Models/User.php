@@ -16,7 +16,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'phone', 'country_id', 'locale', 'preferred_currency'])]
+#[Fillable(['name', 'email', 'password', 'phone', 'address', 'country_id', 'locale', 'preferred_currency', 'avatar_path'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 {
@@ -71,5 +71,15 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     public function hasFavorited(Vehicle $vehicle): bool
     {
         return $this->favorites()->where('vehicle_id', $vehicle->id)->exists();
+    }
+
+    /** Public URL of the user's avatar, or null when none is set. */
+    public function avatarUrl(): ?string
+    {
+        if (! $this->avatar_path) {
+            return null;
+        }
+
+        return \Illuminate\Support\Facades\Storage::disk('public')->url($this->avatar_path);
     }
 }

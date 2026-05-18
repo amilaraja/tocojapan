@@ -21,6 +21,14 @@ class PortForm
                 TextInput::make('slug')
                     ->required(),
                 TextInput::make('unlocode'),
+                Select::make('shipping_modes')
+                    ->label('Shipping modes supported')
+                    ->helperText('Which shipping methods this port can receive.')
+                    ->multiple()
+                    ->options([
+                        'roro' => 'RORO',
+                        'container' => 'Container',
+                    ]),
                 TextInput::make('rate_per_m3')
                     ->required()
                     ->numeric(),

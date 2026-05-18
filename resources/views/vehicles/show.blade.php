@@ -4,6 +4,7 @@
     if ($photoUrls->isEmpty()) {
         $photoUrls = collect(['/img/v5/car-'.((($vehicle->id % 4) + 1)).'.jpg']);
     }
+    $videoUrl = $vehicle->videoUrl();
 
     // Buy-now state — hoisted to top so it's in scope regardless of any
     // x-component closures further down in the view.
@@ -116,12 +117,12 @@
             <span class="mx-1.5">/</span>
             <a href="{{ route('vehicles.index') }}?make={{ $vehicle->make->slug }}" class="hover:text-toco-red">{{ $vehicle->make->name }}</a>
             <span class="mx-1.5">/</span>
-            <span class="text-ink">{{ $vehicle->ref_no }}</span>
+            <span class="text-ink">{{ $vehicle->stock_no ?: $vehicle->ref_no }}</span>
         </div>
     </div>
 
     <section class="max-w-[1600px] mx-auto px-6 2xl:px-8 pt-6 pb-2">
-        <p class="font-mono text-[10px] uppercase tracking-widest text-ink-soft">{{ $vehicle->ref_no }}</p>
+        <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">{{ $vehicle->stock_no ? 'Stock #'.$vehicle->stock_no : $vehicle->ref_no }}</p>
         <h1 class="text-2xl md:text-3xl font-extrabold text-toco-navy leading-tight mt-1">
             {{ $vehTitleNice }} for sale
             @if ($vehicle->bodyType?->name)<span class="text-ink-soft font-semibold"> — {{ $vehicle->bodyType->name }}</span>@endif
@@ -142,7 +143,7 @@
         <div class="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6">
             <div class="space-y-4">
                 @if ($isSold)
-                    <div class="bg-toco-navy text-white text-center font-mono uppercase tracking-[0.3em] text-sm font-bold py-3 rounded-sm">
+                    <div class="bg-toco-red text-white text-center font-mono uppercase tracking-[0.3em] text-sm font-bold py-3 rounded-sm">
                         SOLD · this vehicle is no longer available
                     </div>
                 @endif
@@ -157,13 +158,31 @@
                     @keydown.window.escape="closeLightbox()"
                 >
                     {{-- Hero image with overlay nav --}}
-                    <div class="relative aspect-[16/10] bg-toco-silver-2 group">
-                        <img
-                            :src="photos[index]"
-                            alt="{{ $vehicle->title }}"
-                            class="w-full h-full object-cover cursor-zoom-in"
-                            @click="openLightbox()"
+                    <div class="relative aspect-[16/10] bg-toco-silver-2 group overflow-hidden">
+                        <div
+                            class="absolute inset-0 flex will-change-transform"
+                            :style="{
+                                transform: `translate3d(calc(${-index * 100}% + ${heroDragOffsetPx}px), 0, 0)`,
+                                transition: heroDragging ? 'none' : 'transform 350ms cubic-bezier(0.22, 1, 0.36, 1)',
+                            }"
                         >
+                            @foreach ($photoUrls as $i => $url)
+                                <img
+                                    src="{{ $url }}"
+                                    alt="{{ $vehicle->title }}"
+                                    class="w-full h-full object-cover shrink-0 cursor-zoom-in select-none"
+                                    style="touch-action: pan-y;"
+                                    {{ $i === 0 ? '' : 'loading=lazy' }}
+                                    draggable="false"
+                                    @click="maybeOpenLightbox()"
+                                    @pointerdown="heroSwipeStart($event)"
+                                    @pointermove="heroSwipeMove($event)"
+                                    @pointerup="heroSwipeEnd($event)"
+                                    @pointercancel="heroSwipeEnd($event)"
+                                    @dragstart.prevent
+                                >
+                            @endforeach
+                        </div>
 
                         @if (count($photoUrls) > 1)
                             <button
@@ -195,6 +214,20 @@
                         >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
                         </button>
+
+                        @if ($videoUrl)
+                            {{-- Play button — shown over the first photo only. --}}
+                            <button
+                                type="button"
+                                x-show="index === 0"
+                                x-cloak
+                                @click.stop="$dispatch('open-video')"
+                                aria-label="Play walkaround video"
+                                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-toco-red/90 hover:bg-toco-red text-white grid place-items-center shadow-lg ring-4 ring-white/30 transition"
+                            >
+                                <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                            </button>
+                        @endif
                     </div>
 
                     @if (count($photoUrls) > 1)
@@ -204,9 +237,21 @@
                                     type="button"
                                     @click="goTo({{ $i }})"
                                     :class="index === {{ $i }} ? 'border-toco-red' : 'border-transparent hover:border-toco-red'"
-                                    class="aspect-[4/3] bg-toco-silver-2 overflow-hidden border-2 transition"
+                                    class="relative aspect-[4/3] bg-toco-silver-2 overflow-hidden border-2 transition"
                                 >
                                     <img src="{{ $url }}" alt="" class="w-full h-full object-cover">
+                                    @if ($i === 0 && $videoUrl)
+                                        <span
+                                            @click.stop="$dispatch('open-video')"
+                                            role="button"
+                                            aria-label="Play walkaround video"
+                                            class="absolute inset-0 grid place-items-center bg-black/15 hover:bg-black/30 cursor-pointer transition"
+                                        >
+                                            <span class="w-7 h-7 rounded-full bg-toco-red/90 text-white grid place-items-center shadow">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                                            </span>
+                                        </span>
+                                    @endif
                                 </button>
                             @endforeach
                         </div>
@@ -285,6 +330,39 @@
                     </div>
                 </div>
 
+                @if ($videoUrl)
+                    {{-- Walkaround video modal --}}
+                    <div
+                        x-data="{ open: false }"
+                        @open-video.window="open = true; $nextTick(() => { $refs.video.currentTime = 0; $refs.video.play().catch(() => {}); })"
+                        @keydown.escape.window="open && (open = false, $refs.video.pause())"
+                        x-show="open"
+                        x-cloak
+                        @click.self="open = false; $refs.video.pause()"
+                        x-effect="document.body.style.overflow = open ? 'hidden' : ''"
+                        class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+                        style="display: none;"
+                    >
+                        <button
+                            type="button"
+                            @click="open = false; $refs.video.pause()"
+                            aria-label="Close video"
+                            class="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white grid place-items-center z-10"
+                        >
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                        </button>
+                        <video
+                            x-ref="video"
+                            src="{{ $videoUrl }}"
+                            controls
+                            playsinline
+                            preload="metadata"
+                            class="max-w-full max-h-[85vh] rounded-sm shadow-2xl bg-black"
+                            @click.stop
+                        ></video>
+                    </div>
+                @endif
+
                 {{-- Description --}}
                 @if ($vehicle->description)
                     <div class="bg-white border border-line rounded-sm p-5">
@@ -338,9 +416,9 @@
                                 {{ $isFavorited ? 'Saved' : 'Wishlist' }}
                             </button>
                         </form>
-                        <p class="font-mono text-[10px] uppercase tracking-widest text-ink-soft">{{ $vehicle->ref_no }}</p>
+                        <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">{{ $vehicle->stock_no ? 'Stock #'.$vehicle->stock_no : $vehicle->ref_no }}</p>
                         <p class="text-xl font-extrabold text-toco-navy leading-tight mt-1 pr-24">{{ $vehicle->title }}</p>
-                        <p class="font-mono text-[11px] uppercase tracking-widest text-ink-soft mt-2">FOB Yokohama</p>
+                        <p class="font-mono text-[11px] uppercase tracking-widest text-ink-soft mt-2">FOB</p>
                         <p class="font-extrabold text-3xl text-toco-red mt-1">
                             @if ($vehicle->price_on_request)
                                 On request
@@ -357,7 +435,7 @@
                     </div>
                     <div class="p-5 space-y-2">
                         @if ($isSold)
-                            <div class="w-full text-center bg-toco-navy/5 border border-toco-navy/20 text-toco-navy font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">
+                            <div class="w-full text-center bg-toco-red text-white border border-toco-red font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">
                                 Sold — view our available stock <a href="{{ route('vehicles.index') }}" class="underline">here</a>
                             </div>
                         @else
@@ -407,6 +485,19 @@
                         x-data="{
                             countryId: '', portId: '', ports: [], result: null, error: null, loading: false,
                             countries: @js($countries->map(fn($c) => ['id' => $c->id, 'name' => $c->name, 'iso2' => $c->iso2, 'ports' => $c->ports->map(fn($p) => ['id' => $p->id, 'name' => $p->name, 'rate_per_m3' => (float) $p->rate_per_m3])->all()])),
+                            init() {
+                                // Pre-fill from the destination saved earlier (toco_port cookie).
+                                // Values are applied via $nextTick so the <option> x-for
+                                // templates have rendered before the <select>s sync.
+                                const dc = '{{ $destPort?->country_id }}', dp = '{{ $destPort?->id }}';
+                                if (! dc) return;
+                                const c = this.countries.find(c => c.id == dc);
+                                this.ports = c ? c.ports : [];
+                                this.$nextTick(() => {
+                                    this.countryId = dc;
+                                    this.$nextTick(() => { this.portId = dp; });
+                                });
+                            },
                             onCountry() {
                                 this.portId = '';
                                 const c = this.countries.find(c => c.id == this.countryId);
@@ -441,7 +532,7 @@
                             <select x-model="portId" :disabled="!ports.length" class="w-full border-line rounded-sm disabled:bg-toco-silver-2">
                                 <option value="">— Port —</option>
                                 <template x-for="p in ports" :key="p.id">
-                                    <option :value="p.id" x-text="p.name + ' · $' + p.rate_per_m3 + '/m³'"></option>
+                                    <option :value="p.id" x-text="p.name"></option>
                                 </template>
                             </select>
                             <button type="button" @click="submit()" :disabled="loading" class="w-full bg-toco-navy hover:bg-toco-navy-deep disabled:opacity-50 text-white font-bold uppercase tracking-widest text-xs px-4 py-2.5 rounded-sm">
@@ -455,10 +546,8 @@
                         <template x-if="result">
                             <dl class="mt-4 pt-4 border-t border-line space-y-1.5 text-sm">
                                 <div class="flex justify-between"><dt class="text-ink-soft text-[12px]">FOB</dt><dd class="font-semibold tabular-nums" x-text="'$' + Number(result.price_fob).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})"></dd></div>
-                                <div class="flex justify-between"><dt class="text-ink-soft text-[12px]">Freight</dt><dd class="font-semibold tabular-nums" x-text="'$' + Number(result.freight).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})"></dd></div>
-                                <div class="flex justify-between"><dt class="text-ink-soft text-[12px]">Insurance</dt><dd class="font-semibold tabular-nums" x-text="'$' + Number(result.insurance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})"></dd></div>
                                 <div class="flex justify-between border-t border-line pt-1.5 mt-1"><dt class="font-bold text-toco-navy">CIF</dt><dd class="font-extrabold text-toco-navy tabular-nums" x-text="'$' + Number(result.cif_total).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})"></dd></div>
-                                <p class="text-[11px] text-ink-soft leading-snug pt-1">Estimate only. Land charges in destination country not included.</p>
+                                <p class="text-[11px] text-ink-soft leading-snug pt-1">CIF includes ocean freight &amp; marine insurance. Estimate only — land charges in destination country not included.</p>
                             </dl>
                         </template>
                     </div>
@@ -470,6 +559,7 @@
                     <h2 class="font-bold text-toco-navy text-lg mt-1 mb-3">Specifications</h2>
                     <dl class="grid grid-cols-2 gap-y-1.5">
                         @foreach ([
+                            ['Stock no.', $vehicle->stock_no ?: '—'],
                             ['Make', $vehicle->make->name ?? '—'],
                             ['Model', $vehicle->vehicleModel->name ?? '—'],
                             ['Body type', $vehicle->bodyType->name ?? '—'],
@@ -484,7 +574,6 @@
                             ['Exterior', $vehicle->exterior_color ?? '—'],
                             ['Interior', $vehicle->interior_color ?? '—'],
                             ['Dimensions', $vehicle->length_cm.'×'.$vehicle->width_cm.'×'.$vehicle->height_cm.' cm'],
-                            ['M³ shipping', $vehicle->m3],
                             ['Warranty', $vehicle->warranty_period ?? '—'],
                         ] as $row)
                             <dt class="text-ink-soft font-mono text-[10px] uppercase tracking-widest pt-1">{{ $row[0] }}</dt>
@@ -502,6 +591,19 @@
                 x-data="{
                     countryId: '', portId: '', ports: [],
                     countries: @js($countries->map(fn($c) => ['id' => $c->id, 'name' => $c->name, 'iso2' => $c->iso2, 'ports' => $c->ports->map(fn($p) => ['id' => $p->id, 'name' => $p->name])->all()])),
+                    init() {
+                        // Pre-fill from the destination saved earlier (toco_port cookie).
+                        // Values are applied via $nextTick so the <option> x-for
+                        // templates have rendered before the <select>s sync.
+                        const dc = '{{ $destPort?->country_id }}', dp = '{{ $destPort?->id }}';
+                        if (! dc) return;
+                        const c = this.countries.find(c => c.id == dc);
+                        this.ports = c ? c.ports : [];
+                        this.$nextTick(() => {
+                            this.countryId = dc;
+                            this.$nextTick(() => { this.portId = dp; });
+                        });
+                    },
                     onCountry() {
                         this.portId = '';
                         const c = this.countries.find(c => c.id == this.countryId);

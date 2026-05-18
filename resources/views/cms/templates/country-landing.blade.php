@@ -27,7 +27,6 @@
                         <tr>
                             <th class="text-left font-mono text-[10px] uppercase tracking-widest px-4 py-2">Port</th>
                             <th class="text-left font-mono text-[10px] uppercase tracking-widest px-4 py-2">UNLOCODE</th>
-                            <th class="text-right font-mono text-[10px] uppercase tracking-widest px-4 py-2">Rate (USD/m³)</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-line">
@@ -35,7 +34,6 @@
                             <tr>
                                 <td class="px-4 py-2 font-semibold text-toco-navy">{{ $port->name }}</td>
                                 <td class="px-4 py-2 font-mono text-[12px] text-ink-soft">{{ $port->unlocode ?? '—' }}</td>
-                                <td class="px-4 py-2 text-right font-mono tabular-nums">${{ number_format((float) $port->rate_per_m3, 2) }}</td>
                             </tr>
                         @endforeach
                     </tbody>

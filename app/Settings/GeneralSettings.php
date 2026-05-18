@@ -18,6 +18,8 @@ class GeneralSettings extends Settings
 
     public array $footer_logos;
 
+    public bool $show_stock_counts;
+
     public static function group(): string
     {
         return 'general';

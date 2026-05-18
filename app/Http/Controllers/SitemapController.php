@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Page;
+use App\Models\Post;
 use App\Models\Vehicle;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
@@ -22,6 +23,8 @@ class SitemapController extends Controller
                     Page::query()->max('updated_at')),
                 self::sitemapEntry(self::abs(route('sitemap.vehicles', absolute: false)),
                     Vehicle::query()->max('updated_at')),
+                self::sitemapEntry(self::abs(route('sitemap.news', absolute: false)),
+                    Post::query()->max('updated_at')),
             ];
 
             return '<?xml version="1.0" encoding="UTF-8"?>'."\n"
@@ -88,6 +91,28 @@ class SitemapController extends Controller
                 ->chunk(500, function ($vehicles) use (&$entries) {
                     foreach ($vehicles as $v) {
                         $entries[] = self::urlEntry(self::abs(route('vehicles.show', $v->slug, absolute: false)), $v->updated_at, '0.6', 'weekly');
+                    }
+                });
+
+            return self::wrap($entries);
+        });
+
+        return response($xml, 200, ['Content-Type' => 'application/xml']);
+    }
+
+    /**
+     * Every published news post.
+     */
+    public function news(): Response
+    {
+        $xml = Cache::remember('sitemap.news.xml', now()->addHour(), function (): string {
+            $entries = [];
+            Post::query()
+                ->published()
+                ->select(['slug', 'updated_at'])
+                ->chunk(500, function ($posts) use (&$entries) {
+                    foreach ($posts as $p) {
+                        $entries[] = self::urlEntry(self::abs(route('news.show', $p->slug, absolute: false)), $p->updated_at, '0.6', 'weekly');
                     }
                 });
 

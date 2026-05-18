@@ -23,13 +23,19 @@
     <meta name="twitter:title" content="{{ $resolvedTitle }}">
     <meta name="twitter:description" content="{{ $resolvedDescription }}">
     <meta name="twitter:image" content="{{ $resolvedOgImage }}">
+    {{-- Hide Alpine elements until Alpine initialises — prevents modals/menus
+         flashing on every page load. Must be inline so it applies pre-render. --}}
+    <style>[x-cloak]{display:none !important;}</style>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('head')
 </head>
 <body class="font-sans text-ink antialiased bg-surface min-h-screen flex flex-col">
-    {{-- Fraud notice bar --}}
-    <div class="bg-[#FDECEE] text-toco-navy text-[11px] font-semibold tracking-wider uppercase py-2 px-4 text-center font-mono">
-        BE AWARE OF FRAUDSTERS · always verify our company details before sending any payment
+    {{-- Brand + fraud notice bar --}}
+    <div class="bg-[#FDECEE] text-toco-navy text-[11px] font-semibold tracking-wider uppercase py-2 font-mono">
+        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 2xl:px-8 flex items-center justify-between gap-4">
+            <span class="shrink-0">Toco - Japanese Used Cars For Sale</span>
+            <span class="text-right hidden sm:inline">BE AWARE OF FRAUDSTERS · always verify our company details before sending any payment</span>
+        </div>
     </div>
 
     {{-- Top bar --}}
@@ -48,15 +54,9 @@
                         >
                             <option value="en" class="text-toco-navy">English</option>
                             <option value="ja" class="text-toco-navy">日本語</option>
-                            <option value="es" class="text-toco-navy">Español</option>
                             <option value="fr" class="text-toco-navy">Français</option>
-                            <option value="de" class="text-toco-navy">Deutsch</option>
-                            <option value="ru" class="text-toco-navy">Русский</option>
-                            <option value="zh-CN" class="text-toco-navy">中文</option>
-                            <option value="ko" class="text-toco-navy">한국어</option>
-                            <option value="ar" class="text-toco-navy">العربية</option>
-                            <option value="th" class="text-toco-navy">ไทย</option>
-                            <option value="vi" class="text-toco-navy">Tiếng Việt</option>
+                            <option value="pt" class="text-toco-navy">Português</option>
+                            <option value="es" class="text-toco-navy">Español</option>
                             <option value="sw" class="text-toco-navy">Kiswahili</option>
                         </select>
                         <span id="google_translate_element" class="hidden"></span>
@@ -76,39 +76,118 @@
                         </form>
                     @endif
 
-                    {{-- Destination port picker — drives CIF on listing + detail --}}
-                    <form method="POST" action="{{ route('destination.set') }}" id="destForm" class="inline-flex items-center gap-1">
-                        @csrf
-                        <span class="hidden md:inline">📍</span>
-                        <select
-                            name="port_id"
-                            onchange="document.getElementById('destForm').submit()"
-                            class="bg-transparent border-0 text-white/80 hover:text-white text-[12px] cursor-pointer focus:outline-none notranslate max-w-[140px]"
-                            title="Set destination port for CIF prices"
-                        >
-                            <option value="">Set destination</option>
-                            @foreach (\App\Models\Country::query()->where('is_active', true)->with(['ports' => fn($q) => $q->where('is_active', true)->orderBy('sort_order')])->orderBy('sort_order')->orderBy('name')->get() as $__c)
-                                <optgroup label="{{ $__c->name }}">
-                                    @foreach ($__c->ports as $__p)
-                                        <option value="{{ $__p->id }}" class="text-toco-navy" {{ $destPort && $destPort->id === $__p->id ? 'selected' : '' }}>{{ $__p->name }}</option>
-                                    @endforeach
-                                </optgroup>
-                            @endforeach
-                        </select>
-                    </form>
+                    {{-- Destination picker — opens a country + port dialog --}}
+                    @php
+                        $destCountries = \App\Models\Country::query()
+                            ->where('is_active', true)
+                            ->whereHas('ports', fn ($q) => $q->where('is_active', true))
+                            ->with(['ports' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')->orderBy('name')])
+                            ->orderBy('name')
+                            ->get();
+                    @endphp
+                    <div
+                        class="inline-flex notranslate" translate="no"
+                        x-data="{
+                            open: false,
+                            countryId: '',
+                            portId: '',
+                            ports: [],
+                            countries: @js($destCountries->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'ports' => $c->ports->map(fn ($p) => ['id' => $p->id, 'name' => $p->name])->all()])),
+                            init() {
+                                const dc = '{{ $destPort?->country_id }}', dp = '{{ $destPort?->id }}';
+                                if (! dc) return;
+                                const c = this.countries.find(c => c.id == dc);
+                                this.ports = c ? c.ports : [];
+                                this.$nextTick(() => {
+                                    this.countryId = dc;
+                                    this.$nextTick(() => { this.portId = dp; });
+                                });
+                            },
+                            onCountry() {
+                                this.portId = '';
+                                const c = this.countries.find(c => c.id == this.countryId);
+                                this.ports = c ? c.ports : [];
+                            },
+                        }"
+                    >
+                        <button type="button" @click="open = true"
+                            class="inline-flex items-center gap-1.5 text-white/80 hover:text-white text-[12px] cursor-pointer focus:outline-none"
+                            title="Set your destination for CIF prices">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            <span class="max-w-[180px] truncate">
+                                @if ($destPort)
+                                    {{ $destPort->country->name ?? '' }} · {{ $destPort->name }}
+                                @else
+                                    Set destination
+                                @endif
+                            </span>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="shrink-0 opacity-70"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+
+                        {{-- Dialog --}}
+                        <div x-show="open" x-cloak @keydown.escape.window="open = false"
+                            class="fixed inset-0 z-[60] flex items-start justify-center p-4 pt-24 bg-black/50"
+                            @click.self="open = false">
+                            <div class="bg-white text-ink rounded-sm shadow-2xl w-full max-w-md" @click.stop>
+                                <div class="flex items-center justify-between px-5 py-3.5 border-b border-line">
+                                    <h3 class="font-bold text-toco-navy text-sm">Choose your destination</h3>
+                                    <button type="button" @click="open = false" aria-label="Close" class="text-ink-soft hover:text-toco-red">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+                                <form method="POST" action="{{ route('destination.set') }}" class="p-5 space-y-3">
+                                    @csrf
+                                    <p class="text-[12px] text-ink-soft">Pick your country and nearest port — CIF prices across the site update to that port.</p>
+                                    <div>
+                                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Country</label>
+                                        <select x-model="countryId" @change="onCountry()" class="w-full border-line rounded-sm text-sm">
+                                            <option value="">— Select country —</option>
+                                            <template x-for="c in countries" :key="c.id">
+                                                <option :value="c.id" x-text="c.name"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Port</label>
+                                        <select name="port_id" x-model="portId" :disabled="!ports.length" class="w-full border-line rounded-sm text-sm disabled:bg-toco-silver-2">
+                                            <option value="">— Select port —</option>
+                                            <template x-for="p in ports" :key="p.id">
+                                                <option :value="p.id" x-text="p.name"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                    <button type="submit" :disabled="!portId"
+                                        class="w-full bg-toco-red hover:bg-toco-red-deep disabled:opacity-50 text-white font-bold uppercase tracking-widest text-[11px] px-4 py-2.5 rounded-sm">
+                                        Apply destination
+                                    </button>
+                                </form>
+                                @if ($destPort)
+                                    <form method="POST" action="{{ route('destination.set') }}" class="px-5 pb-4 -mt-1 text-center">
+                                        @csrf
+                                        <button type="submit" class="text-[12px] font-semibold text-ink-soft hover:text-toco-red">Clear destination</button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
                 @endisset
             </div>
             <div class="flex items-center gap-3 sm:gap-5">
                 @isset($topBarRight)
                     {{ $topBarRight }}
                 @else
-                    <a href="#" class="hidden sm:inline-flex items-center gap-1.5 hover:text-white">
+                    <span class="hidden md:inline-flex items-center gap-1.5 notranslate" translate="no">
+                        <span class="text-white/55">Japan time</span>
+                        <span id="jp-clock" class="font-mono text-white tabular-nums">—</span>
+                    </span>
+                    <a href="#" class="hidden lg:inline-flex items-center gap-1.5 hover:text-white">
                         <span class="inline-block w-1.5 h-1.5 rounded-full bg-toco-red"></span>
-                        <span class="hidden lg:inline">Live: 12 buyers viewing now</span>
-                        <span class="lg:hidden">Live</span>
+                        <span>Live: {{ rand(45, 70) }} buyers viewing now</span>
                     </a>
-                    <a href="#" class="hidden md:inline-flex hover:text-white">Track shipment</a>
-                    <a href="#" class="hidden md:inline-flex hover:text-white">+81 90-1234-5678</a>
+                    <a href="https://wa.me/819057628702" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 hover:text-white notranslate" translate="no">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#25D366" class="shrink-0"><path d="M17.5 14.4c-.3-.15-1.74-.86-2.01-.96-.27-.1-.47-.15-.66.15-.2.29-.76.96-.93 1.16-.17.2-.34.22-.63.07-.29-.15-1.24-.46-2.36-1.46-.87-.78-1.46-1.74-1.63-2.03-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.49.1-.2.05-.36-.02-.51-.07-.15-.66-1.59-.9-2.18-.24-.57-.48-.49-.66-.5l-.56-.01c-.2 0-.51.07-.78.36-.27.29-1.02 1-1.02 2.43 0 1.44 1.04 2.82 1.19 3.02.15.2 2.06 3.14 4.99 4.4.7.3 1.24.48 1.66.62.7.22 1.33.19 1.83.12.56-.08 1.74-.71 1.98-1.4.24-.68.24-1.27.17-1.39-.07-.12-.27-.2-.56-.34M12 2a10 10 0 0 0-8.55 15.16L2 22l4.96-1.43A10 10 0 1 0 12 2"/></svg>
+                        <span>+81 90 5762 8702</span>
+                    </a>
                 @endisset
             </div>
         </div>
@@ -116,42 +195,76 @@
 
     {{-- Sticky header --}}
     <header class="sticky top-0 z-30 bg-white border-b border-line" x-data="{ mobileOpen: false }">
-        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 2xl:px-8 h-16 flex items-center justify-between gap-3 sm:gap-6">
+        {{-- Header — 3 columns: logo · (menu + search) · actions --}}
+        @php($nav = [
+            ['Home', route('home'), request()->is('/')],
+            ['Buy Vehicles', route('vehicles.index'), request()->is('vehicles*')],
+            ['Spareparts', route('cms.page', 'order-spareparts'), request()->is('order-spareparts')],
+            ['How to Buy', route('cms.page', 'how-to-buy-cars-and-other-vehicles'), request()->is('how-to-buy-cars-and-other-vehicles')],
+            ['FAQs', route('cms.page', 'faqs'), request()->is('faqs')],
+            ['Contact Us', route('cms.page', 'contact'), request()->is('contact')],
+        ])
+        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 2xl:px-8 py-3 flex items-center gap-4 sm:gap-8">
+            {{-- Column 1 — logo --}}
             @php($headerLogo = app(\App\Settings\GeneralSettings::class)->header_logo ?? null)
             <a href="{{ route('home') }}" class="inline-flex items-center gap-2.5 shrink-0">
                 @if ($headerLogo)
-                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($headerLogo) }}" alt="{{ config('app.name', 'Toco Japan') }}" class="h-9 sm:h-10 w-auto">
+                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($headerLogo) }}" alt="{{ config('app.name', 'Toco Japan') }}" class="h-[3.3rem] sm:h-[3.85rem] w-auto">
                 @else
-                    <span class="inline-flex items-center justify-center w-9 h-9 rounded-sm bg-toco-red text-white font-bold text-sm font-mono">TJ</span>
-                    <span class="font-extrabold tracking-tight text-toco-navy text-lg hidden sm:inline">Toco Japan</span>
+                    <span class="inline-flex items-center justify-center w-11 h-11 rounded-sm bg-toco-red text-white font-bold text-base font-mono">TJ</span>
+                    <span class="font-extrabold tracking-tight text-toco-navy text-xl hidden sm:inline">Toco Japan</span>
                 @endif
             </a>
-            <nav class="hidden lg:flex items-center gap-7 text-[13px] font-semibold text-ink">
-                <a href="{{ route('home') }}" class="hover:text-toco-red">Home</a>
-                <a href="{{ route('vehicles.index') }}" class="hover:text-toco-red">Vehicles</a>
-                <a href="#how-it-works" class="hover:text-toco-red">How it works</a>
-                <a href="#why-toco" class="hover:text-toco-red">Why Toco</a>
-                <a href="#contact" class="hover:text-toco-red">Contact</a>
-            </nav>
-            <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+
+            {{-- Column 2 — menu + search (centered) --}}
+            <div class="hidden lg:flex flex-1 flex-col items-center gap-2.5 min-w-0">
+                <nav>
+                    <ul class="flex items-center justify-center gap-8 text-[13px] font-bold uppercase tracking-wide">
+                        @foreach ($nav as [$label, $url, $active])
+                            <li>
+                                <a href="{{ $url }}" class="transition hover:text-toco-red {{ $active ? 'text-toco-red' : 'text-toco-navy' }}">{{ $label }}</a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </nav>
+                <form action="{{ route('vehicles.index') }}" method="GET" class="flex items-stretch h-10 w-full max-w-[600px] rounded-sm border border-line overflow-hidden bg-white">
+                    <select name="search_by" class="bg-toco-silver-2 border-0 border-r border-line text-[13px] font-semibold text-toco-navy focus:ring-0 pl-3 pr-8 cursor-pointer notranslate">
+                        <option value="keyword">By Keyword</option>
+                        <option value="ref">By Stock No.</option>
+                    </select>
+                    <input type="text" name="q" value="{{ request('q') }}" placeholder="Search by make, model, year…" class="flex-1 min-w-0 border-0 text-[13px] text-ink placeholder:text-ink-soft focus:ring-0 px-3">
+                    <button type="submit" aria-label="Search" class="bg-toco-red hover:bg-toco-red-deep text-white px-4 grid place-items-center transition">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                    </button>
+                </form>
+            </div>
+
+            {{-- Column 3 — actions --}}
+            <div class="flex items-center gap-3 sm:gap-4 shrink-0 ml-auto">
                 @php($wishlistCount = count($favoritedIds ?? []))
                 <a href="{{ Auth::check() ? route('favorites.index') : route('login') }}" class="relative inline-flex items-center text-ink hover:text-toco-red" title="My wishlist">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="{{ $wishlistCount ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.7A4 4 0 0 1 19 11c0 5.5-7 10-7 10Z"/></svg>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="{{ $wishlistCount ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.7A4 4 0 0 1 19 11c0 5.5-7 10-7 10Z"/></svg>
                     @if ($wishlistCount > 0)
                         <span class="absolute -top-1 -right-1.5 min-w-[16px] h-[16px] px-1 bg-toco-red text-white text-[10px] font-bold rounded-full grid place-items-center">{{ $wishlistCount }}</span>
                     @endif
                 </a>
                 @auth
-                    <a href="{{ route('orders.index') }}" class="relative inline-flex items-center text-ink hover:text-toco-red" title="My orders & messages">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        @if (($unreadMessageCount ?? 0) > 0)
-                            <span class="absolute -top-1 -right-1.5 min-w-[16px] h-[16px] px-1 bg-toco-red text-white text-[10px] font-bold rounded-full grid place-items-center">{{ $unreadMessageCount }}</span>
+                    <a href="{{ route('profile.edit') }}" class="relative inline-flex items-center text-ink hover:text-toco-red" title="My account">
+                        @if (Auth::user()->avatarUrl())
+                            <img src="{{ Auth::user()->avatarUrl() }}" alt="" class="w-7 h-7 rounded-full object-cover border border-line">
+                        @else
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                         @endif
                     </a>
-                    <a href="{{ route('dashboard') }}" class="hidden sm:inline text-[12px] font-semibold text-ink hover:text-toco-red">Dashboard</a>
+                    <a href="{{ route('dashboard') }}" class="relative hidden sm:inline-flex items-center text-[13px] font-semibold text-ink hover:text-toco-red">
+                        Dashboard
+                        @if (($unreadMessageCount ?? 0) > 0)
+                            <span class="ml-1 min-w-[16px] h-[16px] px-1 bg-toco-red text-white text-[10px] font-bold rounded-full grid place-items-center">{{ $unreadMessageCount }}</span>
+                        @endif
+                    </a>
                 @else
-                    <a href="{{ route('login') }}" class="hidden sm:inline-block text-[12px] font-semibold text-ink hover:text-toco-red">Sign in</a>
-                    <a href="{{ route('register') }}" class="bg-toco-red hover:bg-toco-red-deep text-white text-[11px] font-bold uppercase tracking-widest px-3 sm:px-3.5 py-2 rounded-sm">Register</a>
+                    <a href="{{ route('login') }}" class="hidden sm:inline-flex items-center text-[13px] font-semibold text-ink hover:text-toco-red">Sign in</a>
+                    <a href="{{ route('register') }}" class="bg-toco-red hover:bg-toco-red-deep text-white text-[12px] font-bold uppercase tracking-widest px-4 py-2.5 rounded-sm">Register</a>
                 @endauth
                 <button type="button" @click="mobileOpen = !mobileOpen" aria-label="Menu" class="lg:hidden inline-flex items-center justify-center w-9 h-9 -mr-1 rounded-sm hover:bg-toco-silver-2 text-toco-navy">
                     <svg x-show="!mobileOpen" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -166,21 +279,28 @@
             x-cloak
             x-transition.opacity
             @click.self="mobileOpen = false"
-            class="lg:hidden fixed inset-0 top-[88px] bg-black/40 z-40"
+            class="lg:hidden absolute inset-x-0 top-full bg-black/40 h-screen z-40"
         >
             <nav
                 x-show="mobileOpen"
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="-translate-y-2 opacity-0"
                 x-transition:enter-end="translate-y-0 opacity-100"
-                class="bg-white border-b border-line shadow-lg max-w-[1600px] mx-auto"
+                class="bg-white border-b border-line shadow-lg"
             >
-                <ul class="divide-y divide-line text-base font-semibold text-ink">
+                <form action="{{ route('vehicles.index') }}" method="GET" class="flex items-stretch h-11 m-4 rounded-sm border border-line overflow-hidden">
+                    <input type="text" name="q" value="{{ request('q') }}" placeholder="Search by make, model, year…" class="flex-1 min-w-0 border-0 text-[13px] focus:ring-0 px-3">
+                    <button type="submit" aria-label="Search" class="bg-toco-red text-white px-4 grid place-items-center">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                    </button>
+                </form>
+                <ul class="divide-y divide-line text-base font-semibold text-ink border-t border-line">
                     <li><a href="{{ route('home') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Home</a></li>
-                    <li><a href="{{ route('vehicles.index') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Vehicles</a></li>
-                    <li><a href="{{ route('cif.index') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">CIF calculator</a></li>
-                    <li><a href="{{ route('home') }}#how-it-works" class="block px-5 py-3.5 hover:bg-toco-silver-2">How it works</a></li>
-                    <li><a href="{{ route('home') }}#why-toco" class="block px-5 py-3.5 hover:bg-toco-silver-2">Why Toco</a></li>
+                    <li><a href="{{ route('vehicles.index') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Buy Vehicles</a></li>
+                    <li><a href="{{ route('cms.page', 'order-spareparts') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Spareparts</a></li>
+                    <li><a href="{{ route('cms.page', 'how-to-buy-cars-and-other-vehicles') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">How to Buy</a></li>
+                    <li><a href="{{ route('cms.page', 'faqs') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">FAQs</a></li>
+                    <li><a href="{{ route('cms.page', 'contact') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Contact Us</a></li>
                     @auth
                         <li><a href="{{ route('dashboard') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Dashboard</a></li>
                         <li><a href="{{ route('orders.index') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">My orders @if (($unreadMessageCount ?? 0) > 0)<span class="ml-2 inline-block bg-toco-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ $unreadMessageCount }}</span>@endif</a></li>
@@ -198,56 +318,96 @@
     </main>
 
     <footer class="bg-toco-navy-deep text-white/85 mt-12">
-        <div class="max-w-[1440px] mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 text-sm">
-            <div class="col-span-2 lg:col-span-1">
-                <div class="inline-flex items-center gap-2.5 mb-3">
-                    <span class="inline-flex items-center justify-center w-9 h-9 rounded-sm bg-toco-red text-white font-bold text-sm font-mono">TJ</span>
-                    <span class="font-extrabold tracking-tight text-white text-lg">Toco Japan</span>
+        <div class="max-w-[1440px] mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1.7fr_1fr_1fr_1fr] gap-8 lg:gap-10 text-sm">
+            {{-- Company + contact + social --}}
+            <div>
+                @php($footerLogo = app(\App\Settings\GeneralSettings::class)->header_logo ?? null)
+                <a href="{{ route('home') }}" class="inline-block bg-white rounded-sm px-4 py-2.5 mb-5">
+                    @if ($footerLogo)
+                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($footerLogo) }}" alt="{{ config('app.name', 'Toco Japan') }}" class="h-9 w-auto">
+                    @else
+                        <span class="font-extrabold tracking-tight text-toco-navy text-xl">TOCO</span>
+                    @endif
+                </a>
+                <ul class="space-y-2.5 text-white/75 text-[13px]">
+                    <li class="flex gap-2.5">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 mt-0.5 text-toco-red"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>
+                        <span>3400-1 Horigome-Cho, Sano City,<br>Tochigi, Japan. 327-0843</span>
+                    </li>
+                    <li class="flex items-center gap-2.5">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 text-toco-red"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.69 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.33 1.85.56 2.81.69A2 2 0 0 1 22 16.92z"/></svg>
+                        <a href="tel:+81283857224" class="hover:text-white">+81 283 85 7224</a>
+                    </li>
+                    <li class="flex items-center gap-2.5">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 text-toco-red"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+                        <span>+81 283 24 4569</span>
+                    </li>
+                    <li class="flex items-center gap-2.5">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="#25D366" class="shrink-0"><path d="M17.5 14.4c-.3-.15-1.74-.86-2.01-.96-.27-.1-.47-.15-.66.15-.2.29-.76.96-.93 1.16-.17.2-.34.22-.63.07-.29-.15-1.24-.46-2.36-1.46-.87-.78-1.46-1.74-1.63-2.03-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.49.1-.2.05-.36-.02-.51-.07-.15-.66-1.59-.9-2.18-.24-.57-.48-.49-.66-.5l-.56-.01c-.2 0-.51.07-.78.36-.27.29-1.02 1-1.02 2.43 0 1.44 1.04 2.82 1.19 3.02.15.2 2.06 3.14 4.99 4.4.7.3 1.24.48 1.66.62.7.22 1.33.19 1.83.12.56-.08 1.74-.71 1.98-1.4.24-.68.24-1.27.17-1.39-.07-.12-.27-.2-.56-.34M12 2a10 10 0 0 0-8.55 15.16L2 22l4.96-1.43A10 10 0 1 0 12 2"/></svg>
+                        <a href="https://wa.me/819057628702" target="_blank" rel="noopener" class="hover:text-white">+81 90 5762 8702</a>
+                    </li>
+                    <li class="flex items-center gap-2.5">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 text-toco-red"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M22 6l-10 7L2 6"/></svg>
+                        <a href="mailto:info@tocojapan.com" class="hover:text-white">info@tocojapan.com</a>
+                    </li>
+                </ul>
+                @php($socials = [
+                    ['Facebook', '#1877F2', '#', 'M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.51 1.49-3.89 3.78-3.89 1.09 0 2.24.19 2.24.19v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12z'],
+                    ['TikTok', '#111111', '#', 'M16.5 3c.32 2.13 1.51 3.4 3.5 3.53v2.61c-1.3.06-2.49-.32-3.83-1.04v5.78c0 4.06-3.36 6.57-7.09 5.62-2.43-.62-3.86-2.92-3.55-5.45.3-2.48 2.66-4.36 5.28-4.13v2.83c-.4-.06-.83-.1-1.24-.04-1.16.17-2.02 1.1-1.95 2.34.07 1.18 1.04 2.07 2.27 2.02 1.36-.05 2.27-1.13 2.27-2.62V3h2.66z'],
+                    ['Instagram', '#E1306C', '#', 'M12 2c2.72 0 3.06.01 4.12.06 1.07.05 1.8.22 2.43.47.66.25 1.22.6 1.77 1.15.55.55.9 1.11 1.15 1.77.25.63.42 1.36.47 2.43.05 1.07.06 1.4.06 4.12s-.01 3.06-.06 4.12c-.05 1.07-.22 1.8-.47 2.43a4.9 4.9 0 0 1-1.15 1.77c-.55.55-1.11.9-1.77 1.15-.63.25-1.36.42-2.43.47-1.07.05-1.4.06-4.12.06s-3.06-.01-4.12-.06c-1.07-.05-1.8-.22-2.43-.47a4.9 4.9 0 0 1-1.77-1.15 4.9 4.9 0 0 1-1.15-1.77c-.25-.63-.42-1.36-.47-2.43C2.01 15.06 2 14.72 2 12s.01-3.06.06-4.12c.05-1.07.22-1.8.47-2.43A4.9 4.9 0 0 1 3.68 3.68 4.9 4.9 0 0 1 5.45 2.53c.63-.25 1.36-.42 2.43-.47C8.94 2.01 9.28 2 12 2zm0 5a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm5.5-2.75a1.25 1.25 0 1 0 0 2.5 1.25 1.25 0 0 0 0-2.5z'],
+                    ['YouTube', '#FF0000', '#', 'M23 12s0-3.19-.4-4.72c-.22-.84-.86-1.5-1.68-1.73C19.39 5.18 12 5.18 12 5.18s-7.39 0-8.92.37c-.82.23-1.46.89-1.68 1.73C1 8.81 1 12 1 12s0 3.19.4 4.72c.22.84.86 1.5 1.68 1.73 1.53.37 8.92.37 8.92.37s7.39 0 8.92-.37c.82-.23 1.46-.89 1.68-1.73C23 15.19 23 12 23 12zM9.75 15.4V8.6l5.95 3.4-5.95 3.4z'],
+                    ['LinkedIn', '#0A66C2', '#', 'M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14zM8.34 18.34V9.9H5.67v8.44h2.67zM7 8.67a1.55 1.55 0 1 0 0-3.1 1.55 1.55 0 0 0 0 3.1zm11.34 9.67v-4.63c0-2.47-1.32-3.62-3.08-3.62-1.42 0-2.06.78-2.42 1.33V9.9h-2.67c.04.75 0 8.44 0 8.44h2.67v-4.71c0-.24.02-.48.09-.65.19-.48.63-.97 1.37-.97.97 0 1.36.74 1.36 1.82v4.51h2.68z'],
+                ])
+                <div class="flex items-center gap-3 mt-6">
+                    <span class="font-bold uppercase tracking-widest text-xs text-white shrink-0">Follow us</span>
+                    <div class="flex items-center gap-2">
+                        @foreach ($socials as [$sName, $sColor, $sUrl, $sPath])
+                            <a href="{{ $sUrl }}" target="_blank" rel="noopener" aria-label="{{ $sName }}"
+                               class="w-8 h-8 rounded-full grid place-items-center hover:opacity-80 transition" style="background-color: {{ $sColor }}">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="#fff"><path d="{{ $sPath }}"/></svg>
+                            </a>
+                        @endforeach
+                    </div>
                 </div>
-                <p class="text-white/70 text-[13px] leading-relaxed max-w-xs">
-                    Quality Japanese vehicles, exported worldwide since 2009. We source, inspect and ship — you import with confidence.
-                </p>
             </div>
+
+            {{-- About Us --}}
             <div>
-                <h4 class="font-bold text-white uppercase tracking-widest text-xs mb-3">Buy</h4>
+                <h4 class="font-bold text-white text-[15px] mb-3">About Us</h4>
                 <ul class="space-y-2 text-white/75">
-                    <li><a href="{{ route('vehicles.index') }}" class="hover:text-white">Browse stock</a></li>
-                    <li><a href="{{ route('vehicles.index') }}?body_type=suv" class="hover:text-white">SUVs</a></li>
-                    <li><a href="{{ route('vehicles.index') }}?body_type=mini-truck" class="hover:text-white">Kei trucks</a></li>
-                    <li><a href="{{ route('register') }}" class="hover:text-white">Request a quote</a></li>
+                    <li><a href="{{ route('cms.page', 'about-us') }}" class="hover:text-white">Company Profile</a></li>
+                    <li><a href="{{ route('cms.page', 'bank-details') }}" class="hover:text-white">Bank Details</a></li>
+                    <li><a href="{{ route('cms.page', 'customer-reviews') }}" class="hover:text-white">Customer Reviews</a></li>
+                    <li><a href="{{ route('cms.page', 'contact') }}" class="hover:text-white">Contact Us</a></li>
                 </ul>
             </div>
+
+            {{-- Other --}}
             <div>
-                <h4 class="font-bold text-white uppercase tracking-widest text-xs mb-3">Ship</h4>
+                <h4 class="font-bold text-white text-[15px] mb-3">Other</h4>
                 <ul class="space-y-2 text-white/75">
-                    <li><a href="#" class="hover:text-white">Destinations</a></li>
-                    <li><a href="#" class="hover:text-white">CIF calculator</a></li>
-                    <li><a href="#" class="hover:text-white">Shipping schedule</a></li>
-                    <li><a href="#" class="hover:text-white">Inspection</a></li>
+                    <li><a href="{{ route('cms.page', 'how-to-buy-cars-and-other-vehicles') }}" class="hover:text-white">How to Buy</a></li>
+                    <li><a href="{{ route('cms.page', 'import-regulations') }}" class="hover:text-white">Import Regulation</a></li>
+                    <li><a href="{{ route('cms.page', 'shipping-schedule') }}" class="hover:text-white">Shipping Schedule</a></li>
+                    <li><a href="{{ route('news.index') }}" class="hover:text-white">News and Updates</a></li>
                 </ul>
             </div>
+
+            {{-- Help and Support --}}
             <div>
-                <h4 class="font-bold text-white uppercase tracking-widest text-xs mb-3">Trust</h4>
+                <h4 class="font-bold text-white text-[15px] mb-3">Help and Support</h4>
                 <ul class="space-y-2 text-white/75">
-                    <li><a href="#" class="hover:text-white">About Toco</a></li>
-                    <li><a href="#" class="hover:text-white">Process</a></li>
-                    <li><a href="#" class="hover:text-white">Reviews</a></li>
-                    <li><a href="#" class="hover:text-white">Banking</a></li>
-                </ul>
-            </div>
-            <div>
-                <h4 class="font-bold text-white uppercase tracking-widest text-xs mb-3">Contact</h4>
-                <ul class="space-y-2 text-white/75">
-                    <li>sales@tocojapan.com</li>
-                    <li>+81 (0) 00 0000 0000</li>
-                    <li>Yokohama, Japan</li>
+                    <li><a href="{{ route('cms.page', 'faqs') }}" class="hover:text-white">FAQs</a></li>
+                    <li><a href="{{ route('cms.page', 'contact') }}" class="hover:text-white">Inquiry</a></li>
+                    <li><a href="{{ route('register') }}" class="hover:text-white">Register</a></li>
+                    <li><a href="{{ route('login') }}" class="hover:text-white">Login</a></li>
                 </ul>
             </div>
         </div>
         @php($footerLogos = app(\App\Settings\GeneralSettings::class)->footer_logos ?? [])
         @if (! empty($footerLogos))
             <div class="border-t border-white/10 bg-white/95">
-                <div class="max-w-[1440px] mx-auto px-6 py-5 flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
+                <div class="max-w-[1440px] mx-auto px-6 py-5 flex flex-wrap items-center justify-center lg:justify-end gap-x-10 gap-y-4">
                     @foreach ($footerLogos as $logo)
                         @php($src = \Illuminate\Support\Facades\Storage::disk('public')->url($logo['image']))
                         @if (! empty($logo['link']))
@@ -264,10 +424,14 @@
         <div class="border-t border-white/10">
             <div class="max-w-[1440px] mx-auto px-6 py-4 text-[11px] text-white/55 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <span>
-                    &copy; {{ date('Y') }} Toco Japan Co., Ltd. All rights reserved. · Web design by
-                    <a href="https://mobiz.lk" target="_blank" rel="noopener" class="text-white/80 hover:text-white underline">Mobiz</a>
+                    Copyright &copy; {{ date('Y') }} 有限会社 TOCO INTERNATIONAL | All rights Reserved.
                 </span>
-                <span class="font-mono uppercase tracking-widest">JUMVEA · JEVIC · JAAI member</span>
+                {{-- Web design by Mobiz — https://mobiz.lk --}}
+                <span class="flex items-center gap-4">
+                    <a href="{{ route('cms.page', 'terms-and-conditions') }}" class="hover:text-white">Terms &amp; Conditions</a>
+                    <a href="{{ route('cms.page', 'privacy-policy') }}" class="hover:text-white">Privacy Policy</a>
+                    <a href="{{ route('sitemap') }}" class="hover:text-white">Site Map</a>
+                </span>
             </div>
         </div>
     </footer>
@@ -284,7 +448,7 @@
         function googleTranslateElementInit() {
             new google.translate.TranslateElement({
                 pageLanguage: 'en',
-                includedLanguages: 'en,ja,es,fr,zh-CN,ru,ar,de,ko,th,vi,sw',
+                includedLanguages: 'en,ja,fr,pt,es,sw',
                 autoDisplay: false,
             }, 'google_translate_element');
             // Once initialized, sync the picker to whatever cookie says we're showing.
@@ -305,6 +469,21 @@
         };
     </script>
     <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async></script>
+
+    {{-- Japan time clock (Asia/Tokyo) --}}
+    <script>
+        (function () {
+            var el = document.getElementById('jp-clock');
+            if (!el) return;
+            function tick() {
+                el.textContent = new Date().toLocaleTimeString('en-US', {
+                    timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hour12: true
+                }).toLowerCase();
+            }
+            tick();
+            setInterval(tick, 1000);
+        })();
+    </script>
     @stack('scripts')
 </body>
 </html>

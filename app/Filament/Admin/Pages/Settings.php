@@ -54,6 +54,7 @@ class Settings extends Page implements HasForms
                 'whatsapp_number' => $general->whatsapp_number,
                 'header_logo' => $general->header_logo,
                 'footer_logos' => $general->footer_logos,
+                'show_stock_counts' => $general->show_stock_counts,
             ],
             'cif' => [
                 'insurance_pct_display' => $cif->insurance_pct * 100, // shown as %
@@ -101,6 +102,13 @@ class Settings extends Page implements HasForms
                                         TextInput::make('general.contact_email')->label('Contact email')->email()->required(),
                                         TextInput::make('general.contact_phone')->label('Contact phone'),
                                         TextInput::make('general.whatsapp_number')->label('WhatsApp number'),
+                                    ]),
+                                Section::make('Stock display')
+                                    ->description('Controls how stock numbers are shown across the storefront.')
+                                    ->schema([
+                                        Toggle::make('general.show_stock_counts')
+                                            ->label('Show per-make / per-body-type stock totals')
+                                            ->helperText('When off, the (N) counts next to makes and body types are hidden — useful while stock is low.'),
                                     ]),
                                 Section::make('Header logo')
                                     ->description('Logo shown in the sticky site header. Leave empty to fall back to the TJ chip + wordmark.')
@@ -294,6 +302,7 @@ class Settings extends Page implements HasForms
             $state['general']['footer_logos'] ?? [],
             fn ($l) => ! empty($l['image'])
         ));
+        $general->show_stock_counts = (bool) ($state['general']['show_stock_counts'] ?? false);
         $general->save();
 
         $cif = app(CifSettings::class);

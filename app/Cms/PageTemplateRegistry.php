@@ -7,6 +7,10 @@ use App\Cms\Templates\CountryLandingTemplate;
 use App\Cms\Templates\DefaultTemplate;
 use App\Cms\Templates\FaqTemplate;
 use App\Cms\Templates\HomeTemplate;
+use App\Cms\Templates\HowToBuyTemplate;
+use App\Cms\Templates\ImportRegulationsTemplate;
+use App\Cms\Templates\ShippingScheduleTemplate;
+use App\Cms\Templates\SparePartsTemplate;
 
 class PageTemplateRegistry
 {
@@ -21,6 +25,10 @@ class PageTemplateRegistry
             CountryLandingTemplate::class,
             ContactTemplate::class,
             FaqTemplate::class,
+            SparePartsTemplate::class,
+            ImportRegulationsTemplate::class,
+            HowToBuyTemplate::class,
+            ShippingScheduleTemplate::class,
         ];
     }
 

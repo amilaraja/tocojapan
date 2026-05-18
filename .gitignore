@@ -3,6 +3,7 @@
 .env
 .env.backup
 .env.production
+.env.production.bak
 .phpactor.json
 .phpunit.result.cache
 /.codex
@@ -22,6 +23,8 @@
 /storage/pail
 /storage/migration-reports
 /vendor
+/public/legacy
+/_wp_archive_2026-05-15
 _ide_helper.php
 Homestead.json
 Homestead.yaml

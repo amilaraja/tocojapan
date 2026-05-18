@@ -14,7 +14,7 @@
             <p class="text-sm text-ink-soft mt-3">{{ $txBody }}</p>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             @foreach ($testimonials as $r)
                 @php
                     $displayName = $r->name ?: 'Verified customer';

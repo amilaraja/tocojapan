@@ -125,11 +125,10 @@
                     <h3 class="font-bold text-toco-navy mb-3">Price summary (USD)</h3>
                     <dl class="space-y-2 text-sm">
                         <div class="flex justify-between"><dt>FOB Yokohama</dt><dd class="tabular-nums" x-text="formatUsd(cif.fob)"></dd></div>
-                        <div class="flex justify-between"><dt>Freight (<span x-text="cif.m3"></span> m³ × <span x-text="cif.rate"></span>)</dt><dd class="tabular-nums" x-text="formatUsd(cif.freight)"></dd></div>
-                        <div class="flex justify-between"><dt>Insurance</dt><dd class="tabular-nums" x-text="formatUsd(cif.insurance)"></dd></div>
                         <div class="flex justify-between border-t pt-2 font-bold text-toco-navy"><dt>CIF total</dt><dd class="tabular-nums" x-text="formatUsd(cif.total)"></dd></div>
                     </dl>
-                    <p class="text-[11px] text-ink-soft mt-3" x-show="!portId" x-cloak>Pick a destination port to see freight + total.</p>
+                    <p class="text-[11px] text-ink-soft mt-2 text-ink-soft">CIF includes ocean freight and marine insurance to your chosen port.</p>
+                    <p class="text-[11px] text-ink-soft mt-1" x-show="!portId" x-cloak>Pick a destination port to see the CIF total.</p>
                 </div>
             </aside>
         </div>

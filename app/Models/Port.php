@@ -12,6 +12,7 @@ class Port extends Model
     protected $casts = [
         'rate_per_m3' => 'decimal:2',
         'insurance_pct' => 'decimal:4',
+        'shipping_modes' => 'array',
         'is_active' => 'bool',
         'sort_order' => 'integer',
     ];

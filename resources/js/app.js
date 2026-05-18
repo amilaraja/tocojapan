@@ -25,6 +25,14 @@ window.vehicleGallery = (photos) => ({
     activePointerCount: 0,
     pinchStartDist: 0,
     pinchStartZoom: 1,
+    // Horizontal swipe → prev/next (hero image + lightbox-at-zoom-1).
+    swipeStartX: 0,
+    swipeStartY: 0,
+    swipeTracking: false,
+    swipeJustFired: false,
+    // Hero filmstrip live drag — translates the strip with the finger.
+    heroDragging: false,
+    heroDragOffsetPx: 0,
     goTo(i) {
         const n = this.photos.length;
         this.index = ((i % n) + n) % n;
@@ -91,6 +99,53 @@ window.vehicleGallery = (photos) => ({
         const delta = e.deltaY < 0 ? 1.2 : 1 / 1.2;
         this.setZoom(this.zoom * delta, e.clientX, e.clientY);
     },
+    // ---- Hero swipe (mouse drag on desktop, touch on mobile) ----
+    heroSwipeStart(e) {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        if (this.photos.length < 2) return;
+        this.swipeStartX = e.clientX;
+        this.swipeStartY = e.clientY;
+        this.swipeTracking = true;
+        this.swipeJustFired = false;
+        this.heroDragging = false;
+        this.heroDragOffsetPx = 0;
+        if (e.target.setPointerCapture) {
+            try { e.target.setPointerCapture(e.pointerId); } catch (_) {}
+        }
+    },
+    heroSwipeMove(e) {
+        if (!this.swipeTracking) return;
+        const dx = e.clientX - this.swipeStartX;
+        const dy = e.clientY - this.swipeStartY;
+        // Lock in horizontal intent once the gesture crosses a small threshold;
+        // before that, let the browser keep the gesture for native vertical scroll.
+        if (!this.heroDragging && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) {
+            this.heroDragging = true;
+        }
+        if (this.heroDragging) {
+            this.heroDragOffsetPx = dx;
+        }
+    },
+    heroSwipeEnd(e) {
+        if (!this.swipeTracking) return;
+        this.swipeTracking = false;
+        const dx = this.heroDragging ? this.heroDragOffsetPx : (e.clientX - this.swipeStartX);
+        const dy = e.clientY - this.swipeStartY;
+        this.heroDragging = false;
+        this.heroDragOffsetPx = 0;
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+            if (dx < 0) this.next();
+            else this.prev();
+            this.swipeJustFired = true;
+            // Suppress the click that would otherwise open the lightbox
+            // when the user's pointer-up lands on the same image.
+            setTimeout(() => { this.swipeJustFired = false; }, 300);
+        }
+    },
+    maybeOpenLightbox() {
+        if (this.swipeJustFired) return;
+        this.openLightbox();
+    },
     // ---- Pointer handlers (mouse + touch + pen via Pointer Events) ----
     pinchDistance() {
         const pts = Array.from(this.pointers.values());
@@ -110,6 +165,7 @@ window.vehicleGallery = (photos) => ({
         if (this.activePointerCount === 2) {
             // Pinch begins — capture baseline and stop any single-finger drag.
             this.dragging = false;
+            this.swipeTracking = false;
             this.pinchStartDist = this.pinchDistance();
             this.pinchStartZoom = this.zoom;
         } else if (this.activePointerCount === 1 && this.zoom > 1) {
@@ -119,6 +175,11 @@ window.vehicleGallery = (photos) => ({
             this.dragStartY = e.clientY;
             this.dragOriginX = this.panX;
             this.dragOriginY = this.panY;
+        } else if (this.activePointerCount === 1 && this.zoom === 1 && this.photos.length > 1) {
+            // Not zoomed → drag becomes a swipe between photos.
+            this.swipeStartX = e.clientX;
+            this.swipeStartY = e.clientY;
+            this.swipeTracking = true;
         }
     },
     onDrag(e) {
@@ -148,6 +209,17 @@ window.vehicleGallery = (photos) => ({
 
         if (this.activePointerCount < 2) {
             this.pinchStartDist = 0;
+        }
+
+        // Lightbox swipe completion — only triggers when zoom=1 and pointer up.
+        if (this.activePointerCount === 0 && this.swipeTracking && e) {
+            this.swipeTracking = false;
+            const dx = e.clientX - this.swipeStartX;
+            const dy = e.clientY - this.swipeStartY;
+            if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+                if (dx < 0) this.next();
+                else this.prev();
+            }
         }
 
         if (this.activePointerCount === 0) {

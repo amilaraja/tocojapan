@@ -1,4 +1,5 @@
 @php
+    $showStockCounts = app(\App\Settings\GeneralSettings::class)->show_stock_counts;
     $activeMake = ($filters['make'] ?? '') ? ($makes->firstWhere('slug', $filters['make'])?->name) : null;
     $activeBody = ($filters['body_type'] ?? '') ? \Illuminate\Support\Str::title(str_replace('-', ' ', $filters['body_type'])) : null;
     $facet = trim(($activeMake ?? '').' '.($activeBody ?? '')) ?: null;
@@ -41,15 +42,15 @@
                 </div>
                 <form method="GET" action="{{ route('vehicles.index') }}" class="p-4 space-y-3 text-sm" :class="{ 'hidden lg:block': ! filtersOpen }">
                     <div>
-                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Search</label>
-                        <input type="text" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="ref no, title…" class="w-full border-line rounded-sm">
+                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Search / Stock no.</label>
+                        <input type="text" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="stock no, title, make…" class="w-full border-line rounded-sm">
                     </div>
                     <div>
                         <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Make</label>
                         <select name="make" class="w-full border-line rounded-sm">
                             <option value="">Any make</option>
                             @foreach ($makes as $m)
-                                <option value="{{ $m->slug }}" @selected(($filters['make'] ?? '') === $m->slug) {{ ($m->published_count ?? 0) === 0 ? 'disabled' : '' }}>{{ $m->name }} ({{ $m->published_count ?? 0 }})</option>
+                                <option value="{{ $m->slug }}" @selected(($filters['make'] ?? '') === $m->slug) {{ ($m->published_count ?? 0) === 0 ? 'disabled' : '' }}>{{ $m->name }}@if ($showStockCounts) ({{ $m->published_count ?? 0 }})@endif</option>
                             @endforeach
                         </select>
                     </div>
@@ -69,7 +70,7 @@
                         <select name="body_type" class="w-full border-line rounded-sm">
                             <option value="">Any</option>
                             @foreach ($bodyTypes as $b)
-                                <option value="{{ $b->slug }}" @selected(($filters['body_type'] ?? '') === $b->slug) {{ ($b->published_count ?? 0) === 0 ? 'disabled' : '' }}>{{ $b->name }} ({{ $b->published_count ?? 0 }})</option>
+                                <option value="{{ $b->slug }}" @selected(($filters['body_type'] ?? '') === $b->slug) {{ ($b->published_count ?? 0) === 0 ? 'disabled' : '' }}>{{ $b->name }}@if ($showStockCounts) ({{ $b->published_count ?? 0 }})@endif</option>
                             @endforeach
                         </select>
                     </div>

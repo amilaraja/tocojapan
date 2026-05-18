@@ -162,12 +162,20 @@ class VehicleForm
 
                 Tab::make('Photos')
                     ->schema([
+                        SpatieMediaLibraryFileUpload::make('video')
+                            ->label('Walkaround video')
+                            ->collection('video')
+                            ->acceptedFileTypes(['video/mp4', 'video/webm', 'video/quicktime'])
+                            ->maxSize(102400)
+                            ->helperText('Optional. MP4/WebM, up to 100 MB. A play button appears over the first photo on the detail page.')
+                            ->columnSpanFull(),
                         SpatieMediaLibraryFileUpload::make('photos')
                             ->collection('photos')
                             ->multiple()
                             ->reorderable()
                             ->image()
                             ->imageEditor()
+                            ->panelLayout('grid')
                             ->columnSpanFull(),
                     ]),
 

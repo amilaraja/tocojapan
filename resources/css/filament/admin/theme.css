@@ -2,3 +2,18 @@
 
 @source '../../../../app/Filament/Admin/**/*';
 @source '../../../../resources/views/filament/admin/**/*';
+
+/* Grid-layout file uploads (e.g. vehicle photos): 6 columns on desktop. */
+.fi-fo-file-upload .filepond--root[data-style-panel-layout="grid"] .filepond--item {
+    width: calc(33.333% - 0.5rem) !important;
+}
+@media (min-width: 48rem) {
+    .fi-fo-file-upload .filepond--root[data-style-panel-layout="grid"] .filepond--item {
+        width: calc(25% - 0.5rem) !important;
+    }
+}
+@media (min-width: 64rem) {
+    .fi-fo-file-upload .filepond--root[data-style-panel-layout="grid"] .filepond--item {
+        width: calc(16.6667% - 0.5rem) !important;
+    }
+}

@@ -30,10 +30,35 @@
                 error: null,
                 loading: false,
                 countries: @js($countries->map(fn($c) => ['id' => $c->id, 'name' => $c->name, 'iso2' => $c->iso2, 'ports' => $c->ports->map(fn($p) => ['id' => $p->id, 'name' => $p->name, 'rate_per_m3' => (float) $p->rate_per_m3])->all()])),
+                init() {
+                    // Pre-fill from the destination saved earlier (toco_port cookie).
+                    // Applied via $nextTick so the <option> x-for templates have
+                    // rendered before the <select>s sync to the saved values.
+                    const dc = '{{ $destPort?->country_id }}', dp = '{{ $destPort?->id }}';
+                    if (! dc) return;
+                    const c = this.countries.find(c => c.id == dc);
+                    this.ports = c ? c.ports : [];
+                    this.$nextTick(() => {
+                        this.countryId = dc;
+                        this.$nextTick(() => { this.portId = dp; });
+                    });
+                },
                 onCountry() {
                     this.portId = '';
                     const c = this.countries.find(c => c.id == this.countryId);
                     this.ports = c ? c.ports : [];
+                },
+                saveDestination() {
+                    if (!this.portId) return;
+                    fetch('{{ route('destination.set') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || '',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: 'port_id=' + encodeURIComponent(this.portId),
+                    }).catch(() => {});
                 },
                 recalcM3() {
                     const l = parseFloat(this.length) || 0;
@@ -105,10 +130,10 @@
                         </div>
                         <div>
                             <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Port</label>
-                            <select x-model="portId" :disabled="!ports.length" class="w-full border-line rounded-sm disabled:bg-toco-silver-2">
+                            <select x-model="portId" @change="saveDestination()" :disabled="!ports.length" class="w-full border-line rounded-sm disabled:bg-toco-silver-2">
                                 <option value="">— Pick a port —</option>
                                 <template x-for="p in ports" :key="p.id">
-                                    <option :value="p.id" x-text="p.name + ' · $' + p.rate_per_m3 + '/m³'"></option>
+                                    <option :value="p.id" x-text="p.name"></option>
                                 </template>
                             </select>
                         </div>
@@ -120,7 +145,7 @@
                         <select x-model="vehicleSlug" class="w-full border-line rounded-sm">
                             <option value="">— Pick a vehicle —</option>
                             @foreach ($vehicles as $v)
-                                <option value="{{ $v->slug }}">{{ $v->title }} ({{ $v->ref_no }}) — ${{ number_format((float) $v->price_fob) }} · m³ {{ $v->m3 }}</option>
+                                <option value="{{ $v->slug }}">{{ $v->title }} ({{ $v->stock_no ?: $v->ref_no }}) — ${{ number_format((float) $v->price_fob) }}</option>
                             @endforeach
                         </select>
                         <p class="text-[12px] text-ink-soft mt-1">Showing the latest 50 vehicles in stock.</p>
@@ -139,11 +164,6 @@
                                 <input type="number" min="0" x-model="width"  @input="recalcM3()" placeholder="Width"  class="border-line rounded-sm">
                                 <input type="number" min="0" x-model="height" @input="recalcM3()" placeholder="Height" class="border-line rounded-sm">
                             </div>
-                            <p class="text-[12px] text-ink-soft mt-1">Used to derive m³ = L × W × H ÷ 1,000,000.</p>
-                        </div>
-                        <div>
-                            <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Or enter m³ directly</label>
-                            <input type="number" min="0" step="0.0001" x-model="m3" class="w-full border-line rounded-sm" placeholder="e.g. 12.5">
                         </div>
                     </div>
 

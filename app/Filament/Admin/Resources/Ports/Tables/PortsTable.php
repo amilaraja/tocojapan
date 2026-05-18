@@ -23,6 +23,11 @@ class PortsTable
                     ->searchable(),
                 TextColumn::make('unlocode')
                     ->searchable(),
+                TextColumn::make('shipping_modes')
+                    ->label('Shipping')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => strtoupper($state))
+                    ->placeholder('—'),
                 TextColumn::make('rate_per_m3')
                     ->numeric()
                     ->sortable(),

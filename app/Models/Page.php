@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\LiteSpeedCache;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -16,6 +17,14 @@ class Page extends Model implements HasMedia
         'data' => 'array',
         'published_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        $bust = fn () => LiteSpeedCache::bustForContentChange();
+
+        static::saved($bust);
+        static::deleted($bust);
+    }
 
     public function isPublished(): bool
     {
