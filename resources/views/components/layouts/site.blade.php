@@ -110,7 +110,15 @@
                             countries: @js($destCountries->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'ports' => $c->ports->map(fn ($p) => ['id' => $p->id, 'name' => $p->name])->all()])),
                             init() {
                                 const dc = '{{ $destPort?->country_id }}', dp = '{{ $destPort?->id }}';
-                                if (! dc) return;
+                                if (! dc) {
+                                    // No destination yet — prompt the visitor to set one,
+                                    // once per browser session so it isn't naggy.
+                                    if (! sessionStorage.getItem('toco_dest_prompted')) {
+                                        sessionStorage.setItem('toco_dest_prompted', '1');
+                                        this.$nextTick(() => { this.open = true; });
+                                    }
+                                    return;
+                                }
                                 const c = this.countries.find(c => c.id == dc);
                                 this.ports = c ? c.ports : [];
                                 this.$nextTick(() => {

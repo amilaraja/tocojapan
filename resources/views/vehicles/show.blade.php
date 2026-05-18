@@ -6,6 +6,30 @@
     }
     $videoUrl = $vehicle->videoUrl();
 
+    // Countries + ports for the CIF forms, with the import regulation that
+    // applies to each port (a port-specific rule wins over a country-wide one).
+    $countriesData = $countries->map(fn ($c) => [
+        'id' => $c->id,
+        'name' => $c->name,
+        'iso2' => $c->iso2,
+        'ports' => $c->ports->map(function ($p) use ($c) {
+            $reg = $c->importRegulations->first(fn ($r) => $r->ports->contains('id', $p->id))
+                ?: $c->importRegulations->first(fn ($r) => $r->ports->isEmpty());
+
+            return [
+                'id' => $p->id,
+                'name' => $p->name,
+                'rate_per_m3' => (float) $p->rate_per_m3,
+                'regulation' => $reg ? [
+                    'description' => $reg->short_description,
+                    'age_limit' => $reg->year_restriction,
+                    'shipment_time' => $reg->time_of_shipment,
+                    'notes' => $reg->comments,
+                ] : null,
+            ];
+        })->all(),
+    ])->all();
+
     // Buy-now state — hoisted to top so it's in scope regardless of any
     // x-component closures further down in the view.
     $payment = app(\App\Settings\PaymentSettings::class);
@@ -484,7 +508,7 @@
                     <div class="bg-white border border-line rounded-sm p-5"
                         x-data="{
                             countryId: '', portId: '', ports: [], result: null, error: null, loading: false,
-                            countries: @js($countries->map(fn($c) => ['id' => $c->id, 'name' => $c->name, 'iso2' => $c->iso2, 'ports' => $c->ports->map(fn($p) => ['id' => $p->id, 'name' => $p->name, 'rate_per_m3' => (float) $p->rate_per_m3])->all()])),
+                            countries: @js($countriesData),
                             init() {
                                 // Pre-fill from the destination saved earlier (toco_port cookie).
                                 // Values are applied via $nextTick so the <option> x-for
@@ -502,6 +526,10 @@
                                 this.portId = '';
                                 const c = this.countries.find(c => c.id == this.countryId);
                                 this.ports = c ? c.ports : [];
+                            },
+                            regulation() {
+                                const p = this.ports.find(p => p.id == this.portId);
+                                return p && p.regulation ? p.regulation : null;
                             },
                             async submit() {
                                 this.error = null; this.result = null;
@@ -539,6 +567,26 @@
                                 <span x-show="!loading">Calculate</span>
                                 <span x-show="loading" x-cloak>Calculating…</span>
                             </button>
+                        </div>
+
+                        {{-- Import regulations for the chosen port --}}
+                        <div x-show="regulation()" x-cloak class="mt-3 border border-line rounded-sm bg-toco-silver-2/60 p-3 text-[12px] leading-snug">
+                            <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold mb-1.5">Import rules — your port</p>
+                            <p x-show="regulation()?.description" x-text="regulation()?.description" class="text-ink mb-2"></p>
+                            <dl class="space-y-1">
+                                <div x-show="regulation()?.age_limit" class="flex gap-2">
+                                    <dt class="text-ink-soft w-28 shrink-0">Age limit</dt>
+                                    <dd class="font-semibold text-toco-navy" x-text="regulation()?.age_limit"></dd>
+                                </div>
+                                <div x-show="regulation()?.shipment_time" class="flex gap-2">
+                                    <dt class="text-ink-soft w-28 shrink-0">Shipment time</dt>
+                                    <dd class="font-semibold text-toco-navy" x-text="regulation()?.shipment_time"></dd>
+                                </div>
+                                <div x-show="regulation()?.notes" class="flex gap-2">
+                                    <dt class="text-ink-soft w-28 shrink-0">Notes</dt>
+                                    <dd class="text-ink whitespace-pre-line" x-text="regulation()?.notes"></dd>
+                                </div>
+                            </dl>
                         </div>
 
                         <div x-show="error" x-cloak class="text-toco-red text-[12px] mt-3" x-text="error"></div>
@@ -590,7 +638,7 @@
             <div id="quote-form" class="bg-white border border-line border-t-4 border-t-toco-red rounded-sm p-6 mt-8 max-w-3xl"
                 x-data="{
                     countryId: '', portId: '', ports: [],
-                    countries: @js($countries->map(fn($c) => ['id' => $c->id, 'name' => $c->name, 'iso2' => $c->iso2, 'ports' => $c->ports->map(fn($p) => ['id' => $p->id, 'name' => $p->name])->all()])),
+                    countries: @js($countriesData),
                     init() {
                         // Pre-fill from the destination saved earlier (toco_port cookie).
                         // Values are applied via $nextTick so the <option> x-for
@@ -608,6 +656,10 @@
                         this.portId = '';
                         const c = this.countries.find(c => c.id == this.countryId);
                         this.ports = c ? c.ports : [];
+                    },
+                    regulation() {
+                        const p = this.ports.find(p => p.id == this.portId);
+                        return p && p.regulation ? p.regulation : null;
                     }
                 }">
                 <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">Request a quote</p>
@@ -650,6 +702,27 @@
                         </select>
                         @error('port_id')<p class="text-toco-red text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
+
+                    {{-- Import regulations for the chosen port --}}
+                    <div x-show="regulation()" x-cloak class="md:col-span-2 border border-line rounded-sm bg-toco-silver-2/60 p-4">
+                        <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold mb-2">Import regulations — your destination port</p>
+                        <p x-show="regulation()?.description" x-text="regulation()?.description" class="text-[13px] text-ink mb-3"></p>
+                        <dl class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[13px]">
+                            <div x-show="regulation()?.age_limit">
+                                <dt class="text-ink-soft font-mono text-[10px] uppercase tracking-widest">Age limit</dt>
+                                <dd class="font-semibold text-toco-navy mt-0.5" x-text="regulation()?.age_limit"></dd>
+                            </div>
+                            <div x-show="regulation()?.shipment_time">
+                                <dt class="text-ink-soft font-mono text-[10px] uppercase tracking-widest">Shipment time</dt>
+                                <dd class="font-semibold text-toco-navy mt-0.5" x-text="regulation()?.shipment_time"></dd>
+                            </div>
+                            <div x-show="regulation()?.notes" class="sm:col-span-3">
+                                <dt class="text-ink-soft font-mono text-[10px] uppercase tracking-widest">Notes</dt>
+                                <dd class="text-ink mt-0.5 whitespace-pre-line" x-text="regulation()?.notes"></dd>
+                            </div>
+                        </dl>
+                    </div>
+
                     <div class="md:col-span-2">
                         <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Message (optional)</label>
                         <textarea name="message" rows="4" maxlength="4000" placeholder="Anything we should know? (target accessories, alternative models, currency, ETA…)" class="w-full border-line rounded-sm">{{ old('message') }}</textarea>
