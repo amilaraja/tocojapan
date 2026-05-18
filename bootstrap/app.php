@@ -25,10 +25,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // in the admin panel can emit the LiteSpeed purge header.
         $middleware->append(\App\Http\Middleware\PurgeLiteSpeedCache::class);
 
-        // Follows managed redirects and logs 404 misses for the admin.
-        $middleware->web(append: [
-            \App\Http\Middleware\HandleNotFound::class,
-        ]);
+        // Global (not web-group) so it also catches requests that match no
+        // route at all — those never enter the web group. Follows managed
+        // redirects and logs every 404 miss for the admin.
+        $middleware->append(\App\Http\Middleware\HandleNotFound::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
