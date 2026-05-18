@@ -11,8 +11,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Vehicle extends Model implements HasMedia
 {
@@ -170,5 +172,31 @@ class Vehicle extends Model implements HasMedia
         $url = $this->getFirstMediaUrl('video');
 
         return $url ?: null;
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        // Small thumbnail for listing cards — keeps the homepage/listing
+        // payload tiny instead of shipping the full 1200px photo.
+        $this->addMediaConversion('card')
+            ->performOnCollections('photos')
+            ->fit(Fit::Crop, 560, 420)
+            ->format('webp')
+            ->quality(72)
+            ->nonQueued();
+    }
+
+    /** Card-sized photo URL — uses the 'card' conversion once it is generated. */
+    public function cardPhotoUrl(): ?string
+    {
+        $media = $this->getFirstMedia('photos');
+
+        if (! $media) {
+            return null;
+        }
+
+        return $media->hasGeneratedConversion('card')
+            ? $media->getUrl('card')
+            : $media->getUrl();
     }
 }

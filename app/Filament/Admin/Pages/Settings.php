@@ -55,6 +55,7 @@ class Settings extends Page implements HasForms
                 'header_logo' => $general->header_logo,
                 'footer_logos' => $general->footer_logos,
                 'show_stock_counts' => $general->show_stock_counts,
+                'google_analytics_id' => $general->google_analytics_id,
             ],
             'cif' => [
                 'insurance_pct_display' => $cif->insurance_pct * 100, // shown as %
@@ -102,6 +103,11 @@ class Settings extends Page implements HasForms
                                         TextInput::make('general.contact_email')->label('Contact email')->email()->required(),
                                         TextInput::make('general.contact_phone')->label('Contact phone'),
                                         TextInput::make('general.whatsapp_number')->label('WhatsApp number'),
+                                        TextInput::make('general.google_analytics_id')
+                                            ->label('Google Analytics ID')
+                                            ->placeholder('G-XXXXXXXXXX')
+                                            ->helperText('GA4 measurement ID. Leave blank to disable tracking.')
+                                            ->columnSpanFull(),
                                     ]),
                                 Section::make('Stock display')
                                     ->description('Controls how stock numbers are shown across the storefront.')
@@ -303,6 +309,7 @@ class Settings extends Page implements HasForms
             fn ($l) => ! empty($l['image'])
         ));
         $general->show_stock_counts = (bool) ($state['general']['show_stock_counts'] ?? false);
+        $general->google_analytics_id = $state['general']['google_analytics_id'] ?: null;
         $general->save();
 
         $cif = app(CifSettings::class);

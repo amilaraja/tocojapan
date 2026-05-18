@@ -20,6 +20,8 @@ class GeneralSettings extends Settings
 
     public bool $show_stock_counts;
 
+    public ?string $google_analytics_id;
+
     public static function group(): string
     {
         return 'general';

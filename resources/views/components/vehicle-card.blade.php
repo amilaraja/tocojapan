@@ -1,7 +1,7 @@
-@props(['vehicle'])
+@props(['vehicle', 'priority' => false])
 
 @php
-    $photo = $vehicle->getFirstMediaUrl('photos');
+    $photo = $vehicle->cardPhotoUrl();
     $isSold = $vehicle->status === 'sold';
     $isNew = ! $isSold && $vehicle->published_at && $vehicle->published_at->gt(now()->subDays(14));
     $fallbackPhoto = '/img/v5/car-'.((($vehicle->id % 4) + 1)).'.jpg';
@@ -11,7 +11,11 @@
 <div class="relative group bg-white border border-line hover:border-toco-navy transition {{ $isSold ? 'opacity-90' : '' }}">
     <a href="{{ route('vehicles.show', $vehicle->slug) }}" class="block">
         <div class="relative aspect-[4/3] bg-toco-silver-2 overflow-hidden">
-            <img src="{{ $photo ?: $fallbackPhoto }}" alt="{{ $vehicle->title }}" class="w-full h-full object-cover transition group-hover:scale-[1.02] {{ $isSold ? 'grayscale' : '' }}">
+            <img src="{{ $photo ?: $fallbackPhoto }}" alt="{{ $vehicle->title }}"
+                 width="560" height="420" decoding="async"
+                 loading="{{ $priority ? 'eager' : 'lazy' }}"
+                 fetchpriority="{{ $priority ? 'high' : 'auto' }}"
+                 class="w-full h-full object-cover transition group-hover:scale-[1.02] {{ $isSold ? 'grayscale' : '' }}">
             @if ($isSold)
                 <span class="absolute top-2 left-2 bg-toco-red text-white text-[11px] font-bold uppercase tracking-widest px-2.5 py-1 font-mono rounded-sm shadow">SOLD</span>
             @elseif ($isNew)

@@ -5,6 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @php
+        $gaId = app(\App\Settings\GeneralSettings::class)->google_analytics_id ?? null;
+    @endphp
+    @if ($gaId)
+        {{-- Google Analytics (GA4) — measurement ID set in Site settings --}}
+        <script async src="https://www.googletagmanager.com/gtag/js?id={{ $gaId }}"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '{{ $gaId }}');
+        </script>
+    @endif
+    @php
         $resolvedTitle = $title ?? config('app.name', 'Toco Japan');
         $resolvedDescription = $description ?? 'Toco Japan — quality Japanese vehicles, exported worldwide. Browse stock, get a CIF quote, and import with confidence.';
         $resolvedOgImage = $ogImage ?? asset('img/footer-logos/toco.png');
@@ -49,6 +62,7 @@
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
                         <select
                             id="lang_picker"
+                            aria-label="Select language"
                             onchange="window.setSiteLanguage(this.value)"
                             class="bg-transparent border-0 text-white/80 hover:text-white text-[12px] cursor-pointer focus:outline-none pr-1"
                         >
@@ -66,6 +80,7 @@
                             @csrf
                             <select
                                 name="code"
+                                aria-label="Select currency"
                                 onchange="document.getElementById('currencyForm').action = '/currency/' + this.value; document.getElementById('currencyForm').submit();"
                                 class="bg-transparent border-0 text-white/80 hover:text-white text-[12px] cursor-pointer focus:outline-none notranslate"
                             >
@@ -177,7 +192,7 @@
                     {{ $topBarRight }}
                 @else
                     <span class="hidden md:inline-flex items-center gap-1.5 notranslate" translate="no">
-                        <span class="text-white/55">Japan time</span>
+                        <span class="text-white/70">Japan time</span>
                         <span id="jp-clock" class="font-mono text-white tabular-nums">—</span>
                     </span>
                     <a href="#" class="hidden lg:inline-flex items-center gap-1.5 hover:text-white">
@@ -228,11 +243,11 @@
                     </ul>
                 </nav>
                 <form action="{{ route('vehicles.index') }}" method="GET" class="flex items-stretch h-10 w-full max-w-[600px] rounded-sm border border-line overflow-hidden bg-white">
-                    <select name="search_by" class="bg-toco-silver-2 border-0 border-r border-line text-[13px] font-semibold text-toco-navy focus:ring-0 pl-3 pr-8 cursor-pointer notranslate">
+                    <select name="search_by" aria-label="Search type" class="bg-toco-silver-2 border-0 border-r border-line text-[13px] font-semibold text-toco-navy focus:ring-0 pl-3 pr-8 cursor-pointer notranslate">
                         <option value="keyword">By Keyword</option>
                         <option value="ref">By Stock No.</option>
                     </select>
-                    <input type="text" name="q" value="{{ request('q') }}" placeholder="Search by make, model, year…" class="flex-1 min-w-0 border-0 text-[13px] text-ink placeholder:text-ink-soft focus:ring-0 px-3">
+                    <input type="text" name="q" value="{{ request('q') }}" aria-label="Search vehicles" placeholder="Search by make, model, year…" class="flex-1 min-w-0 border-0 text-[13px] text-ink placeholder:text-ink-soft focus:ring-0 px-3">
                     <button type="submit" aria-label="Search" class="bg-toco-red hover:bg-toco-red-deep text-white px-4 grid place-items-center transition">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
                     </button>
@@ -289,7 +304,7 @@
                 class="bg-white border-b border-line shadow-lg"
             >
                 <form action="{{ route('vehicles.index') }}" method="GET" class="flex items-stretch h-11 m-4 rounded-sm border border-line overflow-hidden">
-                    <input type="text" name="q" value="{{ request('q') }}" placeholder="Search by make, model, year…" class="flex-1 min-w-0 border-0 text-[13px] focus:ring-0 px-3">
+                    <input type="text" name="q" value="{{ request('q') }}" aria-label="Search vehicles" placeholder="Search by make, model, year…" class="flex-1 min-w-0 border-0 text-[13px] focus:ring-0 px-3">
                     <button type="submit" aria-label="Search" class="bg-toco-red text-white px-4 grid place-items-center">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
                     </button>
@@ -422,7 +437,7 @@
             </div>
         @endif
         <div class="border-t border-white/10">
-            <div class="max-w-[1440px] mx-auto px-6 py-4 text-[11px] text-white/55 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div class="max-w-[1440px] mx-auto px-6 py-4 text-[11px] text-white/70 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <span>
                     Copyright &copy; {{ date('Y') }} 有限会社 TOCO INTERNATIONAL | All rights Reserved.
                 </span>
@@ -445,7 +460,7 @@
         font[style*="background-color: rgb(255, 255, 102)"] { background-color: transparent !important; box-shadow: none !important; }
     </style>
     <script>
-        function googleTranslateElementInit() {
+        window.googleTranslateElementInit = function () {
             new google.translate.TranslateElement({
                 pageLanguage: 'en',
                 includedLanguages: 'en,ja,fr,pt,es,sw',
@@ -455,7 +470,7 @@
             var current = (document.cookie.match(/(?:^|;\s*)googtrans=\/en\/([\w-]+)/) || [])[1] || 'en';
             var sel = document.getElementById('lang_picker');
             if (sel) sel.value = current;
-        }
+        };
 
         window.setSiteLanguage = function (lang) {
             // Google Translate reads the `googtrans` cookie; set it for the
@@ -467,8 +482,24 @@
             document.cookie = 'googtrans=' + value + ';path=/;domain=.' + parent + ';max-age=31536000';
             location.reload();
         };
+
+        // Google Translate is heavy — only load it when the visitor is
+        // actually viewing the site in a non-English language. English
+        // visitors (the majority) never pay for it.
+        (function () {
+            var m = document.cookie.match(/(?:^|;\s*)googtrans=\/[\w-]+\/([\w-]+)/);
+            if (!m || m[1] === 'en') return;
+            ['//translate.googleapis.com', '//translate-pa.googleapis.com', '//www.gstatic.com'].forEach(function (origin) {
+                var l = document.createElement('link');
+                l.rel = 'preconnect'; l.href = origin; l.crossOrigin = '';
+                document.head.appendChild(l);
+            });
+            var s = document.createElement('script');
+            s.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+            s.async = true;
+            document.head.appendChild(s);
+        })();
     </script>
-    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async></script>
 
     {{-- Japan time clock (Asia/Tokyo) --}}
     <script>

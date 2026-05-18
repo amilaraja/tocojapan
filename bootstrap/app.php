@@ -24,6 +24,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Runs on every request (public + Filament admin) so a CMS save
         // in the admin panel can emit the LiteSpeed purge header.
         $middleware->append(\App\Http\Middleware\PurgeLiteSpeedCache::class);
+
+        // Follows managed redirects and logs 404 misses for the admin.
+        $middleware->web(append: [
+            \App\Http\Middleware\HandleNotFound::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

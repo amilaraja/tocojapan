@@ -53,6 +53,9 @@
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
         </script>
     @endpush
+
+    <h1 class="sr-only">Toco Japan — Used Japanese Vehicles for Export Worldwide</h1>
+
     {{-- Hero band --}}
     <section class="bg-gradient-to-b from-toco-navy to-toco-navy-deep text-white py-6">
         <div class="max-w-[1600px] mx-auto px-6 2xl:px-8">
@@ -93,7 +96,7 @@
                         @endphp
                         <a href="{{ $sxUrl }}" aria-label="{{ $sxAlt }}"
                            class="mb-3 block overflow-hidden border border-white/10 rounded-sm">
-                            <img src="{{ $sxImg }}" alt="{{ $sxAlt }}" class="block w-full h-auto">
+                            <img src="{{ $sxImg }}" alt="{{ $sxAlt }}" width="1280" height="68" decoding="async" class="block w-full h-auto">
                         </a>
                     @endif
 
@@ -104,7 +107,7 @@
                          (6:1) but this works for any matching-ratio set. --}}
                     <div class="relative bg-toco-silver border border-white/10 overflow-hidden">
                         <template x-for="(slide, i) in slides" :key="slide">
-                            <img :src="slide" alt=""
+                            <img :src="slide" alt="" width="1500" height="250" decoding="async"
                                  class="block w-full h-auto transition-opacity duration-700"
                                  :class="{
                                      'opacity-100 relative': i === idx,
@@ -204,23 +207,23 @@
                         </div>
 
                         <form @submit.prevent="submit()" x-show="tab === 'make'" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-                            <select x-model="makeSlug" @change="loadModels(makeSlug)" class="w-full text-sm">
+                            <select x-model="makeSlug" @change="loadModels(makeSlug)" aria-label="Make" class="w-full text-sm">
                                 <option value="">Any make</option>
                                 @foreach ($allMakes as $m)
                                     <option value="{{ $m->slug }}" {{ ($m->published_count ?? 0) === 0 ? 'disabled' : '' }}>{{ $m->name }}@if ($showStockCounts) ({{ $m->published_count ?? 0 }})@endif</option>
                                 @endforeach
                             </select>
-                            <select x-model="modelSlug" :disabled="loadingModels || !makeSlug" class="w-full text-sm disabled:bg-toco-silver-2">
+                            <select x-model="modelSlug" :disabled="loadingModels || !makeSlug" aria-label="Model" class="w-full text-sm disabled:bg-toco-silver-2">
                                 <option value="">Any model</option>
                                 <template x-for="m in models" :key="m.slug">
                                     <option :value="m.slug" x-text="m.name"></option>
                                 </template>
                             </select>
-                            <select x-model="yearFrom" class="w-full text-sm">
+                            <select x-model="yearFrom" aria-label="Year from" class="w-full text-sm">
                                 <option value="">Any year</option>
                                 @for ($y = (int) date('Y'); $y >= 1990; $y--)<option value="{{ $y }}">{{ $y }}+</option>@endfor
                             </select>
-                            <select x-model="priceTo" class="w-full text-sm">
+                            <select x-model="priceTo" aria-label="Maximum price" class="w-full text-sm">
                                 <option value="">Any price</option>
                                 @foreach ([3000, 5000, 8000, 12000, 20000, 35000, 60000] as $p)<option value="{{ $p }}">≤ ${{ number_format($p) }}</option>@endforeach
                             </select>
@@ -253,7 +256,7 @@
                         <form @submit.prevent="submit()" x-show="tab === 'ref'" x-cloak class="flex flex-col gap-1.5">
                             <label class="font-mono text-[10px] uppercase tracking-widest text-ink-soft">Search by stock number</label>
                             <div class="flex gap-2">
-                                <input x-model="stockRef" type="text" placeholder="e.g. E01888" class="flex-1 text-sm">
+                                <input x-model="stockRef" type="text" aria-label="Stock number" placeholder="e.g. E01888" class="flex-1 text-sm">
                                 <button type="submit" class="bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-3 py-2 rounded-sm">Find</button>
                             </div>
                         </form>
