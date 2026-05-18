@@ -53,7 +53,7 @@
 
     {{-- Top bar --}}
     <div class="bg-toco-navy text-white/80 text-[12px] tracking-wide border-b border-white/5">
-        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 2xl:px-8 py-0.5 sm:py-2 flex items-center justify-between gap-4 [&_select]:py-1 sm:[&_select]:py-1.5">
+        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 2xl:px-8 py-0.5 sm:py-2 flex items-center justify-between gap-4 [&_select]:h-7 [&_select]:py-0 sm:[&_select]:h-auto sm:[&_select]:py-1.5">
             <div class="flex items-center gap-3 sm:gap-5">
                 @isset($topBarLeft)
                     {{ $topBarLeft }}
@@ -207,7 +207,7 @@
                         <span class="inline-block w-1.5 h-1.5 rounded-full bg-toco-red"></span>
                         <span>Live: {{ rand(45, 70) }} buyers viewing now</span>
                     </a>
-                    <a href="https://wa.me/819057628702" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 hover:text-white notranslate" translate="no">
+                    <a href="https://wa.me/819057628702" target="_blank" rel="noopener" class="hidden sm:inline-flex items-center gap-1.5 hover:text-white notranslate" translate="no">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="#25D366" class="shrink-0"><path d="M17.5 14.4c-.3-.15-1.74-.86-2.01-.96-.27-.1-.47-.15-.66.15-.2.29-.76.96-.93 1.16-.17.2-.34.22-.63.07-.29-.15-1.24-.46-2.36-1.46-.87-.78-1.46-1.74-1.63-2.03-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.49.1-.2.05-.36-.02-.51-.07-.15-.66-1.59-.9-2.18-.24-.57-.48-.49-.66-.5l-.56-.01c-.2 0-.51.07-.78.36-.27.29-1.02 1-1.02 2.43 0 1.44 1.04 2.82 1.19 3.02.15.2 2.06 3.14 4.99 4.4.7.3 1.24.48 1.66.62.7.22 1.33.19 1.83.12.56-.08 1.74-.71 1.98-1.4.24-.68.24-1.27.17-1.39-.07-.12-.27-.2-.56-.34M12 2a10 10 0 0 0-8.55 15.16L2 22l4.96-1.43A10 10 0 1 0 12 2"/></svg>
                         <span>+81 90 5762 8702</span>
                     </a>
@@ -232,7 +232,7 @@
             @php($headerLogo = app(\App\Settings\GeneralSettings::class)->header_logo ?? null)
             <a href="{{ route('home') }}" class="inline-flex items-center gap-2.5 shrink-0">
                 @if ($headerLogo)
-                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($headerLogo) }}" alt="{{ config('app.name', 'Toco Japan') }}" class="h-[3.3rem] sm:h-[3.85rem] w-auto">
+                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($headerLogo) }}" alt="{{ config('app.name', 'Toco Japan') }}" class="h-10 sm:h-[3.85rem] w-auto">
                 @else
                     <span class="inline-flex items-center justify-center w-11 h-11 rounded-sm bg-toco-red text-white font-bold text-base font-mono">TJ</span>
                     <span class="font-extrabold tracking-tight text-toco-navy text-xl hidden sm:inline">Toco Japan</span>
@@ -263,7 +263,7 @@
             </div>
 
             {{-- Column 3 — actions --}}
-            <div class="flex items-center gap-3 sm:gap-4 shrink-0 ml-auto">
+            <div class="flex items-center gap-2 sm:gap-4 shrink-0 ml-auto">
                 @php($wishlistCount = count($favoritedIds ?? []))
                 <a href="{{ Auth::check() ? route('favorites.index') : route('login') }}" class="relative inline-flex items-center text-ink hover:text-toco-red" title="My wishlist">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="{{ $wishlistCount ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.7A4 4 0 0 1 19 11c0 5.5-7 10-7 10Z"/></svg>
@@ -287,9 +287,9 @@
                     </a>
                 @else
                     <a href="{{ route('login') }}" class="hidden sm:inline-flex items-center text-[13px] font-semibold text-ink hover:text-toco-red">Sign in</a>
-                    <a href="{{ route('register') }}" class="bg-toco-red hover:bg-toco-red-deep text-white text-[12px] font-bold uppercase tracking-widest px-4 py-2.5 rounded-sm">Register</a>
+                    <a href="{{ route('register') }}" class="bg-toco-red hover:bg-toco-red-deep text-white text-[11px] sm:text-[12px] font-bold uppercase tracking-widest px-3 sm:px-4 py-2 sm:py-2.5 rounded-sm">Register</a>
                 @endauth
-                <button type="button" @click="mobileOpen = !mobileOpen" aria-label="Menu" class="lg:hidden inline-flex items-center justify-center w-9 h-9 -mr-1 rounded-sm hover:bg-toco-silver-2 text-toco-navy">
+                <button type="button" @click="mobileOpen = !mobileOpen" aria-label="Menu" class="lg:hidden inline-flex items-center justify-center w-9 h-9 shrink-0 rounded-sm hover:bg-toco-silver-2 text-toco-navy">
                     <svg x-show="!mobileOpen" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
                     <svg x-show="mobileOpen" x-cloak width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M6 18 18 6"/></svg>
                 </button>
