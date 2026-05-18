@@ -41,9 +41,17 @@ class CustomerReviewsTemplate implements PageTemplate
             ->orderByDesc('created_at')
             ->paginate(20);
 
+        // Aggregate across every published review for the schema.org markup.
+        $reviewCount = Testimonial::query()->published()->count();
+        $avgRating = $reviewCount > 0
+            ? round((float) Testimonial::query()->published()->avg('stars'), 1)
+            : null;
+
         return view('cms.templates.customer-reviews', [
             'page' => $page,
             'testimonials' => $testimonials,
+            'reviewCount' => $reviewCount,
+            'avgRating' => $avgRating,
         ]);
     }
 }

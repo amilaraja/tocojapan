@@ -1,4 +1,34 @@
 <x-layouts.cms :page="$page">
+    @push('head')
+        <script type="application/ld+json">
+        {!! json_encode(array_filter([
+            '@context' => 'https://schema.org',
+            '@type' => 'AutoDealer',
+            'name' => config('app.name', 'Toco Japan'),
+            'url' => url('/'),
+            'aggregateRating' => ($reviewCount ?? 0) > 0 ? [
+                '@type' => 'AggregateRating',
+                'ratingValue' => $avgRating,
+                'reviewCount' => $reviewCount,
+                'bestRating' => 5,
+                'worstRating' => 1,
+            ] : null,
+            'review' => $testimonials->map(fn ($r) => array_filter([
+                '@type' => 'Review',
+                'reviewRating' => [
+                    '@type' => 'Rating',
+                    'ratingValue' => $r->stars,
+                    'bestRating' => 5,
+                    'worstRating' => 1,
+                ],
+                'author' => ['@type' => 'Person', 'name' => $r->name ?: 'Verified customer'],
+                'reviewBody' => $r->quote ?: null,
+                'datePublished' => optional($r->created_at)->toDateString(),
+            ]))->values()->all(),
+        ]), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+        </script>
+    @endpush
+
     <section class="bg-gradient-to-b from-toco-navy to-toco-navy-deep text-white">
         <div class="max-w-[1280px] mx-auto px-6 py-12 md:py-16">
             @if (! empty($page->data['kicker']))
