@@ -53,7 +53,7 @@
 
     {{-- Top bar --}}
     <div class="bg-toco-navy text-white/80 text-[12px] tracking-wide border-b border-white/5">
-        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 2xl:px-8 py-2 flex items-center justify-between gap-4">
+        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 2xl:px-8 py-0.5 sm:py-2 flex items-center justify-between gap-4 [&_select]:py-1 sm:[&_select]:py-1.5">
             <div class="flex items-center gap-3 sm:gap-5">
                 @isset($topBarLeft)
                     {{ $topBarLeft }}
