@@ -20,6 +20,10 @@ class PortResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Shipping';
+
+    protected static ?int $navigationSort = 41;
+
     public static function form(Schema $schema): Schema
     {
         return PortForm::configure($schema);

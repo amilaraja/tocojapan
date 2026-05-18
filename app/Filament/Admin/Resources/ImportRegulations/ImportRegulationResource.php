@@ -20,6 +20,10 @@ class ImportRegulationResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Shipping';
+
+    protected static ?int $navigationSort = 42;
+
     protected static ?string $navigationLabel = 'Import regulations';
 
     protected static ?string $recordTitleAttribute = 'year_restriction';

@@ -21,11 +21,13 @@ class RedirectResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowsRightLeft;
 
-    protected static string|UnitEnum|null $navigationGroup = 'System';
+    protected static string|\UnitEnum|null $navigationGroup = 'System';
+
+    protected static ?int $navigationSort = 52;
+
 
     protected static ?string $navigationLabel = 'Redirects';
 
-    protected static ?int $navigationSort = 80;
 
     protected static ?string $recordTitleAttribute = 'from_path';
 

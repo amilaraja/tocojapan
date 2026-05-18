@@ -33,7 +33,9 @@ class Settings extends Page implements HasForms
 
     protected static ?string $title = 'Site settings';
 
-    protected static ?int $navigationSort = 90;
+    protected static string|\UnitEnum|null $navigationGroup = 'System';
+
+    protected static ?int $navigationSort = 50;
 
     /** @var array<string, mixed> */
     public array $data = [];

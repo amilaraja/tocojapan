@@ -37,6 +37,7 @@ class AdminPanelProvider extends PanelProvider
             ->login(Login::class)
             ->brandName('Toco Japan Admin')
             ->maxContentWidth(Width::Full)
+            ->navigationGroups(['Catalogue', 'Content', 'Enquiries', 'Shipping', 'System'])
             ->renderHook(PanelsRenderHook::HEAD_END, fn (): string => Blade::render('@include("filament.admin.auth.head")'))
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn (): string => Blade::render('@include("filament.admin.auth.turnstile")'))
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_BEFORE, fn (): string => Blade::render('@include("filament.admin.auth.brand")'))

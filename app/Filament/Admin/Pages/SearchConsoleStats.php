@@ -12,7 +12,9 @@ class SearchConsoleStats extends Page
 
     protected static ?string $title = 'Google Search Console';
 
-    protected static ?int $navigationSort = 92;
+    protected static string|\UnitEnum|null $navigationGroup = 'System';
+
+    protected static ?int $navigationSort = 55;
 
     protected string $view = 'filament.admin.pages.search-console-stats';
 

@@ -20,6 +20,10 @@ class PageResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Content';
+
+    protected static ?int $navigationSort = 20;
+
     protected static ?string $recordTitleAttribute = 'title';
 
     protected static ?string $navigationLabel = 'Pages';

@@ -20,7 +20,9 @@ class ActivityLog extends Page implements HasTable
 
     protected static ?string $navigationLabel = 'Activity log';
 
-    protected static ?int $navigationSort = 95;
+    protected static string|\UnitEnum|null $navigationGroup = 'System';
+
+    protected static ?int $navigationSort = 54;
 
     public static function canAccess(): bool
     {

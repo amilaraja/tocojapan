@@ -20,7 +20,8 @@ class OrderResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShoppingCart;
 
-    protected static ?int $navigationSort = 30;
+    protected static ?int $navigationSort = 2;
+
 
     public static function getNavigationBadge(): ?string
     {

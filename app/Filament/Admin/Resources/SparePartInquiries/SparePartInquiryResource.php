@@ -20,6 +20,10 @@ class SparePartInquiryResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWrenchScrewdriver;
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Enquiries';
+
+    protected static ?int $navigationSort = 31;
+
     protected static ?string $navigationLabel = 'Spare-part inquiries';
 
     protected static ?string $recordTitleAttribute = 'name';

@@ -20,6 +20,10 @@ class ContactInquiryResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedEnvelope;
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Enquiries';
+
+    protected static ?int $navigationSort = 30;
+
     protected static ?string $navigationLabel = 'Contact inquiries';
 
     protected static ?string $recordTitleAttribute = 'name';

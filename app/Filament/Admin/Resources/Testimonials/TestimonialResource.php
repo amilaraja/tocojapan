@@ -20,7 +20,10 @@ class TestimonialResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChatBubbleLeftRight;
 
-    protected static ?int $navigationSort = 25;
+    protected static string|\UnitEnum|null $navigationGroup = 'Content';
+
+    protected static ?int $navigationSort = 23;
+
 
     protected static ?string $recordTitleAttribute = 'name';
 

@@ -17,11 +17,13 @@ class NotFoundLogResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedExclamationTriangle;
 
-    protected static string|UnitEnum|null $navigationGroup = 'System';
+    protected static string|\UnitEnum|null $navigationGroup = 'System';
+
+    protected static ?int $navigationSort = 53;
+
 
     protected static ?string $navigationLabel = '404 Log';
 
-    protected static ?int $navigationSort = 81;
 
     protected static ?string $recordTitleAttribute = 'path';
 

@@ -20,6 +20,10 @@ class BodyTypeResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Catalogue';
+
+    protected static ?int $navigationSort = 12;
+
     public static function form(Schema $schema): Schema
     {
         return BodyTypeForm::configure($schema);
