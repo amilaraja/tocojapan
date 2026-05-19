@@ -1,8 +1,11 @@
 @php
     $photos = $vehicle->getMedia('photos');
-    $photoUrls = $photos->map(fn ($m) => $m->getUrl())->values();
+    // Hero carousel: 1280px WebP. Thumb strip: 300px WebP. Lightbox: originals.
+    $photoUrls = $photos->map(fn ($m) => $m->hasGeneratedConversion('gallery') ? $m->getUrl('gallery') : $m->getUrl())->values();
+    $thumbUrls = $photos->map(fn ($m) => $m->hasGeneratedConversion('thumb') ? $m->getUrl('thumb') : $m->getUrl())->values();
+    $fullUrls = $photos->map(fn ($m) => $m->getUrl())->values();
     if ($photoUrls->isEmpty()) {
-        $photoUrls = collect(['/img/v5/car-'.((($vehicle->id % 4) + 1)).'.jpg']);
+        $photoUrls = $thumbUrls = $fullUrls = collect(['/img/v5/car-'.((($vehicle->id % 4) + 1)).'.jpg']);
     }
     $videoUrl = $vehicle->videoUrl();
 
@@ -175,7 +178,7 @@
                 {{-- Photo gallery --}}
                 <div
                     class="bg-white border border-line rounded-sm overflow-hidden"
-                    x-data="vehicleGallery({{ $photoUrls->toJson() }})"
+                    x-data="vehicleGallery({{ $photoUrls->toJson() }}, {{ $fullUrls->toJson() }})"
                     x-effect="document.body.style.overflow = lightbox ? 'hidden' : ''"
                     @keydown.window.left.prevent="prev()"
                     @keydown.window.right.prevent="next()"
@@ -256,14 +259,14 @@
 
                     @if (count($photoUrls) > 1)
                         <div class="grid grid-cols-6 gap-1 p-1 border-t border-line">
-                            @foreach ($photoUrls as $i => $url)
+                            @foreach ($thumbUrls as $i => $url)
                                 <button
                                     type="button"
                                     @click="goTo({{ $i }})"
                                     :class="index === {{ $i }} ? 'border-toco-red' : 'border-transparent hover:border-toco-red'"
                                     class="relative aspect-[4/3] bg-toco-silver-2 overflow-hidden border-2 transition"
                                 >
-                                    <img src="{{ $url }}" alt="" class="w-full h-full object-cover">
+                                    <img src="{{ $url }}" alt="" width="300" height="225" loading="lazy" class="w-full h-full object-cover">
                                     @if ($i === 0 && $videoUrl)
                                         <span
                                             @click.stop="$dispatch('open-video')"
@@ -319,7 +322,7 @@
 
                         <img
                             x-ref="zoomImage"
-                            :src="photos[index]"
+                            :src="fullPhotos[index]"
                             alt="{{ $vehicle->title }}"
                             class="max-w-full max-h-[88vh] object-contain shadow-2xl will-change-transform touch-none"
                             :style="{ transform: transform, cursor: zoom > 1 ? (dragging ? 'grabbing' : 'grab') : 'zoom-in', transition: (dragging || activePointerCount >= 2) ? 'none' : 'transform 150ms' }"

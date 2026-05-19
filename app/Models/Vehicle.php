@@ -176,18 +176,46 @@ class Vehicle extends Model implements HasMedia
 
     public function registerMediaConversions(?Media $media = null): void
     {
-        // Small thumbnail for listing cards — keeps the homepage/listing
-        // payload tiny instead of shipping the full 1200px photo.
+        // Tiny WebP for the detail-page thumbnail strip.
+        $this->addMediaConversion('thumb')
+            ->performOnCollections('photos')
+            ->fit(Fit::Crop, 300, 225)
+            ->format('webp')
+            ->quality(70)
+            ->nonQueued();
+
+        // Small WebP for listing cards — keeps the homepage/listing payload
+        // tiny instead of shipping the full photo.
         $this->addMediaConversion('card')
             ->performOnCollections('photos')
             ->fit(Fit::Crop, 560, 420)
             ->format('webp')
             ->quality(72)
             ->nonQueued();
+
+        // 1280px WebP for the detail-page hero + retina (2x) card srcset.
+        $this->addMediaConversion('gallery')
+            ->performOnCollections('photos')
+            ->width(1280)
+            ->format('webp')
+            ->quality(80)
+            ->nonQueued();
     }
 
     /** Card-sized photo URL — uses the 'card' conversion once it is generated. */
     public function cardPhotoUrl(): ?string
+    {
+        return $this->conversionUrl('card');
+    }
+
+    /** 1280px hero/retina photo URL — uses the 'gallery' conversion. */
+    public function galleryPhotoUrl(): ?string
+    {
+        return $this->conversionUrl('gallery');
+    }
+
+    /** First-photo URL for a given conversion, falling back to the original. */
+    protected function conversionUrl(string $conversion): ?string
     {
         $media = $this->getFirstMedia('photos');
 
@@ -195,8 +223,8 @@ class Vehicle extends Model implements HasMedia
             return null;
         }
 
-        return $media->hasGeneratedConversion('card')
-            ? $media->getUrl('card')
+        return $media->hasGeneratedConversion($conversion)
+            ? $media->getUrl($conversion)
             : $media->getUrl();
     }
 }

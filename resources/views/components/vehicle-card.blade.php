@@ -2,6 +2,7 @@
 
 @php
     $photo = $vehicle->cardPhotoUrl();
+    $photo2x = $vehicle->galleryPhotoUrl();
     $isSold = $vehicle->status === 'sold';
     $isNew = ! $isSold && $vehicle->published_at && $vehicle->published_at->gt(now()->subDays(14));
     $fallbackPhoto = '/img/v5/car-'.((($vehicle->id % 4) + 1)).'.jpg';
@@ -12,6 +13,10 @@
     <a href="{{ route('vehicles.show', $vehicle->slug) }}" class="block">
         <div class="relative aspect-[4/3] bg-toco-silver-2 overflow-hidden">
             <img src="{{ $photo ?: $fallbackPhoto }}" alt="{{ $vehicle->title }}"
+                 @if ($photo && $photo2x)
+                 srcset="{{ $photo }} 560w, {{ $photo2x }} 1280w"
+                 sizes="(min-width:1280px) 300px, (min-width:768px) 33vw, (min-width:640px) 50vw, 100vw"
+                 @endif
                  width="560" height="420" decoding="async"
                  loading="{{ $priority ? 'eager' : 'lazy' }}"
                  fetchpriority="{{ $priority ? 'high' : 'auto' }}"

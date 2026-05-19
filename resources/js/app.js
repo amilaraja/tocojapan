@@ -4,8 +4,9 @@ import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;
 
-window.vehicleGallery = (photos) => ({
+window.vehicleGallery = (photos, fullPhotos = null) => ({
     photos,
+    fullPhotos: fullPhotos ?? photos,
     index: 0,
     lightbox: false,
     zoom: 1,
