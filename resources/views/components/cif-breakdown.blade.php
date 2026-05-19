@@ -15,7 +15,7 @@
             <div>
                 <p class="font-mono text-[10px] uppercase tracking-widest text-ink-soft" x-text="'To ' + result.port.name + ', ' + result.port.country"></p>
                 <p class="font-extrabold text-4xl text-toco-red mt-1 leading-none">
-                    <span x-text="'$' + Number(result.cif_total).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span>
+                    <span x-text="'$' + Number(result.cif_total).toLocaleString(undefined, {maximumFractionDigits: 0})"></span>
                     <span class="text-xs text-ink-soft font-bold ml-1" x-text="result.currency"></span>
                 </p>
                 <p class="font-mono text-[10px] uppercase tracking-widest text-ink-soft mt-3">CIF — cost, insurance &amp; freight included</p>

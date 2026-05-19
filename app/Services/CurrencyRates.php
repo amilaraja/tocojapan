@@ -85,9 +85,10 @@ class CurrencyRates
         $currency = Currency::query()->where('code', $code)->first();
         $amount = $this->convert($usdAmount, $code);
         $symbol = $currency?->symbol ?: '';
-        $decimals = in_array($code, ['JPY', 'KRW', 'LKR', 'KES'], true) ? 0 : 2;
 
-        return $symbol.number_format($amount, $decimals).($symbol === '' ? ' '.$code : '');
+        // Prices are shown as whole units everywhere — no cents. number_format
+        // rounds half-up, the standard way.
+        return $symbol.number_format($amount, 0).($symbol === '' ? ' '.$code : '');
     }
 
     public function userCurrencyCode(): string

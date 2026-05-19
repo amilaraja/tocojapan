@@ -593,8 +593,8 @@
 
                         <template x-if="result">
                             <dl class="mt-4 pt-4 border-t border-line space-y-1.5 text-sm">
-                                <div class="flex justify-between"><dt class="text-ink-soft text-[12px]">FOB</dt><dd class="font-semibold tabular-nums" x-text="'$' + Number(result.price_fob).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})"></dd></div>
-                                <div class="flex justify-between border-t border-line pt-1.5 mt-1"><dt class="font-bold text-toco-navy">CIF</dt><dd class="font-extrabold text-toco-navy tabular-nums" x-text="'$' + Number(result.cif_total).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})"></dd></div>
+                                <div class="flex justify-between"><dt class="text-ink-soft text-[12px]">FOB</dt><dd class="font-semibold tabular-nums" x-text="'$' + Number(result.price_fob).toLocaleString(undefined, {maximumFractionDigits: 0})"></dd></div>
+                                <div class="flex justify-between border-t border-line pt-1.5 mt-1"><dt class="font-bold text-toco-navy">CIF</dt><dd class="font-extrabold text-toco-navy tabular-nums" x-text="'$' + Number(result.cif_total).toLocaleString(undefined, {maximumFractionDigits: 0})"></dd></div>
                                 <p class="text-[11px] text-ink-soft leading-snug pt-1">CIF includes ocean freight &amp; marine insurance. Estimate only — land charges in destination country not included.</p>
                             </dl>
                         </template>
