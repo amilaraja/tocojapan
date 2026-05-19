@@ -35,8 +35,17 @@ class VehicleForm
                             ->columnSpan(2)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug((string) $state))),
-                        TextInput::make('ref_no')->required()->maxLength(50),
-                        TextInput::make('slug')->required()->maxLength(220),
+                        TextInput::make('stock_no')
+                            ->label('Stock ID')
+                            ->required()
+                            ->maxLength(50)
+                            ->unique(ignoreRecord: true)
+                            ->helperText("Toco's internal stock reference (e.g. E01888). Shown to customers and stamped on the vehicle photos."),
+                        TextInput::make('ref_no')
+                            ->label('Reference number')
+                            ->maxLength(50)
+                            ->helperText('External / auction reference (optional).'),
+                        TextInput::make('slug')->required()->maxLength(220)->columnSpan(2),
                         Select::make('status')
                             ->options([
                                 'draft' => 'Draft',

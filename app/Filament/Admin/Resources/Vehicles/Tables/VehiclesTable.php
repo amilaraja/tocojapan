@@ -29,7 +29,8 @@ class VehiclesTable
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
-                TextColumn::make('ref_no')->searchable()->sortable()->toggleable(),
+                TextColumn::make('stock_no')->label('Stock ID')->searchable()->sortable()->weight('bold'),
+                TextColumn::make('ref_no')->label('Ref no.')->searchable()->sortable()->toggleable(),
                 TextColumn::make('title')->searchable()->limit(40)->toggleable(),
                 TextColumn::make('make.name')->label('Make')->sortable()->toggleable(),
                 TextColumn::make('vehicleModel.name')->label('Model')->sortable()->toggleable(),
