@@ -57,7 +57,12 @@
             <div class="bg-amber-50 border border-amber-200 rounded-sm p-5">
                 <p class="font-mono text-[10px] uppercase tracking-widest text-amber-800 font-bold">Bank transfer instructions</p>
                 <h2 class="font-bold text-toco-navy text-base mt-1 mb-3">Please send your payment to:</h2>
-                <pre class="whitespace-pre-wrap text-sm bg-white border border-line rounded p-4 font-mono">{{ app(\App\Settings\PaymentSettings::class)->bank_account_details ?: 'Bank details have not been published yet. Please contact us.' }}</pre>
+                @php($bankDetails = app(\App\Settings\PaymentSettings::class)->bank_account_details)
+                @if (filled($bankDetails))
+                    <div class="prose prose-sm max-w-none bg-white border border-line rounded p-4">{!! $bankDetails !!}</div>
+                @else
+                    <p class="text-sm text-ink-soft bg-white border border-line rounded p-4">Bank details have not been published yet. Please contact us.</p>
+                @endif
                 <div class="mt-3 text-sm">
                     <p><span class="text-ink-soft">Amount:</span> <strong>${{ number_format((float) $order->amount_usd, 2) }} USD</strong></p>
                     <p><span class="text-ink-soft">Reference (include on transfer):</span> <strong class="font-mono">{{ $order->order_no }}</strong></p>

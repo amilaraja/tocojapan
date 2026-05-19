@@ -259,11 +259,8 @@ class Settings extends Page implements HasForms
                                     ->description('When enabled, a "Buy with bank transfer" button appears alongside PayPal. After clicking, the customer sees these account details and is asked to reference the order number on the transfer.')
                                     ->schema([
                                         Toggle::make('payment.bank_transfer_enabled')->label('Enable bank transfer checkout')->columnSpanFull(),
-                                        Textarea::make('payment.bank_account_details')
-                                            ->label('Account details shown to customers')
-                                            ->rows(8)
-                                            ->placeholder("Account name: Toco Japan Co., Ltd.\nBank name: ...\nBranch: ...\nAccount no.: ...\nSWIFT / BIC: ...")
-                                            ->columnSpanFull(),
+                                        \App\Cms\Editor::make('payment.bank_account_details', 'Account details shown to customers')
+                                            ->helperText('Shown to customers on their order page after they choose bank transfer.'),
                                     ]),
                             ]),
                         Tab::make('Social media')
