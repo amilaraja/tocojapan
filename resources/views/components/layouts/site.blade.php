@@ -46,7 +46,7 @@
     {{-- Brand + fraud notice bar --}}
     <div class="bg-[#FDECEE] text-toco-navy text-[11px] font-semibold tracking-wider uppercase py-2 font-mono">
         <div class="max-w-[1600px] mx-auto px-4 sm:px-6 2xl:px-8 flex items-center justify-between gap-4">
-            <span class="shrink-0">Toco - Japanese Used Cars For Sale</span>
+            <h1 class="shrink-0 text-[11px] font-semibold tracking-wider uppercase m-0">Toco - Japanese Used Cars For Sale</h1>
             <span class="text-right hidden sm:inline">BE AWARE OF FRAUDSTERS · always verify our company details before sending any payment</span>
         </div>
     </div>
