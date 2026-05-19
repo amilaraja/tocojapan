@@ -60,9 +60,9 @@
                             $line2 = trim(($r->flag ? $r->flag.' ' : '').($r->country ?? ''));
                         @endphp
                         <figure class="bg-white border border-line rounded-sm overflow-hidden flex flex-col">
-                            @if ($r->getPhotoUrl())
+                            @if ($r->getPhotoUrl('display'))
                                 <div class="aspect-[4/3] bg-toco-silver-2 overflow-hidden">
-                                    <img src="{{ $r->getPhotoUrl() }}" alt="Delivery: {{ $r->vehicle_label ?: $displayName }}" class="w-full h-full object-cover block" loading="lazy">
+                                    <img src="{{ $r->getPhotoUrl('display') }}" alt="Delivery: {{ $r->vehicle_label ?: $displayName }}" width="600" height="450" loading="lazy" class="w-full h-full object-cover block">
                                 </div>
                             @endif
                             <figcaption class="p-4 flex flex-col gap-1.5 flex-1">

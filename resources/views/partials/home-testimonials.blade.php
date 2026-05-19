@@ -21,9 +21,9 @@
                     $line2 = trim(($r->flag ? $r->flag.' ' : '').($r->country ?? ''));
                 @endphp
                 <figure class="bg-white border border-line rounded-sm overflow-hidden flex flex-col">
-                    @if ($r->getPhotoUrl())
+                    @if ($r->getPhotoUrl('thumb'))
                         <div class="aspect-[4/3] bg-toco-silver-2 overflow-hidden">
-                            <img src="{{ $r->getPhotoUrl() }}" alt="Delivery: {{ $r->vehicle_label ?: $displayName }}" class="w-full h-full object-cover block">
+                            <img src="{{ $r->getPhotoUrl('thumb') }}" alt="Delivery: {{ $r->vehicle_label ?: $displayName }}" width="300" height="225" loading="lazy" class="w-full h-full object-cover block">
                         </div>
                     @endif
                     <figcaption class="px-3 pt-2.5 pb-3 flex flex-col gap-1 flex-1">

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Testimonial extends Model implements HasMedia
 {
@@ -44,9 +45,24 @@ class Testimonial extends Model implements HasMedia
         $this->addMediaCollection('photo')->singleFile();
     }
 
-    public function getPhotoUrl(): ?string
+    public function registerMediaConversions(?Media $media = null): void
     {
-        $url = $this->getFirstMediaUrl('photo');
+        // 600px WebP — the display image for the customer-reviews page.
+        $this->addMediaConversion('display')
+            ->width(600)
+            ->format('webp')
+            ->nonQueued();
+
+        // 300px WebP — compact thumbnail for the homepage grid.
+        $this->addMediaConversion('thumb')
+            ->width(300)
+            ->format('webp')
+            ->nonQueued();
+    }
+
+    public function getPhotoUrl(string $conversion = ''): ?string
+    {
+        $url = $this->getFirstMediaUrl('photo', $conversion);
 
         return $url ?: null;
     }
