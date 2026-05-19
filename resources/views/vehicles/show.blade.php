@@ -58,7 +58,7 @@
     if ($vehicle->engine_cc) $descBits[] = ((int) $vehicle->engine_cc).'cc';
     $descCore = $descBits ? ' — '.implode(', ', $descBits).'.' : '.';
     $descPrice = ! $vehicle->price_on_request && $vehicle->price_fob > 0
-        ? ' FOB Yokohama from $'.number_format((float) $vehicle->price_fob).'.'
+        ? ' FOB Japan from $'.number_format((float) $vehicle->price_fob).'.'
         : '';
     $descRef = $vehicle->ref_no ? ' Ref '.$vehicle->ref_no.'.' : '';
 

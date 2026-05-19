@@ -7,8 +7,8 @@
         ? "Used Japanese {$facet} for export — Toco Japan"
         : 'Used Japanese cars for export — Toco Japan';
     $description = $facet
-        ? number_format($vehicles->total()).' used '.$facet.' vehicles ready to ship from Yokohama. RHD/LHD, RoRo & container, FOB or CIF to your port.'
-        : number_format($vehicles->total()).' used Japanese vehicles in stock — Toyota, Honda, Nissan, Mazda and more. Yokohama FOB, worldwide CIF.';
+        ? number_format($vehicles->total()).' used '.$facet.' vehicles ready to ship from Japan. RHD/LHD, RoRo & container, FOB or CIF to your port.'
+        : number_format($vehicles->total()).' used Japanese vehicles in stock — Toyota, Honda, Nissan, Mazda and more. FOB Japan, worldwide CIF.';
 @endphp
 
 <x-layouts.site :title="$title" :description="$description">
