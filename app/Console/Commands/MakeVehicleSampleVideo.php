@@ -8,13 +8,17 @@ use Illuminate\Support\Str;
 
 /**
  * Builds a sample marketing video from a vehicle's photo gallery:
- * a Ken Burns slideshow of every photo with a branded lower-third
- * (title, specs, FOB price) and an optional music track.
+ * a Ken Burns slideshow of every photo, crossfading between shots,
+ * with a branded overlay (title, specs, FOB price, stock id, domain)
+ * and an optional music track.
  *
- * Memory-safe by design: each photo is rendered to its own small clip
- * (one image input at a time), then the clips are joined with the
- * concat demuxer copying the video stream — no giant filtergraph, so
- * it scales to any number of photos on a modest server.
+ * Memory-safe by design:
+ *  1. Each photo is rendered to its own clip — one image input at a
+ *     time, so memory stays flat regardless of photo count.
+ *  2. Clips are crossfaded together in small batches, then the batch
+ *     files are crossfaded — no single giant filtergraph, so it never
+ *     OOMs on a modest server.
+ * ffmpeg runs niced so it cannot starve the web server or database.
  *
  * Stand-alone proof-of-concept for client review — not the production
  * auto-generation pipeline.
@@ -30,9 +34,15 @@ class MakeVehicleSampleVideo extends Command
         {vehicle? : Vehicle id or slug — defaults to the vehicle with the most photos}
         {--music= : Path to a music file to mix in (you provide this)}
         {--out= : Output .mp4 path — defaults to storage/app/sample-videos/}
-        {--seconds=3.0 : Seconds each photo is shown}';
+        {--seconds=3.0 : Seconds each photo is shown}
+        {--fade=0.5 : Crossfade duration between photos}';
 
     protected $description = 'Build a sample marketing video from a vehicle photo gallery';
+
+    /** Photos crossfaded per batch — keeps every filtergraph shallow. */
+    private const BATCH = 8;
+
+    private int $fps = 30;
 
     public function handle(): int
     {
@@ -72,9 +82,9 @@ class MakeVehicleSampleVideo extends Command
             return self::FAILURE;
         }
 
-        $fps = 30;
         $per = max(1.5, (float) $this->option('seconds'));
-        $total = round($n * $per, 3);
+        $xf = max(0.2, min((float) $this->option('fade'), $per - 0.4));
+        $total = round($n * $per - ($n - 1) * $xf, 3);
 
         $this->info("Vehicle #{$vehicle->id} — {$vehicle->title}");
         $this->info("Photos: {$n}   Length: ".round($total).'s');
@@ -112,29 +122,29 @@ class MakeVehicleSampleVideo extends Command
             ? 'Price on request'
             : 'FOB Japan   $'.number_format((float) $vehicle->price_fob);
 
-        $brand = 'TOCO JAPAN'.($vehicle->stock_no ? '    #'.$vehicle->stock_no : '');
+        $stockId = $vehicle->stock_no ? '#'.$vehicle->stock_no : 'TOCO JAPAN';
 
         file_put_contents("{$tmp}/title.txt", (string) $vehicle->title);
         file_put_contents("{$tmp}/specs.txt", $specs);
         file_put_contents("{$tmp}/price.txt", $price);
-        file_put_contents("{$tmp}/brand.txt", $brand);
+        file_put_contents("{$tmp}/stock.txt", $stockId);
+        file_put_contents("{$tmp}/site.txt", 'tocojapan.com');
 
         $font = $this->fontFile(bold: false);
         $fontBold = $this->fontFile(bold: true);
 
         // ---- Per-photo overlay filter chain (shared by every clip) ---------------
         $dt = fn (array $o) => 'drawtext='.collect($o)->map(fn ($v, $k) => "{$k}={$v}")->implode(':');
-        $fadeOut = round($per - 0.35, 3);
-        $frames = (int) round($per * $fps);
+        $frames = (int) round($per * $this->fps);
 
         $chain = implode(',', [
             // Cover-crop to 1080p (modest 1.2x headroom for the zoom).
             'scale=2304:1296:force_original_aspect_ratio=increase,crop=2304:1296',
             // Gentle Ken Burns zoom.
             "zoompan=z='min(zoom+0.0010,1.12)':d={$frames}:".
-                "x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080:fps={$fps}",
+                "x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080:fps={$this->fps}",
             'setsar=1,format=yuv420p',
-            // Branded lower-third + corner watermark.
+            // Branded lower-third.
             'drawbox=x=0:y=ih-210:w=iw:h=210:color=black@0.55:t=fill',
             $dt(['fontfile' => $fontBold, 'textfile' => "{$tmp}/title.txt",
                 'fontcolor' => 'white', 'fontsize' => 54, 'x' => 70, 'y' => 'h-178']),
@@ -142,12 +152,13 @@ class MakeVehicleSampleVideo extends Command
                 'fontcolor' => '0xD0D4DD', 'fontsize' => 30, 'x' => 70, 'y' => 'h-100']),
             $dt(['fontfile' => $fontBold, 'textfile' => "{$tmp}/price.txt",
                 'fontcolor' => '0xFF4757', 'fontsize' => 42, 'x' => 'w-tw-70', 'y' => 'h-128']),
-            $dt(['fontfile' => $fontBold, 'textfile' => "{$tmp}/brand.txt",
+            // Corner badges: stock id (left), website (right).
+            $dt(['fontfile' => $fontBold, 'textfile' => "{$tmp}/stock.txt",
                 'fontcolor' => 'white', 'fontsize' => 30, 'x' => 70, 'y' => 56,
                 'box' => 1, 'boxcolor' => '0xE30613@0.9', 'boxborderw' => 16]),
-            // Quick dip-to-black transition at both ends of the clip.
-            'fade=t=in:st=0:d=0.35',
-            "fade=t=out:st={$fadeOut}:d=0.35",
+            $dt(['fontfile' => $fontBold, 'textfile' => "{$tmp}/site.txt",
+                'fontcolor' => 'white', 'fontsize' => 30, 'x' => 'w-tw-70', 'y' => 56,
+                'box' => 1, 'boxcolor' => '0xE30613@0.9', 'boxborderw' => 16]),
         ]);
 
         // ---- Render each photo to its own clip (one input → low memory) ---------
@@ -161,48 +172,54 @@ class MakeVehicleSampleVideo extends Command
             $code = $this->ffmpeg([
                 '-i', $img,
                 '-filter_complex', "[0:v]{$chain}[v]",
-                '-map', '[v]', '-t', (string) $per,
-                '-r', (string) $fps,
+                '-map', '[v]', '-t', (string) $per, '-r', (string) $this->fps,
                 '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20',
                 '-pix_fmt', 'yuv420p', '-an', $clip,
             ]);
 
             if ($code !== 0 || ! is_file($clip)) {
-                $this->error("Failed to render clip for photo #".($i + 1).'.');
+                $this->error('Failed to render clip for photo #'.($i + 1).'.');
                 $this->cleanup($tmp);
 
                 return self::FAILURE;
             }
         }
 
-        // ---- Join clips (video stream copied — no re-encode, no memory) ---------
-        $list = "{$tmp}/concat.txt";
-        file_put_contents($list, collect($clips)
-            ->map(fn ($c) => "file '".str_replace("'", "'\\''", $c)."'")
-            ->implode("\n"));
+        // ---- Crossfade the clips together ---------------------------------------
+        if ($n <= self::BATCH) {
+            // Few enough photos — one shallow crossfade graph.
+            $this->newLine();
+            $this->info('Crossfading clips'.($music ? ' and mixing music…' : '…'));
+            $code = $this->xfade($clips, array_fill(0, $n, $per), $xf, $music, $out, true);
+        } else {
+            // Crossfade in batches, then crossfade the batch files.
+            $batchFiles = [];
+            $batchDurations = [];
+            foreach (array_chunk($clips, self::BATCH) as $bi => $group) {
+                $bf = sprintf('%s/batch-%03d.mp4', $tmp, $bi);
+                $k = count($group);
+                $this->info('Crossfading batch '.($bi + 1).'…');
 
-        $this->newLine();
-        $this->info('Joining clips'.($music ? ' and mixing music…' : '…'));
+                $code = $this->xfade($group, array_fill(0, $k, $per), $xf, null, $bf, false);
+                if ($code !== 0 || ! is_file($bf)) {
+                    $this->error('Failed to crossfade batch '.($bi + 1).'.');
+                    $this->cleanup($tmp);
 
-        $join = ['-f', 'concat', '-safe', '0', '-i', $list];
-        if ($music) {
-            array_push($join, '-stream_loop', '-1', '-i', $music);
+                    return self::FAILURE;
+                }
+                $batchFiles[] = $bf;
+                $batchDurations[] = $k * $per - ($k - 1) * $xf;
+            }
+
+            $this->newLine();
+            $this->info('Joining batches'.($music ? ' and mixing music…' : '…'));
+            $code = $this->xfade($batchFiles, $batchDurations, $xf, $music, $out, true);
         }
-        array_push($join, '-map', '0:v:0', '-c:v', 'copy');
-        if ($music) {
-            array_push($join,
-                '-map', '1:a:0',
-                '-af', 'afade=t=in:d=2,afade=t=out:st='.round($total - 2.5, 3).':d=2.5',
-                '-c:a', 'aac', '-b:a', '192k', '-shortest',
-            );
-        }
-        array_push($join, '-movflags', '+faststart', $out);
 
-        $code = $this->ffmpeg($join);
         $this->cleanup($tmp);
 
         if ($code !== 0 || ! is_file($out)) {
-            $this->error('ffmpeg failed to join clips (exit '.$code.').');
+            $this->error('ffmpeg failed (exit '.$code.').');
 
             return self::FAILURE;
         }
@@ -211,6 +228,67 @@ class MakeVehicleSampleVideo extends Command
         $this->info('Done: '.$out.'  ('.$this->humanSize((int) filesize($out)).')');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Crossfade a set of equal-codec video files into one output.
+     *
+     * @param  string[]  $files       Input clips, in order.
+     * @param  float[]   $durations   Each clip's duration in seconds.
+     * @param  bool      $fadeEnds    Fade the whole video in/out at the ends.
+     */
+    private function xfade(array $files, array $durations, float $xf, ?string $music, string $out, bool $fadeEnds): int
+    {
+        $count = count($files);
+        $total = round(array_sum($durations) - ($count - 1) * $xf, 3);
+
+        // Build the crossfade chain.
+        $graph = [];
+        if ($count === 1) {
+            $graph[] = '[0:v]null[vx]';
+        } else {
+            $prev = '[0:v]';
+            $cumulative = 0.0;
+            for ($j = 1; $j < $count; $j++) {
+                $cumulative += $durations[$j - 1];
+                $offset = round($cumulative - $j * $xf, 3);
+                $label = ($j === $count - 1) ? '[vx]' : "[t{$j}]";
+                $graph[] = "{$prev}[{$j}:v]xfade=transition=fade:duration={$xf}:offset={$offset}{$label}";
+                $prev = $label;
+            }
+        }
+
+        if ($fadeEnds) {
+            $graph[] = '[vx]fade=t=in:st=0:d=0.6,fade=t=out:st='.round($total - 0.8, 3).':d=0.8[v]';
+            $vLabel = '[v]';
+        } else {
+            $vLabel = '[vx]';
+        }
+
+        if ($music) {
+            $graph[] = "[{$count}:a]afade=t=in:d=2,afade=t=out:st=".round($total - 2.5, 3).':d=2.5[a]';
+        }
+
+        // Assemble the command.
+        $args = [];
+        foreach ($files as $f) {
+            array_push($args, '-i', $f);
+        }
+        if ($music) {
+            array_push($args, '-stream_loop', '-1', '-i', $music);
+        }
+
+        array_push($args,
+            '-filter_complex', implode(';', $graph),
+            '-map', $vLabel,
+            '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p',
+        );
+        if ($music) {
+            array_push($args, '-map', '[a]', '-c:a', 'aac', '-b:a', '192k', '-shortest');
+        }
+        array_push($args, '-movflags', '+faststart', $out);
+
+        return $this->ffmpeg($args);
     }
 
     /** Run ffmpeg, niced so it never starves the web server / database. */
