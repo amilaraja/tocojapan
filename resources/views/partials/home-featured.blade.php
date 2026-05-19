@@ -8,7 +8,13 @@
             <div>
                 <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-toco-red font-bold">Latest stock</p>
                 <h2 class="text-2xl md:text-3xl font-extrabold text-toco-navy mt-1 leading-tight">Featured vehicles</h2>
-                <p class="text-ink-soft text-sm mt-1">{{ number_format($totalPublished) }} vehicles currently listed for export.</p>
+                <p class="text-ink-soft text-sm mt-1">
+                    @if ($showStockCounts)
+                        {{ number_format($totalPublished) }} vehicles currently listed for export.
+                    @else
+                        Quality used vehicles currently listed for export.
+                    @endif
+                </p>
             </div>
             <a href="{{ route('vehicles.index') }}" class="text-sm font-bold text-toco-red hover:text-toco-red-deep inline-flex items-center gap-1">
                 View all stock <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 6 6 6-6 6"/></svg>
