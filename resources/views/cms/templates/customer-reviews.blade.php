@@ -62,7 +62,13 @@
                         <figure class="bg-white border border-line rounded-sm overflow-hidden flex flex-col">
                             @if ($r->getPhotoUrl('display'))
                                 <div class="aspect-[4/3] bg-toco-silver-2 overflow-hidden">
-                                    <img src="{{ $r->getPhotoUrl('display') }}" alt="Delivery: {{ $r->vehicle_label ?: $displayName }}" width="600" height="450" loading="lazy" class="w-full h-full object-cover block">
+                                    <img
+                                        src="{{ $r->getPhotoUrl('display') }}"
+                                        srcset="{{ $r->getPhotoUrl('thumb') }} 300w, {{ $r->getPhotoUrl('display') }} 600w"
+                                        sizes="(min-width:1024px) 290px, (min-width:640px) 45vw, 90vw"
+                                        alt="Delivery: {{ $r->vehicle_label ?: $displayName }}"
+                                        width="600" height="450" loading="lazy"
+                                        class="w-full h-full object-cover block">
                                 </div>
                             @endif
                             <figcaption class="p-4 flex flex-col gap-1.5 flex-1">
