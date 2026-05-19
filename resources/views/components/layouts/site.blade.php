@@ -253,7 +253,7 @@
                 <form action="{{ route('vehicles.index') }}" method="GET" class="flex items-stretch h-10 w-full max-w-[600px] rounded-sm border border-line overflow-hidden bg-white">
                     <select name="search_by" aria-label="Search type" class="bg-toco-silver-2 border-0 border-r border-line text-[13px] font-semibold text-toco-navy focus:ring-0 pl-3 pr-8 cursor-pointer notranslate">
                         <option value="keyword">By Keyword</option>
-                        <option value="ref">By Stock No.</option>
+                        <option value="ref">By Stock ID / Ref</option>
                     </select>
                     <input type="text" name="q" value="{{ request('q') }}" aria-label="Search vehicles" placeholder="Search by make, model, year…" class="flex-1 min-w-0 border-0 text-[13px] text-ink placeholder:text-ink-soft focus:ring-0 px-3">
                     <button type="submit" aria-label="Search" class="bg-toco-red hover:bg-toco-red-deep text-white px-4 grid place-items-center transition">

@@ -197,7 +197,7 @@
                         }"
                     >
                         <div class="flex flex-wrap gap-1 border-b border-line -mt-1 mb-3">
-                            @foreach (['make' => 'Make & Model', 'body' => 'Body', 'budget' => 'Budget', 'ref' => 'Ref'] as $key => $label)
+                            @foreach (['make' => 'Make & Model', 'body' => 'Body', 'budget' => 'Budget', 'ref' => 'Stock ID/Ref'] as $key => $label)
                                 <button type="button" @click="tab = '{{ $key }}'"
                                     :class="tab === '{{ $key }}' ? 'text-toco-red border-toco-red' : 'text-ink-soft border-transparent hover:text-ink'"
                                     class="text-[11px] font-bold uppercase tracking-widest px-2.5 py-2 border-b-2 -mb-px transition">
@@ -254,9 +254,9 @@
                         </form>
 
                         <form @submit.prevent="submit()" x-show="tab === 'ref'" x-cloak class="flex flex-col gap-1.5">
-                            <label class="font-mono text-[10px] uppercase tracking-widest text-ink-soft">Search by stock number</label>
+                            <label class="font-mono text-[10px] uppercase tracking-widest text-ink-soft">Search by Stock ID or reference number</label>
                             <div class="flex gap-2">
-                                <input x-model="stockRef" type="text" aria-label="Stock number" placeholder="e.g. E01888" class="flex-1 text-sm">
+                                <input x-model="stockRef" type="text" aria-label="Stock ID or reference number" placeholder="e.g. E01888 or HA4-236…" class="flex-1 text-sm">
                                 <button type="submit" class="bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-3 py-2 rounded-sm">Find</button>
                             </div>
                         </form>

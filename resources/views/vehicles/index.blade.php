@@ -42,8 +42,8 @@
                 </div>
                 <form method="GET" action="{{ route('vehicles.index') }}" class="p-4 space-y-3 text-sm" :class="{ 'hidden lg:block': ! filtersOpen }">
                     <div>
-                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Search / Stock no.</label>
-                        <input type="text" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="stock no, title, make…" class="w-full border-line rounded-sm">
+                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Search — Stock ID / Ref</label>
+                        <input type="text" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Stock ID, ref, title, make…" class="w-full border-line rounded-sm">
                     </div>
                     <div>
                         <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Make</label>
