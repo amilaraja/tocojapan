@@ -19,6 +19,7 @@ class BodyTypeForm
                     ->required(),
                 SpatieMediaLibraryFileUpload::make('logo')
                     ->collection('logo')
+                    ->disk('public')
                     ->image()
                     ->imageEditor()
                     ->acceptedFileTypes(['image/svg+xml', 'image/png', 'image/jpeg', 'image/webp'])

@@ -50,6 +50,7 @@ class PostForm
                             ->helperText('Leave empty to publish immediately when status is Published.'),
                         SpatieMediaLibraryFileUpload::make('featured')
                             ->collection('featured')
+                            ->disk('public')
                             ->image()
                             ->imageEditor()
                             ->label('Featured image'),
