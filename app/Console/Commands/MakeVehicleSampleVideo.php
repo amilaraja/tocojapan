@@ -138,9 +138,11 @@ class MakeVehicleSampleVideo extends Command
         $frames = (int) round($per * $this->fps);
 
         $chain = implode(',', [
-            // Cover-crop to 1080p (modest 1.2x headroom for the zoom).
-            'scale=2304:1296:force_original_aspect_ratio=increase,crop=2304:1296',
-            // Gentle Ken Burns zoom.
+            // Cover-crop to a large 16:9 frame. zoompan rounds its crop
+            // origin to whole INPUT pixels, so feeding it a 5760px frame
+            // makes each step ~1/3 of a 1080p pixel — no visible jitter.
+            'scale=5760:3240:force_original_aspect_ratio=increase,crop=5760:3240',
+            // Gentle Ken Burns zoom, rendered straight down to 1080p.
             "zoompan=z='min(zoom+0.0010,1.12)':d={$frames}:".
                 "x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080:fps={$this->fps}",
             'setsar=1,format=yuv420p',
