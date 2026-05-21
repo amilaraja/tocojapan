@@ -37,7 +37,7 @@ Route::post('/currency/{code}', [CurrencyController::class, 'set'])->name('curre
 Route::post('/destination', [DestinationController::class, 'set'])->name('destination.set');
 Route::delete('/destination', [DestinationController::class, 'clear'])->name('destination.clear');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
