@@ -23,6 +23,21 @@ class Vehicle extends Model implements HasMedia
 
     protected $guarded = [];
 
+    /**
+     * Stamp `published_at` automatically when an admin flips status to
+     * 'published' without supplying one. Without this, freshly-published
+     * vehicles would sort to the bottom of the listing (ORDER BY
+     * published_at DESC, MySQL puts NULL last).
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (Vehicle $vehicle): void {
+            if ($vehicle->status === 'published' && $vehicle->published_at === null) {
+                $vehicle->published_at = now();
+            }
+        });
+    }
+
     protected $casts = [
         'features' => 'array',
         'seo' => 'array',
@@ -77,14 +92,18 @@ class Vehicle extends Model implements HasMedia
     {
         // Visible if status='published' OR status='sold' within the last 90 days.
         // Sold vehicles auto-hide after 3 months without a manual archive step.
+        //
+        // `published_at` is intentionally NOT a visibility gate — clicking
+        // publish makes the vehicle live globally and immediately. The column
+        // is used only for sort order (so admins can re-bump a listing by
+        // bumping its timestamp). A future-dated value used to silently hide
+        // the row, which surprised us with stock E02020.
         $query->where(function ($q) {
             $q->where('status', 'published')
                 ->orWhere(function ($qq) {
                     $qq->where('status', 'sold')
                         ->where('sold_at', '>=', now()->subDays(90));
                 });
-        })->where(function ($q) {
-            $q->whereNull('published_at')->orWhere('published_at', '<=', now());
         });
     }
 

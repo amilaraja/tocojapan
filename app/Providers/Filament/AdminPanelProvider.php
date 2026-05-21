@@ -7,6 +7,7 @@ use App\Filament\Admin\Widgets\QuotesAndOrders;
 use App\Filament\Admin\Widgets\SearchConsoleChart;
 use App\Filament\Admin\Widgets\StatsOverview;
 use Filament\Http\Middleware\Authenticate;
+use Filament\Support\Facades\FilamentTimezone;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Blade;
@@ -28,6 +29,15 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
 {
+    public function boot(): void
+    {
+        // Admin-side DateTimePicker default. Without this, Filament v5's picker
+        // reads/writes in config('app.timezone') = UTC, so an admin typing
+        // "09:17" intending JST stores 09:17 UTC and the row appears scheduled
+        // for the future on the live site (bit us with stock E02020).
+        FilamentTimezone::set('Asia/Tokyo');
+    }
+
     public function panel(Panel $panel): Panel
     {
         return $panel
