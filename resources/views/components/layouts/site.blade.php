@@ -344,7 +344,7 @@
         {{ $slot }}
     </main>
 
-    <footer class="bg-toco-navy-deep text-white/85 mt-12">
+    <footer class="bg-toco-navy-deep text-white/85 {{ request()->routeIs('home') ? '' : 'mt-12' }}">
         <div class="max-w-[1440px] mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1.7fr_1fr_1fr_1fr] gap-8 lg:gap-10 text-sm">
             {{-- Company + contact + social --}}
             <div>
