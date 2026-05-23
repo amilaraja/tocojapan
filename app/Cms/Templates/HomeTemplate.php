@@ -97,15 +97,35 @@ class HomeTemplate implements PageTemplate
                 Tab::make('Seasonal strip')
                     ->columns(2)
                     ->schema([
-                        FileUpload::make('data.seasonal.image')
-                            ->label('Banner image')
-                            ->disk('public')->directory('home/seasonal')
-                            ->image()->imageEditor(),
-                        TextInput::make('data.seasonal.tag')->label('Tag (e.g. "Limited time")'),
-                        TextInput::make('data.seasonal.text')->label('Headline text')->columnSpanFull()
-                            ->helperText('You can use <strong>bold</strong> markup.'),
-                        TextInput::make('data.seasonal.cta_label')->label('CTA label')->default('Shop sale'),
-                        TextInput::make('data.seasonal.cta_url')->label('CTA URL'),
+                        Section::make('Top strip (above hero slider)')
+                            ->columns(2)
+                            ->columnSpanFull()
+                            ->schema([
+                                FileUpload::make('data.seasonal.image')
+                                    ->label('Banner image (wide, sits above the slider)')
+                                    ->disk('public')->directory('home/seasonal')
+                                    ->image()->imageEditor()
+                                    ->columnSpanFull(),
+                                TextInput::make('data.seasonal.tag')->label('Tag (e.g. "Limited time")'),
+                                TextInput::make('data.seasonal.text')->label('Headline text')
+                                    ->helperText('You can use <strong>bold</strong> markup.'),
+                                TextInput::make('data.seasonal.cta_label')->label('CTA label')->default('Shop sale'),
+                                TextInput::make('data.seasonal.cta_url')->label('CTA URL (used by both strip and sidebar)'),
+                            ]),
+                        Section::make('Right-column sidebar banner')
+                            ->description('Tall image shown in the right sidebar alongside the Hot Deal and Latest Stock blocks. Leave empty to hide.')
+                            ->columnSpanFull()
+                            ->schema([
+                                FileUpload::make('data.seasonal.sidebar_image')
+                                    ->label('Sidebar banner image')
+                                    ->disk('public')->directory('home/seasonal')
+                                    ->image()->imageEditor()
+                                    ->columnSpanFull(),
+                                TextInput::make('data.seasonal.sidebar_url')
+                                    ->label('Sidebar link URL (optional)')
+                                    ->placeholder('Defaults to the CTA URL above if left blank.')
+                                    ->columnSpanFull(),
+                            ]),
                     ]),
 
                 Tab::make('Search panel chips')
@@ -170,19 +190,49 @@ class HomeTemplate implements PageTemplate
                             ]),
                     ]),
 
-                Tab::make('How it works')
+                Tab::make('How to buy')
                     ->schema([
-                        TextInput::make('data.how_intro_kicker')->default('How it works'),
-                        TextInput::make('data.how_intro_headline')->default('Four steps from browse to delivery.'),
+                        TextInput::make('data.how_intro_kicker')->default('How to buy'),
+                        TextInput::make('data.how_intro_headline')->default('Simple steps to get your vehicle from TOCO'),
                         Textarea::make('data.how_intro_body')->rows(2),
                         Repeater::make('data.how_steps')
-                            ->label('Steps (4 recommended)')
+                            ->label('Steps (5 recommended)')
                             ->schema([
-                                TextInput::make('num')->required()->placeholder('01')->maxLength(4),
-                                TextInput::make('title')->required(),
-                                Textarea::make('body')->required()->rows(2),
+                                TextInput::make('num')->required()->placeholder('01')->maxLength(4)->columnSpan(1),
+                                Select::make('icon')
+                                    ->options(\App\Support\HowToBuyIcons::options())
+                                    ->searchable()
+                                    ->required()
+                                    ->columnSpan(2),
+                                TextInput::make('title')->required()->columnSpan(3),
+                                Textarea::make('body')
+                                    ->label('Body text (below the title)')
+                                    ->helperText('Shown on every card. Used by steps without buttons; safely ignored when buttons exist.')
+                                    ->rows(2)
+                                    ->columnSpan(3),
+                                Repeater::make('buttons')
+                                    ->label('Buttons (leave empty for steps 3–5)')
+                                    ->helperText('When set, the buttons appear below the title instead of, or alongside, the body text.')
+                                    ->schema([
+                                        TextInput::make('label')->required()->columnSpan(2),
+                                        TextInput::make('url')->placeholder('https://… or /vehicles')->required()->columnSpan(2),
+                                        Select::make('icon')
+                                            ->options(\App\Support\HowToBuyIcons::options())
+                                            ->searchable()
+                                            ->columnSpan(1),
+                                        Select::make('style')
+                                            ->options(['solid' => 'Red filled', 'outline' => 'White outline'])
+                                            ->default('solid')
+                                            ->columnSpan(1),
+                                    ])
+                                    ->columns(2)
+                                    ->itemLabel(fn (array $state): ?string => $state['label'] ?? null)
+                                    ->collapsible()
+                                    ->defaultItems(0)
+                                    ->columnSpan(3),
                             ])
-                            ->itemLabel(fn (array $state): ?string => $state['title'] ?? null)
+                            ->columns(3)
+                            ->itemLabel(fn (array $state): ?string => trim(($state['num'] ?? '').' '.($state['title'] ?? '')) ?: null)
                             ->collapsible()->defaultItems(0)->columnSpanFull(),
                     ]),
 
