@@ -15,7 +15,8 @@ class CheckoutController extends Controller
     {
         $vehicle = Vehicle::query()->where('slug', $slug)->where('status', 'published')->firstOrFail();
 
-        if ($vehicle->price_on_request || ! $vehicle->price_fob || $vehicle->price_fob <= 0) {
+        $effectivePrice = $vehicle->effectivePriceFob();
+        if ($effectivePrice === null || $effectivePrice <= 0) {
             return back()->withErrors(['vehicle' => 'This vehicle is sold on request — please send an inquiry.']);
         }
 
@@ -26,7 +27,7 @@ class CheckoutController extends Controller
         $order = Order::create([
             'user_id' => Auth::id(),
             'vehicle_id' => $vehicle->id,
-            'amount_usd' => $vehicle->price_fob,
+            'amount_usd' => $effectivePrice,
             'currency' => 'USD',
             'status' => 'pending',
             'payment_provider' => 'paypal',

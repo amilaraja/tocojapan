@@ -82,7 +82,7 @@ class FacebookPosterService
         $template = $this->settings->facebook_post_template;
         $price = $vehicle->price_on_request
             ? 'Price on request'
-            : ($vehicle->currency.' '.number_format((float) $vehicle->price_fob, 0));
+            : ($vehicle->currency.' '.number_format((float) $vehicle->effectivePriceFob(), 0));
 
         return strtr($template, [
             '{title}' => $vehicle->title ?? '',

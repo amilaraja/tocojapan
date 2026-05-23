@@ -42,7 +42,7 @@
         && ! empty(config("paypal.{$paypalMode}.client_secret"));
     $bankReady = $payment->bank_transfer_enabled;
     $isSold = $vehicle->status === 'sold';
-    $buyable = ! $isSold && ! $vehicle->price_on_request && $vehicle->price_fob > 0;
+    $buyable = ! $isSold && ! $vehicle->price_on_request && $vehicle->effectivePriceFob() > 0;
 
     // --- SEO meta ---
     // Title format: "{Year} {Make} {Model} for sale — Toco Japan"
@@ -60,8 +60,8 @@
     if ($vehicle->fuel) $descBits[] = strtolower($vehicle->fuel);
     if ($vehicle->engine_cc) $descBits[] = ((int) $vehicle->engine_cc).'cc';
     $descCore = $descBits ? ' — '.implode(', ', $descBits).'.' : '.';
-    $descPrice = ! $vehicle->price_on_request && $vehicle->price_fob > 0
-        ? ' FOB Japan from $'.number_format((float) $vehicle->price_fob).'.'
+    $descPrice = ! $vehicle->price_on_request && $vehicle->effectivePriceFob() > 0
+        ? ' FOB Japan from $'.number_format((float) $vehicle->effectivePriceFob()).'.'
         : '';
     $descRef = $vehicle->ref_no ? ' Ref '.$vehicle->ref_no.'.' : '';
 
@@ -113,11 +113,11 @@
                         'unitCode' => 'CMQ',
                     ],
                 ] : null,
-                'offers' => ($vehicle->price_on_request || ! $vehicle->price_fob)
+                'offers' => ($vehicle->price_on_request || ! $vehicle->effectivePriceFob())
                     ? null
                     : [
                         '@type' => 'Offer',
-                        'price' => (float) $vehicle->price_fob,
+                        'price' => (float) $vehicle->effectivePriceFob(),
                         'priceCurrency' => 'USD',
                         'availability' => $isSold ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
                         'itemCondition' => 'https://schema.org/UsedCondition',
@@ -466,13 +466,17 @@
                         <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">{{ $vehicle->stock_no ? 'Stock #'.$vehicle->stock_no : $vehicle->ref_no }}</p>
                         <p class="text-xl font-extrabold text-toco-navy leading-tight mt-1 pr-24">{{ $vehicle->title }}</p>
                         <p class="font-mono text-[11px] uppercase tracking-widest text-ink-soft mt-2">FOB</p>
-                        <p class="font-extrabold text-3xl text-toco-red mt-1">
-                            @if ($vehicle->price_on_request)
-                                On request
-                            @else
-                                @money($vehicle->price_fob)
-                            @endif
-                        </p>
+                        @if ($vehicle->price_on_request)
+                            <p class="font-extrabold text-3xl text-toco-red mt-1">On request</p>
+                        @elseif ($vehicle->isDiscounted())
+                            <div class="flex items-baseline gap-3 mt-1">
+                                <p class="font-extrabold text-3xl text-toco-red">@money($vehicle->price_fob_discount)</p>
+                                <p class="font-mono text-base text-ink-soft line-through">@money($vehicle->price_fob)</p>
+                                <span class="bg-toco-red text-white font-bold uppercase tracking-widest text-[10px] px-2 py-1 rounded-sm">Save {{ (int) round((((float) $vehicle->price_fob - (float) $vehicle->price_fob_discount) / (float) $vehicle->price_fob) * 100) }}%</span>
+                            </div>
+                        @else
+                            <p class="font-extrabold text-3xl text-toco-red mt-1">@money($vehicle->price_fob)</p>
+                        @endif
                         @if (! $vehicle->price_on_request && $vehicle->price_fob > 0 && ($destPort ?? null) && $vehicle->m3 > 0)
                             <p class="text-[12px] text-ink-soft mt-2 leading-tight">
                                 CIF to <span class="font-semibold text-toco-navy">{{ $destPort->name }}</span>:
@@ -492,7 +496,7 @@
                                     @csrf
                                     <button type="submit" class="w-full text-center bg-toco-navy hover:bg-toco-navy-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm inline-flex items-center justify-center gap-2">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3zm0 2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H7z"/></svg>
-                                        Buy with PayPal — @money($vehicle->price_fob)
+                                        Buy with PayPal — @money($vehicle->effectivePriceFob() ?? $vehicle->price_fob)
                                     </button>
                                 </form>
                             @endif

@@ -40,13 +40,14 @@
             <div class="mt-3 flex items-end justify-between">
                 <div>
                     <p class="font-mono text-[10px] tracking-widest uppercase text-ink-soft">FOB</p>
-                    <p class="font-extrabold text-toco-red text-lg leading-none mt-0.5">
-                        @if ($vehicle->price_on_request)
-                            On request
-                        @else
-                            @money($vehicle->price_fob)
-                        @endif
-                    </p>
+                    @if ($vehicle->price_on_request)
+                        <p class="font-extrabold text-toco-red text-lg leading-none mt-0.5">On request</p>
+                    @elseif ($vehicle->isDiscounted())
+                        <p class="font-mono text-[11px] text-ink-soft line-through leading-none mt-0.5">@money($vehicle->price_fob)</p>
+                        <p class="font-extrabold text-toco-red text-lg leading-none mt-0.5">@money($vehicle->price_fob_discount)</p>
+                    @else
+                        <p class="font-extrabold text-toco-red text-lg leading-none mt-0.5">@money($vehicle->price_fob)</p>
+                    @endif
                     @if (! $vehicle->price_on_request && $vehicle->price_fob > 0 && ($destPort ?? null) && $vehicle->m3 > 0)
                         <p class="text-[10px] text-ink-soft mt-1 leading-tight">
                             CIF {{ $destPort->name }}: <span class="font-semibold text-toco-navy">@cif($vehicle, $destPort)</span>

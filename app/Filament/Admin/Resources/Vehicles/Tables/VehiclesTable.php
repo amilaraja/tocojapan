@@ -38,6 +38,14 @@ class VehiclesTable
                 TextColumn::make('mileage_km')->label('Mileage')->numeric()->sortable()->toggleable(),
                 TextColumn::make('m3')->label('M³')->numeric(decimalPlaces: 3)->sortable()->toggleable(),
                 TextColumn::make('price_fob')->label('FOB')->money(fn ($record) => $record->currency)->sortable()->toggleable(),
+                TextColumn::make('price_fob_discount')
+                    ->label('Discount')
+                    ->money(fn ($record) => $record->currency)
+                    ->color('danger')
+                    ->weight('bold')
+                    ->placeholder('—')
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {

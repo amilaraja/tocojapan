@@ -42,6 +42,7 @@ class Vehicle extends Model implements HasMedia
         'features' => 'array',
         'seo' => 'array',
         'price_fob' => 'decimal:2',
+        'price_fob_discount' => 'decimal:2',
         'm3' => 'decimal:4',
         'length_cm' => 'decimal:2',
         'width_cm' => 'decimal:2',
@@ -111,6 +112,31 @@ class Vehicle extends Model implements HasMedia
     public function isSold(): bool
     {
         return $this->status === 'sold';
+    }
+
+    /**
+     * Price the customer actually pays. Falls back to the listed FOB price
+     * when no discount is set. Returns null when the vehicle is "on request".
+     */
+    public function effectivePriceFob(): ?float
+    {
+        if ($this->price_on_request) {
+            return null;
+        }
+        if ($this->price_fob_discount !== null && (float) $this->price_fob_discount > 0) {
+            return (float) $this->price_fob_discount;
+        }
+
+        return $this->price_fob !== null ? (float) $this->price_fob : null;
+    }
+
+    public function isDiscounted(): bool
+    {
+        return ! $this->price_on_request
+            && $this->price_fob_discount !== null
+            && (float) $this->price_fob_discount > 0
+            && (float) $this->price_fob > 0
+            && (float) $this->price_fob_discount < (float) $this->price_fob;
     }
 
     /** @param  Builder<Vehicle>  $query */

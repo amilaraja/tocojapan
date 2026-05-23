@@ -166,6 +166,13 @@ class VehicleForm
                     ->columns(3)
                     ->schema([
                         TextInput::make('price_fob')->label('FOB Price')->numeric()->prefix('$'),
+                        TextInput::make('price_fob_discount')
+                            ->label('Discount price (FOB)')
+                            ->numeric()
+                            ->prefix('$')
+                            ->helperText('Optional. When set, the original price is shown struck through and this is the price the customer pays.')
+                            ->lt('price_fob')
+                            ->rules(['nullable', 'numeric', 'min:0']),
                         Select::make('currency')->options([
                             'USD' => 'USD', 'JPY' => 'JPY', 'EUR' => 'EUR', 'GBP' => 'GBP',
                         ])->default('USD')->required(),

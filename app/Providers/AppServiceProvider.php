@@ -81,9 +81,10 @@ class AppServiceProvider extends ServiceProvider
         Blade::directive('cif', function (string $expr) {
             return "<?php
                 [\$__cifVeh, \$__cifPort] = [{$expr}];
-                if (\$__cifVeh && \$__cifPort && (float) \$__cifVeh->price_fob > 0 && (float) \$__cifVeh->m3 > 0) {
+                \$__cifEff = \$__cifVeh ? (float) (\$__cifVeh->effectivePriceFob() ?? 0) : 0;
+                if (\$__cifVeh && \$__cifPort && \$__cifEff > 0 && (float) \$__cifVeh->m3 > 0) {
                     \$__cifBreak = app(\App\Services\CifCalculator::class)->calculate(
-                        priceFob: (float) \$__cifVeh->price_fob,
+                        priceFob: \$__cifEff,
                         m3: (float) \$__cifVeh->m3,
                         port: \$__cifPort,
                     );

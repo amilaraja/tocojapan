@@ -22,7 +22,7 @@ class BankTransferController extends Controller
     {
         $vehicle = Vehicle::query()->where('slug', $slug)->where('status', 'published')->firstOrFail();
 
-        if ($vehicle->price_on_request || ! $vehicle->price_fob || $vehicle->price_fob <= 0) {
+        if (! $vehicle->effectivePriceFob() || $vehicle->effectivePriceFob() <= 0) {
             return redirect()->route('vehicles.show', $vehicle->slug)
                 ->withErrors(['vehicle' => 'This vehicle is priced on request — please send an inquiry.']);
         }
@@ -60,7 +60,7 @@ class BankTransferController extends Controller
         if (! app(PaymentSettings::class)->bank_transfer_enabled) {
             return back()->withErrors(['payment' => 'Bank transfer checkout is not enabled.']);
         }
-        if ($vehicle->price_on_request || ! $vehicle->price_fob || $vehicle->price_fob <= 0 || ! $vehicle->m3 || $vehicle->m3 <= 0) {
+        if (! $vehicle->effectivePriceFob() || $vehicle->effectivePriceFob() <= 0 || ! $vehicle->m3 || $vehicle->m3 <= 0) {
             return back()->withErrors(['vehicle' => 'This vehicle cannot be checked out automatically — please contact us.']);
         }
 
@@ -83,7 +83,7 @@ class BankTransferController extends Controller
         }
 
         $cif = $calculator->calculate(
-            priceFob: (float) $vehicle->price_fob,
+            priceFob: (float) $vehicle->effectivePriceFob(),
             m3: (float) $vehicle->m3,
             port: $port,
         );
