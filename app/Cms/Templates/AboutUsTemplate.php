@@ -153,6 +153,35 @@ class AboutUsTemplate implements PageTemplate
                             ->itemLabel(fn (array $state): ?string => $state['k'] ?? null)
                             ->collapsible()->defaultItems(0)->columnSpanFull(),
                     ]),
+
+                Tab::make('Branches')
+                    ->schema([
+                        TextInput::make('data.branches_eyebrow')->default('Our offices'),
+                        TextInput::make('data.branches_headline')->default('Branches'),
+                        TextInput::make('data.branches_body')
+                            ->default('Reach us at any of our regional offices.'),
+                        Repeater::make('data.branches')
+                            ->label('Branches')
+                            ->helperText('Leave a contact field blank to hide that row on the public site.')
+                            ->schema([
+                                TextInput::make('name')->label('Branch name')->required()->columnSpan(2),
+                                TextInput::make('country_code')
+                                    ->label('Country code (ISO 2-letter)')
+                                    ->placeholder('gb')
+                                    ->helperText('Used to render the flag. e.g. gb, lk, jp')
+                                    ->maxLength(2)
+                                    ->columnSpan(1),
+                                TextInput::make('address')->label('Address')->columnSpan(3),
+                                TextInput::make('phone')->label('Phone')->columnSpan(1),
+                                TextInput::make('email')->label('Email')->email()->columnSpan(1),
+                                TextInput::make('registration_no')->label('Company registration no.')->columnSpan(1),
+                            ])
+                            ->columns(3)
+                            ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
+                            ->collapsible()
+                            ->defaultItems(0)
+                            ->columnSpanFull(),
+                    ]),
             ]),
         ];
     }

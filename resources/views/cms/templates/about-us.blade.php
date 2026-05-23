@@ -16,6 +16,7 @@
         $quickStats = collect($d['quick_stats'] ?? []);
         $gallery = collect($d['gallery_items'] ?? []);
         $info = collect($d['info_rows'] ?? []);
+        $branches = collect($d['branches'] ?? [])->filter(fn ($b) => trim((string) ($b['name'] ?? '')) !== '')->values();
     @endphp
 
     {{-- ============ Page title band (matches Contact page style) ============ --}}
@@ -209,6 +210,65 @@
                             @endforeach
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </section>
+    @endif
+
+    {{-- ============ Branches ============ --}}
+    @if ($branches->isNotEmpty())
+        <section class="bg-toco-silver-2">
+            <div class="max-w-[1440px] mx-auto px-6 py-14 md:py-20">
+                <div class="mb-8 max-w-3xl">
+                    @if (! empty($d['branches_eyebrow']))
+                        <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-toco-red font-bold relative pl-4 before:content-[''] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-2 before:h-0.5 before:bg-toco-red">{{ $d['branches_eyebrow'] }}</p>
+                    @endif
+                    <h2 class="font-extrabold text-toco-navy tracking-tight leading-[1.1] mt-3 text-[clamp(26px,3vw,38px)]">{{ $d['branches_headline'] ?? 'Branches' }}</h2>
+                    @if (! empty($d['branches_body']))
+                        <p class="text-ink-soft mt-3 text-[15px] leading-relaxed">{{ $d['branches_body'] }}</p>
+                    @endif
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    @foreach ($branches as $b)
+                        @php
+                            $cc = strtolower(trim((string) ($b['country_code'] ?? '')));
+                            $flagSrc = $cc !== '' ? '/legacy/uploads/2023/11/'.$cc.'.svg' : null;
+                            $rows = array_filter([
+                                'Address' => $b['address'] ?? null,
+                                'Phone' => $b['phone'] ?? null,
+                                'Email' => $b['email'] ?? null,
+                                'Company registration no.' => $b['registration_no'] ?? null,
+                            ], fn ($v) => $v !== null && trim((string) $v) !== '');
+                        @endphp
+                        <article class="bg-white border border-line p-6 md:p-7 flex flex-col">
+                            <div class="flex items-center gap-3">
+                                @if ($flagSrc)
+                                    <img src="{{ $flagSrc }}" alt="" width="28" height="20" class="rounded-[2px] border border-line shrink-0" loading="lazy">
+                                @endif
+                                <h3 class="font-extrabold text-toco-navy tracking-tight text-[18px] leading-tight">{{ $b['name'] }}</h3>
+                            </div>
+                            @if (! empty($rows))
+                                <dl class="mt-4 border-t border-line">
+                                    @foreach ($rows as $label => $value)
+                                        <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-3 py-3 border-b border-line last:border-b-0">
+                                            <dt class="font-mono text-[11px] uppercase tracking-[0.12em] font-semibold text-ink-soft">{{ $label }}</dt>
+                                            <dd class="text-[13.5px] font-semibold text-ink break-words">
+                                                @if ($label === 'Email')
+                                                    <a href="mailto:{{ $value }}" class="hover:text-toco-red">{{ $value }}</a>
+                                                @elseif ($label === 'Phone')
+                                                    <a href="tel:{{ preg_replace('/[^\d+]/', '', $value) }}" class="hover:text-toco-red">{{ $value }}</a>
+                                                @else
+                                                    {{ $value }}
+                                                @endif
+                                            </dd>
+                                        </div>
+                                    @endforeach
+                                </dl>
+                            @else
+                                <p class="mt-4 text-[12.5px] text-ink-soft italic">Contact details coming soon.</p>
+                            @endif
+                        </article>
+                    @endforeach
                 </div>
             </div>
         </section>
