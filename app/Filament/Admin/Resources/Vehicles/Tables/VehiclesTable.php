@@ -80,6 +80,13 @@ class VehiclesTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
+                Action::make('viewOnSite')
+                    ->label('View')
+                    ->icon('heroicon-o-arrow-top-right-on-square')
+                    ->color('gray')
+                    ->url(fn (Vehicle $r) => route('vehicles.show', $r->slug))
+                    ->openUrlInNewTab()
+                    ->visible(fn (Vehicle $r) => filled($r->slug)),
                 Action::make('shareToFacebook')
                     ->label('Share to FB')
                     ->icon('heroicon-o-share')
