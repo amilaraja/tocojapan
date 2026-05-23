@@ -56,15 +56,20 @@
             @endif
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 items-stretch">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr_auto_1fr] gap-4 lg:gap-2 items-stretch">
             @foreach ($howSteps as $i => $step)
                 @php
                     $iconSvg = HowToBuyIcons::svg($step['icon'] ?? null);
                     $buttons = is_array($step['buttons'] ?? null) ? $step['buttons'] : [];
+                    // Alternate badge: odd (1,3,5) red, even (2,4) black.
+                    $badgeRed = ($i % 2) === 0;
                 @endphp
-                <div class="relative bg-white border border-line rounded-sm p-5 flex flex-col h-full shadow-[0_1px_2px_rgba(16,20,58,.04)]">
-                    {{-- Number badge --}}
-                    <span class="absolute -top-3 left-4 bg-toco-black text-white font-mono font-extrabold text-[12px] tracking-widest px-2 py-1 rounded-sm">{{ $step['num'] ?? sprintf('%02d', $i + 1) }}</span>
+                <div class="relative bg-white border border-line rounded-sm p-5 pt-7 flex flex-col h-full shadow-[0_1px_2px_rgba(16,20,58,.04)]">
+                    {{-- Number badge (alternating red / black, oversized as per mock) --}}
+                    <span class="absolute -top-3 left-4 font-mono font-extrabold text-base tracking-widest text-white px-3 py-1.5 rounded-sm shadow
+                                 {{ $badgeRed ? 'bg-toco-red' : 'bg-toco-black' }}">
+                        {{ $step['num'] ?? sprintf('%02d', $i + 1) }}
+                    </span>
 
                     {{-- Icon tile --}}
                     <div class="w-14 h-14 grid place-items-center bg-toco-red text-white rounded-sm mt-2 mx-auto">
@@ -73,12 +78,13 @@
                         @endif
                     </div>
 
-                    {{-- Title --}}
+                    {{-- Title + underline rule --}}
                     <h3 class="font-extrabold text-toco-navy text-center text-sm uppercase tracking-widest mt-4">{{ $step['title'] ?? '' }}</h3>
+                    <div class="mx-auto mt-2 h-0.5 w-12 bg-toco-red" aria-hidden="true"></div>
 
                     {{-- Body text (always shown when present) --}}
                     @if (! empty($step['body']))
-                        <p class="text-[12px] text-ink-soft text-center mt-2 leading-snug">{{ $step['body'] }}</p>
+                        <p class="text-[12px] text-ink-soft text-center mt-3 leading-snug">{{ $step['body'] }}</p>
                     @endif
 
                     {{-- Buttons (cards 1 & 2) --}}
@@ -101,6 +107,15 @@
                         </div>
                     @endif
                 </div>
+
+                {{-- Chevron arrow between cards (lg+ only — on mobile the cards stack) --}}
+                @if (! $loop->last)
+                    <div class="hidden lg:flex items-center justify-center text-toco-red" aria-hidden="true">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m9 6 6 6-6 6"/>
+                        </svg>
+                    </div>
+                @endif
             @endforeach
         </div>
 
