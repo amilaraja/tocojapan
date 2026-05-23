@@ -22,7 +22,7 @@ class CifController extends Controller
                 ->where('price_on_request', false)
                 ->orderByDesc('published_at')
                 ->limit(50)
-                ->get(['id', 'slug', 'title', 'price_fob', 'currency', 'm3', 'ref_no']),
+                ->get(['id', 'slug', 'title', 'price_fob', 'price_fob_discount', 'currency', 'm3', 'ref_no']),
         ]);
     }
 }

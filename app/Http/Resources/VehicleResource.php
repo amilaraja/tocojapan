@@ -40,7 +40,13 @@ class VehicleResource extends JsonResource
             ],
             'm3' => $this->m3,
             'price' => [
+                // `effective` is the price the customer pays — the discount when
+                // set, otherwise the listed FOB. Mobile/API clients should use
+                // `effective` for any "buy now" or CIF math.
                 'fob' => $this->price_fob,
+                'fob_discount' => $this->price_fob_discount,
+                'effective' => $this->effectivePriceFob(),
+                'is_discounted' => $this->isDiscounted(),
                 'currency' => $this->currency,
                 'on_request' => $this->price_on_request,
             ],

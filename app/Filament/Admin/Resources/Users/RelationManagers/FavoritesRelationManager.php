@@ -26,7 +26,10 @@ class FavoritesRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('vehicle.ref_no')->label('Ref'),
                 TextColumn::make('vehicle.title')->label('Vehicle')->limit(50),
-                TextColumn::make('vehicle.price_fob')->money(fn ($r) => $r->vehicle?->currency ?? 'USD'),
+                TextColumn::make('vehicle.price_fob')
+                    ->label('Price')
+                    ->money(fn ($r) => $r->vehicle?->currency ?? 'USD')
+                    ->getStateUsing(fn ($r) => $r->vehicle?->effectivePriceFob() ?? $r->vehicle?->price_fob),
                 TextColumn::make('created_at')->label('Saved')->dateTime('Y-m-d')->sortable(),
             ]);
     }

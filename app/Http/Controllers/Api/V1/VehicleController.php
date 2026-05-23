@@ -17,13 +17,20 @@ class VehicleController extends Controller
         $sort = $filters['sort'] ?? 'latest';
         $perPage = (int) ($filters['per_page'] ?? 20);
 
-        $page = Vehicle::query()
+        $query = Vehicle::query()
             ->published()
             ->with(['make', 'vehicleModel', 'bodyType', 'media'])
-            ->filter($filters)
-            ->orderBy(...self::sortColumns($sort))
-            ->paginate($perPage)
-            ->withQueryString();
+            ->filter($filters);
+
+        if ($sort === 'price_asc') {
+            $query->orderByRaw('COALESCE(price_fob_discount, price_fob) asc');
+        } elseif ($sort === 'price_desc') {
+            $query->orderByRaw('COALESCE(price_fob_discount, price_fob) desc');
+        } else {
+            $query->orderBy(...self::sortColumns($sort));
+        }
+
+        $page = $query->paginate($perPage)->withQueryString();
 
         return ApiResponse::ok(
             VehicleResource::collection($page)->resolve(),
@@ -71,8 +78,6 @@ class VehicleController extends Controller
     private static function sortColumns(string $sort): array
     {
         return match ($sort) {
-            'price_asc' => ['price_fob', 'asc'],
-            'price_desc' => ['price_fob', 'desc'],
             'year_asc' => ['year_first_reg', 'asc'],
             'year_desc' => ['year_first_reg', 'desc'],
             default => ['published_at', 'desc'],

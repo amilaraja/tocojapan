@@ -184,8 +184,11 @@ class Vehicle extends Model implements HasMedia
             ->when(! empty($filters['body_type']), fn ($q) => $q->whereHas('bodyType', fn ($q) => $q->where('slug', $filters['body_type'])))
             ->when(! empty($filters['year_from']), fn ($q) => $q->where('year_first_reg', '>=', (int) $filters['year_from']))
             ->when(! empty($filters['year_to']), fn ($q) => $q->where('year_first_reg', '<=', (int) $filters['year_to']))
-            ->when(! empty($filters['price_from']), fn ($q) => $q->where('price_fob', '>=', (float) $filters['price_from']))
-            ->when(! empty($filters['price_to']), fn ($q) => $q->where('price_fob', '<=', (float) $filters['price_to']))
+            // Price filters compare against the *effective* price (discount when
+            // set, otherwise the listed FOB). COALESCE handles NULL discounts
+            // without excluding the row.
+            ->when(! empty($filters['price_from']), fn ($q) => $q->whereRaw('COALESCE(price_fob_discount, price_fob) >= ?', [(float) $filters['price_from']]))
+            ->when(! empty($filters['price_to']), fn ($q) => $q->whereRaw('COALESCE(price_fob_discount, price_fob) <= ?', [(float) $filters['price_to']]))
             ->when(! empty($filters['mileage_max']), fn ($q) => $q->where('mileage_km', '<=', (int) $filters['mileage_max']))
             ->when(! empty($filters['transmission']), fn ($q) => $q->where('transmission', $filters['transmission']))
             ->when(! empty($filters['fuel']), fn ($q) => $q->where('fuel', $filters['fuel']))
@@ -205,7 +208,7 @@ class Vehicle extends Model implements HasMedia
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['ref_no', 'status', 'price_fob', 'published_at'])
+            ->logOnly(['ref_no', 'status', 'price_fob', 'price_fob_discount', 'is_featured', 'published_at'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }

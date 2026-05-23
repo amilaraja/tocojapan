@@ -25,7 +25,7 @@ class ListVehicles extends ListRecords
 
                     return Csv::download(
                         'vehicles-'.now()->format('Ymd-His').'.csv',
-                        ['ref_no', 'title', 'make', 'model', 'body_type', 'year', 'mileage_km', 'engine_cc', 'transmission', 'm3', 'price_fob', 'currency', 'status', 'published_at'],
+                        ['ref_no', 'title', 'make', 'model', 'body_type', 'year', 'mileage_km', 'engine_cc', 'transmission', 'm3', 'price_fob', 'price_fob_discount', 'effective_price', 'currency', 'status', 'published_at'],
                         $query->lazy()->map(fn ($v) => [
                             $v->ref_no,
                             $v->title,
@@ -38,6 +38,8 @@ class ListVehicles extends ListRecords
                             $v->transmission,
                             $v->m3,
                             $v->price_fob,
+                            $v->price_fob_discount,
+                            $v->effectivePriceFob(),
                             $v->currency,
                             $v->status,
                             $v->published_at?->toDateString(),

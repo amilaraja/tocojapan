@@ -145,7 +145,7 @@
                         <select x-model="vehicleSlug" class="w-full border-line rounded-sm">
                             <option value="">— Pick a vehicle —</option>
                             @foreach ($vehicles as $v)
-                                <option value="{{ $v->slug }}">{{ $v->title }} ({{ $v->stock_no ?: $v->ref_no }}) — ${{ number_format((float) $v->price_fob) }}</option>
+                                <option value="{{ $v->slug }}">{{ $v->title }} ({{ $v->stock_no ?: $v->ref_no }}) — ${{ number_format((float) ($v->effectivePriceFob() ?? $v->price_fob)) }}</option>
                             @endforeach
                         </select>
                         <p class="text-[12px] text-ink-soft mt-1">Showing the latest 50 vehicles in stock.</p>

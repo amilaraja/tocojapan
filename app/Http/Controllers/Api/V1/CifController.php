@@ -28,7 +28,8 @@ class CifController extends Controller
                 ->where('slug', $data['vehicle_slug'])
                 ->firstOrFail();
 
-            if ($vehicle->price_on_request || $vehicle->price_fob === null || $vehicle->price_fob == 0.0) {
+            $effective = $vehicle->effectivePriceFob();
+            if ($effective === null || $effective == 0.0) {
                 return ApiResponse::error('This vehicle is priced on request — CIF cannot be auto-calculated.', 422, [
                     'vehicle_slug' => ['Price is on request.'],
                 ]);
@@ -39,7 +40,7 @@ class CifController extends Controller
                 ]);
             }
 
-            $priceFob = (float) $vehicle->price_fob;
+            $priceFob = $effective;
             $m3 = (float) $vehicle->m3;
             $currency = $currency ?? $vehicle->currency;
             $vehicleMeta = [

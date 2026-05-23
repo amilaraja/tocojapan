@@ -118,9 +118,10 @@ class MakeVehicleSampleVideo extends Command
             $vehicle->engine_cc ? ((int) $vehicle->engine_cc).'cc' : null,
         ])->filter()->implode('   •   ');
 
-        $price = $vehicle->price_on_request || ! $vehicle->price_fob
+        $effective = $vehicle->effectivePriceFob();
+        $price = $effective === null || $effective <= 0
             ? 'Price on request'
-            : 'FOB Japan   $'.number_format((float) $vehicle->price_fob);
+            : 'FOB Japan   $'.number_format((float) $effective);
 
         $stockId = $vehicle->stock_no ? '#'.$vehicle->stock_no : 'TOCO JAPAN';
 

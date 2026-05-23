@@ -18,7 +18,7 @@
         @endphp
         <div
             class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6"
-            x-data="bankCheckout(@js($countryPayload), {{ (float) $vehicle->price_fob }}, {{ (float) ($vehicle->m3 ?: 0) }}, {{ (float) (app(\App\Settings\CifSettings::class)->insurance_pct ?: 0) }}, {{ $destPort?->country_id ? (int) $destPort->country_id : 0 }}, {{ $destPort?->id ? (int) $destPort->id : 0 }})"
+            x-data="bankCheckout(@js($countryPayload), {{ (float) ($vehicle->effectivePriceFob() ?? $vehicle->price_fob) }}, {{ (float) ($vehicle->m3 ?: 0) }}, {{ (float) (app(\App\Settings\CifSettings::class)->insurance_pct ?: 0) }}, {{ $destPort?->country_id ? (int) $destPort->country_id : 0 }}, {{ $destPort?->id ? (int) $destPort->id : 0 }})"
         >
             <form method="POST" action="{{ route('checkout.bank.store', $vehicle->slug) }}" class="space-y-6">
                 @csrf
