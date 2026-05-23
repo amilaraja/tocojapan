@@ -30,6 +30,7 @@ class VehicleListRequest extends FormRequest
             'fuel' => ['nullable', 'in:petrol,diesel,hybrid,electric,lpg'],
             'steering' => ['nullable', 'in:right,left'],
             'drive' => ['nullable', 'in:2wd,4wd,awd'],
+            'featured' => ['nullable', 'boolean'],
             'sort' => ['nullable', 'in:price_asc,price_desc,year_desc,year_asc,latest'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:60'],
         ];

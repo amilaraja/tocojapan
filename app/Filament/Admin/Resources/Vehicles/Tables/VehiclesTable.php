@@ -62,8 +62,19 @@ class VehiclesTable
                 TextColumn::make('published_at')->dateTime('Y-m-d')->sortable()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')->dateTime('Y-m-d H:i')->sortable()->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('price_on_request')->boolean()->toggleable(isToggledHiddenByDefault: true),
+                IconColumn::make('is_featured')
+                    ->label('Hot')
+                    ->boolean()
+                    ->trueIcon('heroicon-s-fire')
+                    ->trueColor('danger')
+                    ->sortable()
+                    ->toggleable(),
             ])
             ->filters([
+                SelectFilter::make('is_featured')
+                    ->label('Hot deals')
+                    ->placeholder('Any')
+                    ->options(['1' => 'Hot deals only', '0' => 'Not hot']),
                 SelectFilter::make('status')->options([
                     'draft' => 'Draft',
                     'published' => 'Published',
@@ -161,6 +172,26 @@ class VehiclesTable
                                 $count++;
                             }
                             Notification::make()->title("Published {$count} vehicle(s).")->success()->send();
+                        }),
+                    BulkAction::make('markHotDeal')
+                        ->label('Mark as Hot Deal')
+                        ->icon('heroicon-o-fire')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records) {
+                            $count = $records->count();
+                            $records->toQuery()->update(['is_featured' => true]);
+                            Notification::make()->title("Marked {$count} vehicle(s) as Hot Deal.")->success()->send();
+                        }),
+                    BulkAction::make('unmarkHotDeal')
+                        ->label('Remove from Hot Deal')
+                        ->icon('heroicon-o-x-mark')
+                        ->color('gray')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records) {
+                            $count = $records->count();
+                            $records->toQuery()->update(['is_featured' => false]);
+                            Notification::make()->title("Removed {$count} vehicle(s) from Hot Deal.")->success()->send();
                         }),
                     BulkAction::make('unpublish')
                         ->label('Move to draft')

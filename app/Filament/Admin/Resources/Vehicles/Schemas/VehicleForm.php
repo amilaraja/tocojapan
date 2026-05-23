@@ -56,6 +56,10 @@ class VehicleForm
                             ->default('draft')
                             ->required(),
                         DateTimePicker::make('published_at'),
+                        Toggle::make('is_featured')
+                            ->label('Hot deal')
+                            ->helperText('Pin to the Hot Deal carousel on the homepage.')
+                            ->columnSpan(2),
                         Select::make('make_id')
                             ->relationship('make', 'name')
                             ->searchable()

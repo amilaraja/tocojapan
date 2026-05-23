@@ -47,6 +47,7 @@ class Vehicle extends Model implements HasMedia
         'width_cm' => 'decimal:2',
         'height_cm' => 'decimal:2',
         'price_on_request' => 'bool',
+        'is_featured' => 'bool',
         'published_at' => 'datetime',
         'sold_at' => 'datetime',
         'fb_shared_at' => 'datetime',
@@ -112,6 +113,12 @@ class Vehicle extends Model implements HasMedia
         return $this->status === 'sold';
     }
 
+    /** @param  Builder<Vehicle>  $query */
+    public function scopeFeatured($query): void
+    {
+        $query->where('is_featured', true);
+    }
+
     /**
      * Strip empty/false/null entries from the features JSON before persisting.
      * Filament's Toggle dehydrate returns null when off; cleaning here means
@@ -158,6 +165,7 @@ class Vehicle extends Model implements HasMedia
             ->when(! empty($filters['fuel']), fn ($q) => $q->where('fuel', $filters['fuel']))
             ->when(! empty($filters['steering']), fn ($q) => $q->where('steering_side', $filters['steering']))
             ->when(! empty($filters['drive']), fn ($q) => $q->where('drive', $filters['drive']))
+            ->when(! empty($filters['featured']), fn ($q) => $q->where('is_featured', true))
             ->when(! empty($filters['q']), fn ($q) => $q->where(function ($q) use ($filters) {
                 $term = '%'.$filters['q'].'%';
                 $q->where('title', 'like', $term)
