@@ -15,12 +15,14 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SparePartController;
+use App\Http\Controllers\SubscriberController;
 use App\Http\Controllers\VehicleController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [VehicleController::class, 'home'])->name('home');
 
 Route::get('/vehicles', [VehicleController::class, 'index'])->name('vehicles.index');
+Route::get('/vehicles/recently-viewed', [VehicleController::class, 'recentlyViewed'])->name('vehicles.recently-viewed');
 Route::get('/vehicles/{slug}', [VehicleController::class, 'show'])->name('vehicles.show');
 
 Route::get('/cif', [CifController::class, 'index'])->name('cif.index');
@@ -31,6 +33,10 @@ Route::get('/news/{slug}', [NewsController::class, 'show'])->name('news.show');
 Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
 
 Route::post('/order-spareparts', [SparePartController::class, 'submit'])->name('spareparts.submit');
+
+Route::post('/subscribe', [SubscriberController::class, 'store'])
+    ->middleware('throttle:5,1')
+    ->name('subscribe.store');
 
 Route::post('/currency/{code}', [CurrencyController::class, 'set'])->name('currency.set');
 

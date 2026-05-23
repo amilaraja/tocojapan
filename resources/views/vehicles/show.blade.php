@@ -135,6 +135,26 @@
         </script>
     @endpush
 
+    @push('scripts')
+    <script>
+        // Track this vehicle in the visitor's localStorage so the "Recently
+        // viewed" strip on the homepage can show it back to them. Stores
+        // slugs only (most-recent first), capped at 8 entries.
+        (function () {
+            try {
+                const KEY = 'toco_recent_vehicles';
+                const slug = @json($vehicle->slug);
+                if (!slug) return;
+                let list = [];
+                try { list = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) {}
+                if (!Array.isArray(list)) list = [];
+                list = [slug, ...list.filter(s => s !== slug)].slice(0, 8);
+                localStorage.setItem(KEY, JSON.stringify(list));
+            } catch (e) { /* localStorage blocked — ignore */ }
+        })();
+    </script>
+    @endpush
+
     {{-- Breadcrumb --}}
     <div class="bg-toco-silver-2 border-b border-line">
         <div class="max-w-[1600px] mx-auto px-6 2xl:px-8 py-3 text-[12px] font-mono uppercase tracking-widest text-ink-soft">

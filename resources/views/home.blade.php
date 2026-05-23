@@ -302,28 +302,6 @@
     {{-- Buyer FAQ (with FAQPage JSON-LD for rich results) --}}
     @include('partials.home-faq', ['content' => $content])
 
-    {{-- CTA strip --}}
-    @php
-        $cta = $content['cta'] ?? [];
-        $ctaKicker = $cta['kicker'] ?? 'Ready to import?';
-        $ctaHeadline = $cta['headline'] ?? 'Tell us what you want — we\'ll quote and ship it.';
-        $ctaBody = $cta['body'] ?? 'Get a CIF estimate to your nearest port, in your currency. No commitment until you\'re happy with the deal.';
-        $ctaPrimaryLabel = $cta['button_primary_label'] ?? 'Request a quote';
-        $ctaPrimaryUrl = $cta['button_primary_url'] ?? route('register');
-        $ctaSecondaryLabel = $cta['button_secondary_label'] ?? 'Browse stock';
-        $ctaSecondaryUrl = $cta['button_secondary_url'] ?? route('vehicles.index');
-    @endphp
-    <section id="contact" class="bg-toco-black text-white">
-        <div class="max-w-[1440px] mx-auto px-6 py-12 md:py-16 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 items-center">
-            <div>
-                <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-toco-red font-bold">{{ $ctaKicker }}</p>
-                <h2 class="text-3xl md:text-4xl font-extrabold mt-2 leading-tight">{{ $ctaHeadline }}</h2>
-                <p class="text-white/70 mt-3 max-w-xl">{{ $ctaBody }}</p>
-            </div>
-            <div class="flex gap-3 md:justify-end">
-                <a href="{{ $ctaPrimaryUrl }}" class="bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-5 py-3 rounded-sm">{{ $ctaPrimaryLabel }}</a>
-                <a href="{{ $ctaSecondaryUrl }}" class="border border-white/30 hover:bg-white/10 text-white font-bold uppercase tracking-widest text-xs px-5 py-3 rounded-sm">{{ $ctaSecondaryLabel }}</a>
-            </div>
-        </div>
-    </section>
+    {{-- Inquiry / Subscribe CTA strip --}}
+    @include('partials.home-cta-strip')
 </x-layouts.site>

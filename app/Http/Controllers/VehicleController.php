@@ -17,7 +17,15 @@ class VehicleController extends Controller
 {
     public function home(): View
     {
-        $featured = Vehicle::query()
+        $hotDeals = Vehicle::query()
+            ->published()
+            ->featured()
+            ->with(['make', 'vehicleModel', 'bodyType', 'media'])
+            ->orderByDesc('published_at')
+            ->limit(12)
+            ->get();
+
+        $latest = Vehicle::query()
             ->published()
             ->with(['make', 'vehicleModel', 'bodyType', 'media'])
             ->orderByDesc('published_at')
@@ -55,7 +63,10 @@ class VehicleController extends Controller
         $template = PageTemplateRegistry::resolve('home');
 
         $shared = [
-            'featured' => $featured,
+            'hotDeals' => $hotDeals,
+            'latest' => $latest,
+            // Back-compat: existing partials still reference $featured.
+            'featured' => $latest,
             'makesWithCounts' => $makesWithCounts,
             'bodyTypesWithCounts' => $bodyTypesWithCounts,
             'allMakes' => Make::where('is_active', true)
@@ -75,6 +86,35 @@ class VehicleController extends Controller
 
         // Fallback: render with empty $content so the Blade defaults kick in.
         return view('home', array_merge(['content' => []], $shared));
+    }
+
+    /**
+     * Returns a rendered horizontal-scroll strip of vehicle cards for the
+     * client-side "Recently viewed" block. Accepts ?slugs=foo,bar,baz and
+     * preserves that order. Cards capped at 8.
+     */
+    public function recentlyViewed(\Illuminate\Http\Request $request): View|\Illuminate\Http\Response
+    {
+        $raw = (string) $request->query('slugs', '');
+        $slugs = array_values(array_filter(array_slice(array_map('trim', explode(',', $raw)), 0, 8)));
+
+        if (empty($slugs)) {
+            return response('', 204);
+        }
+
+        $vehicles = Vehicle::query()
+            ->published()
+            ->whereIn('slug', $slugs)
+            ->with(['make', 'vehicleModel', 'bodyType', 'media'])
+            ->get()
+            ->sortBy(fn ($v) => array_search($v->slug, $slugs, true))
+            ->values();
+
+        if ($vehicles->isEmpty()) {
+            return response('', 204);
+        }
+
+        return view('partials.home-recently-viewed-cards', ['vehicles' => $vehicles]);
     }
 
     public function index(VehicleListRequest $request): View
