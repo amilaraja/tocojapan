@@ -115,6 +115,40 @@ class Vehicle extends Model implements HasMedia
     }
 
     /**
+     * Related vehicles for the detail page. Ranks by a fixed priority:
+     *
+     *   tier 1 — same make AND same model       (highest)
+     *   tier 2 — same make AND same body type
+     *   tier 3 — same make
+     *   tier 4 — same body type
+     *   then  — nearest effective price, then nearest year
+     *
+     * One query, no N+1; sold-within-90-days are included (the public scope
+     * keeps them visible for that window) but the current vehicle itself is
+     * excluded.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, Vehicle>
+     */
+    public function relatedVehicles(int $limit = 8): \Illuminate\Database\Eloquent\Collection
+    {
+        $currentPrice = (float) ($this->effectivePriceFob() ?? $this->price_fob ?? 0);
+        $currentYear = (int) ($this->year_first_reg ?? 0);
+
+        return static::query()
+            ->published()
+            ->where('id', '<>', $this->id)
+            ->with(['make', 'vehicleModel', 'bodyType', 'media'])
+            ->orderByRaw('CASE WHEN make_id = ? AND vehicle_model_id = ? THEN 1 ELSE 0 END DESC', [$this->make_id, $this->vehicle_model_id])
+            ->orderByRaw('CASE WHEN make_id = ? AND body_type_id = ? THEN 1 ELSE 0 END DESC', [$this->make_id, $this->body_type_id])
+            ->orderByRaw('CASE WHEN make_id = ? THEN 1 ELSE 0 END DESC', [$this->make_id])
+            ->orderByRaw('CASE WHEN body_type_id = ? THEN 1 ELSE 0 END DESC', [$this->body_type_id])
+            ->orderByRaw('ABS(COALESCE(price_fob_discount, price_fob, 0) - ?) ASC', [$currentPrice])
+            ->orderByRaw('ABS(COALESCE(year_first_reg, 0) - ?) ASC', [$currentYear])
+            ->limit($limit)
+            ->get();
+    }
+
+    /**
      * Price the customer actually pays. Falls back to the listed FOB price
      * when no discount is set. Returns null when the vehicle is "on request".
      */

@@ -177,6 +177,7 @@ class VehicleController extends Controller
         return view('vehicles.show', [
             'vehicle' => $vehicle,
             'countries' => $countries,
+            'relatedVehicles' => $vehicle->relatedVehicles(8),
         ]);
     }
 

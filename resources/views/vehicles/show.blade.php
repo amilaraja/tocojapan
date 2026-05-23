@@ -763,4 +763,27 @@
         @endif
         @endauth
     </section>
+
+    {{-- ============ Related vehicles ============ --}}
+    @if (! empty($relatedVehicles) && $relatedVehicles->count() > 0)
+        <section class="bg-toco-silver-2 mt-10 border-t border-line">
+            <div class="max-w-[1600px] mx-auto px-6 2xl:px-8 py-10 md:py-14">
+                <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-6">
+                    <div>
+                        <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-toco-red font-bold">You might also like</p>
+                        <h2 class="text-2xl md:text-[28px] font-extrabold text-toco-navy mt-1 leading-tight">Related vehicles</h2>
+                        <p class="text-ink-soft text-sm mt-1">More {{ $vehicle->make?->name ?? '' }} {{ $vehicle->vehicleModel?->name ?? ($vehicle->bodyType?->name ? mb_strtolower($vehicle->bodyType->name).'s' : 'vehicles') }} in our stock.</p>
+                    </div>
+                    <a href="{{ route('vehicles.index').'?'.http_build_query(array_filter(['make' => $vehicle->make?->slug, 'vehicle_model' => $vehicle->vehicleModel?->slug])) }}" class="text-sm font-bold text-toco-red hover:text-toco-red-deep inline-flex items-center gap-1">
+                        See all <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 6 6 6-6 6"/></svg>
+                    </a>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+                    @foreach ($relatedVehicles as $rv)
+                        <x-vehicle-card :vehicle="$rv" />
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
 </x-layouts.site>
