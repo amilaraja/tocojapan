@@ -71,6 +71,7 @@ class Settings extends Page implements HasForms
                 // isn't shoulder-surfed but is still editable by re-typing.
                 'facebook_page_access_token' => $social->facebook_page_access_token,
                 'facebook_post_template' => $social->facebook_post_template,
+                'links' => $social->links,
             ],
             'image' => [
                 'max_width' => $image->max_width,
@@ -265,7 +266,38 @@ class Settings extends Page implements HasForms
                             ]),
                         Tab::make('Social media')
                             ->schema([
-                                Section::make('Facebook page')
+                                Section::make('Footer social icons')
+                                    ->description('Profile links shown in the site footer "Follow us" strip. Drag to reorder; leave URL blank to hide an entry.')
+                                    ->schema([
+                                        Repeater::make('social.links')
+                                            ->label('')
+                                            ->reorderable()
+                                            ->reorderableWithDragAndDrop()
+                                            ->columns(3)
+                                            ->itemLabel(fn (array $state): ?string => trim(($state['label'] ?? '') !== ''
+                                                ? $state['label']
+                                                : (\App\Support\SocialPlatforms::find($state['platform'] ?? '')['name'] ?? null)))
+                                            ->schema([
+                                                Select::make('platform')
+                                                    ->label('Platform')
+                                                    ->options(\App\Support\SocialPlatforms::options())
+                                                    ->searchable()
+                                                    ->required()
+                                                    ->columnSpan(1),
+                                                TextInput::make('label')
+                                                    ->label('Display name (optional)')
+                                                    ->helperText('Used as aria-label. Defaults to the platform name.')
+                                                    ->columnSpan(1),
+                                                TextInput::make('url')
+                                                    ->label('Profile URL')
+                                                    ->url()
+                                                    ->placeholder('https://facebook.com/your-page')
+                                                    ->columnSpan(1),
+                                            ])
+                                            ->addActionLabel('Add a social profile')
+                                            ->defaultItems(0),
+                                    ]),
+                                Section::make('Facebook page (auto-post)')
                                     ->description('Posts a vehicle to your Facebook page on publish. Use a long-lived Page Access Token from Meta Graph API Explorer with the `pages_manage_posts` permission.')
                                     ->columns(2)
                                     ->schema([
@@ -322,6 +354,16 @@ class Settings extends Page implements HasForms
         $social->facebook_page_id = $state['social']['facebook_page_id'] ?: null;
         $social->facebook_page_access_token = $state['social']['facebook_page_access_token'] ?: null;
         $social->facebook_post_template = (string) ($state['social']['facebook_post_template'] ?? '');
+        $social->links = array_values(array_filter(
+            array_map(function ($l) {
+                return [
+                    'platform' => (string) ($l['platform'] ?? ''),
+                    'label' => trim((string) ($l['label'] ?? '')) !== '' ? trim((string) $l['label']) : null,
+                    'url' => trim((string) ($l['url'] ?? '')) !== '' ? trim((string) $l['url']) : null,
+                ];
+            }, $state['social']['links'] ?? []),
+            fn ($l) => $l['platform'] !== '' && $l['url'] !== null
+        ));
         $social->save();
 
         $image = app(ImageSettings::class);

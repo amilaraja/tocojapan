@@ -15,6 +15,8 @@ class SocialSettings extends Settings
 
     public string $facebook_post_template;
 
+    public array $links;
+
     public static function group(): string
     {
         return 'social';

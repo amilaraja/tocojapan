@@ -378,24 +378,24 @@
                         <a href="mailto:info@tocojapan.com" class="hover:text-white">info@tocojapan.com</a>
                     </li>
                 </ul>
-                @php($socials = [
-                    ['Facebook', '#1877F2', '#', 'M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.51 1.49-3.89 3.78-3.89 1.09 0 2.24.19 2.24.19v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12z'],
-                    ['TikTok', '#111111', '#', 'M16.5 3c.32 2.13 1.51 3.4 3.5 3.53v2.61c-1.3.06-2.49-.32-3.83-1.04v5.78c0 4.06-3.36 6.57-7.09 5.62-2.43-.62-3.86-2.92-3.55-5.45.3-2.48 2.66-4.36 5.28-4.13v2.83c-.4-.06-.83-.1-1.24-.04-1.16.17-2.02 1.1-1.95 2.34.07 1.18 1.04 2.07 2.27 2.02 1.36-.05 2.27-1.13 2.27-2.62V3h2.66z'],
-                    ['Instagram', '#E1306C', '#', 'M12 2c2.72 0 3.06.01 4.12.06 1.07.05 1.8.22 2.43.47.66.25 1.22.6 1.77 1.15.55.55.9 1.11 1.15 1.77.25.63.42 1.36.47 2.43.05 1.07.06 1.4.06 4.12s-.01 3.06-.06 4.12c-.05 1.07-.22 1.8-.47 2.43a4.9 4.9 0 0 1-1.15 1.77c-.55.55-1.11.9-1.77 1.15-.63.25-1.36.42-2.43.47-1.07.05-1.4.06-4.12.06s-3.06-.01-4.12-.06c-1.07-.05-1.8-.22-2.43-.47a4.9 4.9 0 0 1-1.77-1.15 4.9 4.9 0 0 1-1.15-1.77c-.25-.63-.42-1.36-.47-2.43C2.01 15.06 2 14.72 2 12s.01-3.06.06-4.12c.05-1.07.22-1.8.47-2.43A4.9 4.9 0 0 1 3.68 3.68 4.9 4.9 0 0 1 5.45 2.53c.63-.25 1.36-.42 2.43-.47C8.94 2.01 9.28 2 12 2zm0 5a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm5.5-2.75a1.25 1.25 0 1 0 0 2.5 1.25 1.25 0 0 0 0-2.5z'],
-                    ['YouTube', '#FF0000', '#', 'M23 12s0-3.19-.4-4.72c-.22-.84-.86-1.5-1.68-1.73C19.39 5.18 12 5.18 12 5.18s-7.39 0-8.92.37c-.82.23-1.46.89-1.68 1.73C1 8.81 1 12 1 12s0 3.19.4 4.72c.22.84.86 1.5 1.68 1.73 1.53.37 8.92.37 8.92.37s7.39 0 8.92-.37c.82-.23 1.46-.89 1.68-1.73C23 15.19 23 12 23 12zM9.75 15.4V8.6l5.95 3.4-5.95 3.4z'],
-                    ['LinkedIn', '#0A66C2', '#', 'M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14zM8.34 18.34V9.9H5.67v8.44h2.67zM7 8.67a1.55 1.55 0 1 0 0-3.1 1.55 1.55 0 0 0 0 3.1zm11.34 9.67v-4.63c0-2.47-1.32-3.62-3.08-3.62-1.42 0-2.06.78-2.42 1.33V9.9h-2.67c.04.75 0 8.44 0 8.44h2.67v-4.71c0-.24.02-.48.09-.65.19-.48.63-.97 1.37-.97.97 0 1.36.74 1.36 1.82v4.51h2.68z'],
-                ])
-                <div class="flex items-center gap-3 mt-6">
-                    <span class="font-bold uppercase tracking-widest text-xs text-white shrink-0">Follow us</span>
-                    <div class="flex items-center gap-2">
-                        @foreach ($socials as [$sName, $sColor, $sUrl, $sPath])
-                            <a href="{{ $sUrl }}" target="_blank" rel="noopener" aria-label="{{ $sName }}"
-                               class="w-8 h-8 rounded-full grid place-items-center hover:opacity-80 transition" style="background-color: {{ $sColor }}">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="#fff"><path d="{{ $sPath }}"/></svg>
-                            </a>
-                        @endforeach
+                @php($socialLinks = app(\App\Settings\SocialSettings::class)->links ?? [])
+                @php($socialRegistry = \App\Support\SocialPlatforms::all())
+                @php($socialLinks = array_values(array_filter($socialLinks, fn ($l) => ! empty($l['url']) && isset($socialRegistry[$l['platform'] ?? '']))))
+                @if (! empty($socialLinks))
+                    <div class="flex items-center gap-3 mt-6">
+                        <span class="font-bold uppercase tracking-widest text-xs text-white shrink-0">Follow us</span>
+                        <div class="flex items-center gap-2">
+                            @foreach ($socialLinks as $link)
+                                @php($meta = $socialRegistry[$link['platform']])
+                                @php($label = ! empty($link['label']) ? $link['label'] : $meta['name'])
+                                <a href="{{ $link['url'] }}" target="_blank" rel="noopener" aria-label="{{ $label }}"
+                                   class="w-8 h-8 rounded-full grid place-items-center hover:opacity-80 transition" style="background-color: {{ $meta['color'] }}">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="#fff"><path d="{{ $meta['svg'] }}"/></svg>
+                                </a>
+                            @endforeach
+                        </div>
                     </div>
-                </div>
+                @endif
             </div>
 
             {{-- About Us --}}
