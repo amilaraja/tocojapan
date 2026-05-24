@@ -75,11 +75,20 @@
     // ---- Vehicle Details block (two-column spec table per the v6 design) ----
     $dash = '—';
     $em = function ($v) use ($dash) { return ($v === null || $v === '' || $v === 0 || $v === '0') ? $dash : $v; };
-    $dimL = $vehicle->length_cm;
-    $dimW = $vehicle->width_cm;
-    $dimH = $vehicle->height_cm;
-    $dimension = ($dimL || $dimW || $dimH)
-        ? (($dimL ?: '?') . ' x ' . ($dimW ?: '?') . ' x ' . ($dimH ?: '?') . ' cm')
+    // Dimensions: stored in cm (decimal:2) but displayed in metres for
+    // public consumption — "426.00 cm" → "4.26 m". Strips trailing zeros
+    // so a clean "4.5" doesn't render as "4.50".
+    $fmtDim = function ($v) {
+        if ($v === null || $v === '' || (float) $v <= 0) {
+            return null;
+        }
+        $m = (float) $v / 100;
+
+        return rtrim(rtrim(number_format($m, 2, '.', ''), '0'), '.');
+    };
+    $dimParts = [$fmtDim($vehicle->length_cm), $fmtDim($vehicle->width_cm), $fmtDim($vehicle->height_cm)];
+    $dimension = array_filter($dimParts) !== []
+        ? implode(' × ', array_map(fn ($p) => $p ?? '?', $dimParts)) . ' m'
         : $dash;
     $steeringDisplay = $vehicle->steering_side
         ? ($vehicle->steering_side === 'right' ? 'Right hand drive' : 'Left hand drive')
