@@ -45,6 +45,14 @@ class VehicleForm
                             ->label('Reference number')
                             ->maxLength(50)
                             ->helperText('External / auction reference (optional).'),
+                        TextInput::make('chassis_number')
+                            ->label('Chassis number')
+                            ->maxLength(80)
+                            ->helperText('Optional. Full VIN / chassis number. Stored privately — only a redacted form is shown publicly.'),
+                        TextInput::make('model_code')
+                            ->label('Model code')
+                            ->maxLength(60)
+                            ->helperText('Optional. Japanese vehicle model code (e.g. DBA-NV150, GH-Z11).'),
                         TextInput::make('slug')->required()->maxLength(220)->columnSpan(2),
                         Select::make('status')
                             ->options([
