@@ -270,7 +270,7 @@ class HomeTemplate implements PageTemplate
         $bodyTypesWithCounts = BodyType::where('is_active', true)
             ->with('media')
             ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
-            ->orderByDesc('published_count')->orderBy('name')->limit(8)->get();
+            ->orderBy('sort_order')->orderBy('name')->limit(12)->get();
 
         return view('home', [
             'content' => $page->data ?? [],
