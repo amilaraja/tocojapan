@@ -133,7 +133,8 @@ class VehicleForm
                         TextInput::make('location')
                             ->label('Location')
                             ->maxLength(80)
-                            ->helperText('Where the vehicle is physically stored (defaults to "Yokohama" on the public page when blank).'),
+                            ->default('Tochigi, Japan')
+                            ->helperText('Where the vehicle is physically stored. Defaults to "Tochigi, Japan" for new vehicles.'),
                         TextInput::make('year_first_reg')
                             ->label('Registration year')
                             ->required()

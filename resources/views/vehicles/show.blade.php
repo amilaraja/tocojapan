@@ -95,7 +95,7 @@
         ['Drive', $em(strtoupper((string) $vehicle->drive))],
         ['Transmission', $em(ucfirst((string) $vehicle->transmission))],
         ['Body type', $em(optional($vehicle->bodyType)->name)],
-        ['Location', $em($vehicle->location ?: 'Yokohama, Japan')],
+        ['Location', $em($vehicle->location ?: 'Tochigi, Japan')],
     ];
     $detailsRight = [
         ['Registration Y/M', $em($vehicle->registrationYmDisplay())],
