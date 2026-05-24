@@ -114,7 +114,7 @@
                 <div class="order-1 lg:order-none flex flex-col gap-4 min-w-0">
 
                     {{-- TOP FILTER BAR --}}
-                    <form method="GET" action="{{ route('vehicles.index') }}" class="bg-white border border-line rounded-sm" x-data="{ advanced: false }">
+                    <form method="GET" action="{{ route('vehicles.index') }}" class="bg-white border border-line rounded-sm" x-data="{ advanced: true }">
                         {{-- Bar header --}}
                         <div class="flex items-center justify-between border-b-2 border-toco-red/30 px-4 py-3">
                             <div class="flex items-center gap-2">
