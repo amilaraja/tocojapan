@@ -269,12 +269,17 @@ class Vehicle extends Model implements HasMedia
             // without excluding the row.
             ->when(! empty($filters['price_from']), fn ($q) => $q->whereRaw('COALESCE(price_fob_discount, price_fob) >= ?', [(float) $filters['price_from']]))
             ->when(! empty($filters['price_to']), fn ($q) => $q->whereRaw('COALESCE(price_fob_discount, price_fob) <= ?', [(float) $filters['price_to']]))
+            ->when(! empty($filters['mileage_min']), fn ($q) => $q->where('mileage_km', '>=', (int) $filters['mileage_min']))
             ->when(! empty($filters['mileage_max']), fn ($q) => $q->where('mileage_km', '<=', (int) $filters['mileage_max']))
+            ->when(! empty($filters['engine_from']), fn ($q) => $q->where('engine_cc', '>=', (int) $filters['engine_from']))
+            ->when(! empty($filters['engine_to']), fn ($q) => $q->where('engine_cc', '<=', (int) $filters['engine_to']))
             ->when(! empty($filters['transmission']), fn ($q) => $q->where('transmission', $filters['transmission']))
             ->when(! empty($filters['fuel']), fn ($q) => $q->where('fuel', $filters['fuel']))
             ->when(! empty($filters['steering']), fn ($q) => $q->where('steering_side', $filters['steering']))
             ->when(! empty($filters['drive']), fn ($q) => $q->where('drive', $filters['drive']))
             ->when(! empty($filters['featured']), fn ($q) => $q->where('is_featured', true))
+            ->when(! empty($filters['discounted']), fn ($q) => $q->whereNotNull('price_fob_discount')->where('price_fob_discount', '>', 0))
+            ->when(! empty($filters['new_only']), fn ($q) => $q->where('published_at', '>=', now()->subDays(14)))
             ->when(! empty($filters['q']), fn ($q) => $q->where(function ($q) use ($filters) {
                 $term = '%'.$filters['q'].'%';
                 $q->where('title', 'like', $term)

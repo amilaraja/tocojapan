@@ -144,11 +144,17 @@ class VehicleController extends Controller
             'vehicles' => $vehicles,
             'filters' => $filters,
             'makes' => Make::where('is_active', true)
+                ->with('media')
                 ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
-                ->orderBy('sort_order')->orderBy('name')->get(['id', 'slug', 'name']),
+                ->orderBy('sort_order')->orderBy('name')->get(),
             'bodyTypes' => BodyType::where('is_active', true)
+                ->with('media')
                 ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
-                ->orderBy('name')->get(['id', 'slug', 'name']),
+                ->orderBy('sort_order')->orderBy('name')->get(),
+            'destCountries' => \App\Models\Country::query()
+                ->where('is_active', true)
+                ->with(['ports' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')])
+                ->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'iso2']),
             'models' => isset($filters['make'])
                 ? VehicleModel::whereHas('make', fn ($q) => $q->where('slug', $filters['make']))
                     ->orderBy('name')->get(['id', 'slug', 'name', 'make_id'])
