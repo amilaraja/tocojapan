@@ -54,7 +54,9 @@
             <div class="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)] gap-6">
 
                 {{-- ============ LEFT SIDEBAR ============ --}}
-                <aside class="flex flex-col gap-4">
+                {{-- On mobile (lg-) the sidebar drops below the main column so users
+                     hit the search bar and results first. CSS Grid honours `order`. --}}
+                <aside class="order-2 lg:order-none flex flex-col gap-4">
                     {{-- Search by Make --}}
                     <div class="bg-white border border-line rounded-sm overflow-hidden">
                         @include('partials.home-sidebar-header', ['kicker' => 'Search by', 'title' => 'Make'])
@@ -109,7 +111,7 @@
                 </aside>
 
                 {{-- ============ MAIN COLUMN ============ --}}
-                <div class="flex flex-col gap-4 min-w-0">
+                <div class="order-1 lg:order-none flex flex-col gap-4 min-w-0">
 
                     {{-- TOP FILTER BAR --}}
                     <form method="GET" action="{{ route('vehicles.index') }}" class="bg-white border border-line rounded-sm" x-data="{ advanced: false }">
