@@ -53,9 +53,55 @@ class Vehicle extends Model implements HasMedia
         'sold_at' => 'datetime',
         'fb_shared_at' => 'datetime',
         'year_first_reg' => 'integer',
+        'registration_month' => 'integer',
+        'manufacture_year' => 'integer',
+        'manufacture_month' => 'integer',
         'mileage_km' => 'integer',
         'engine_cc' => 'integer',
     ];
+
+    /** Registration YYYY/MM string for display. Returns just the year when month is unknown. */
+    public function registrationYmDisplay(): ?string
+    {
+        if (! $this->year_first_reg) {
+            return null;
+        }
+
+        return $this->registration_month
+            ? sprintf('%04d/%02d', $this->year_first_reg, $this->registration_month)
+            : (string) $this->year_first_reg;
+    }
+
+    /** Manufacture YYYY/MM string for display. */
+    public function manufactureYmDisplay(): ?string
+    {
+        if (! $this->manufacture_year) {
+            return null;
+        }
+
+        return $this->manufacture_month
+            ? sprintf('%04d/%02d', $this->manufacture_year, $this->manufacture_month)
+            : (string) $this->manufacture_year;
+    }
+
+    /**
+     * Public-facing chassis number with the bulk of the digits masked.
+     * Pattern: keep the first 4 characters, mask the rest with asterisks
+     * preserving any dashes. Returns null when no chassis is recorded.
+     */
+    public function chassisNumberRedacted(): ?string
+    {
+        $raw = (string) ($this->chassis_number ?? '');
+        if ($raw === '') {
+            return null;
+        }
+        $keep = 4;
+        $head = mb_substr($raw, 0, $keep);
+        $tail = mb_substr($raw, $keep);
+        $masked = preg_replace_callback('/[A-Za-z0-9]/u', fn () => '*', $tail) ?? $tail;
+
+        return $head.$masked;
+    }
 
     /** @return BelongsTo<Make, $this> */
     public function make(): BelongsTo

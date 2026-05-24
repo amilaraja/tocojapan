@@ -126,12 +126,37 @@ class VehicleForm
                                 Toggle::make('is_active')->default(true),
                             ])
                             ->createOptionUsing(fn (array $data) => BodyType::create($data + ['is_active' => true, 'sort_order' => 0])->id),
+                        TextInput::make('grade')
+                            ->label('Grade / trim')
+                            ->maxLength(60)
+                            ->helperText('Optional. Trim level e.g. Z, GT, LX.'),
+                        TextInput::make('location')
+                            ->label('Location')
+                            ->maxLength(80)
+                            ->helperText('Where the vehicle is physically stored (defaults to "Yokohama" on the public page when blank).'),
                         TextInput::make('year_first_reg')
-                            ->label('Year (first reg.)')
+                            ->label('Registration year')
                             ->required()
                             ->numeric()
                             ->minValue(1980)
                             ->maxValue((int) date('Y') + 1),
+                        TextInput::make('registration_month')
+                            ->label('Registration month')
+                            ->numeric()
+                            ->minValue(1)->maxValue(12)
+                            ->placeholder('1-12')
+                            ->helperText('Optional. 1 (Jan) to 12 (Dec).'),
+                        TextInput::make('manufacture_year')
+                            ->label('Manufacture year')
+                            ->numeric()
+                            ->minValue(1980)
+                            ->maxValue((int) date('Y') + 1)
+                            ->helperText('Optional. Counts for destination-country age-limit rules.'),
+                        TextInput::make('manufacture_month')
+                            ->label('Manufacture month')
+                            ->numeric()
+                            ->minValue(1)->maxValue(12)
+                            ->placeholder('1-12'),
                     ]),
 
                 Tab::make('Spec')

@@ -71,6 +71,45 @@
     );
 
     $title = $seoTitle;
+
+    // ---- Vehicle Details block (two-column spec table per the v6 design) ----
+    $dash = '—';
+    $em = function ($v) use ($dash) { return ($v === null || $v === '' || $v === 0 || $v === '0') ? $dash : $v; };
+    $dimL = $vehicle->length_cm;
+    $dimW = $vehicle->width_cm;
+    $dimH = $vehicle->height_cm;
+    $dimension = ($dimL || $dimW || $dimH)
+        ? (($dimL ?: '?') . ' x ' . ($dimW ?: '?') . ' x ' . ($dimH ?: '?') . ' cm')
+        : $dash;
+    $steeringDisplay = $vehicle->steering_side
+        ? ($vehicle->steering_side === 'right' ? 'Right hand drive' : 'Left hand drive')
+        : $dash;
+    $detailsLeft = [
+        ['Stock no.', $em($vehicle->stock_no)],
+        ['Make', $em(optional($vehicle->make)->name)],
+        ['Model', $em(optional($vehicle->vehicleModel)->name)],
+        ['Grade', $em($vehicle->grade)],
+        ['VIN / Chassis no.', $em($vehicle->chassisNumberRedacted())],
+        ['Model code', $em($vehicle->model_code)],
+        ['Engine', $vehicle->engine_cc ? number_format((int) $vehicle->engine_cc) . ' cc' : $dash],
+        ['Drive', $em(strtoupper((string) $vehicle->drive))],
+        ['Transmission', $em(ucfirst((string) $vehicle->transmission))],
+        ['Body type', $em(optional($vehicle->bodyType)->name)],
+        ['Location', $em($vehicle->location ?: 'Yokohama, Japan')],
+    ];
+    $detailsRight = [
+        ['Registration Y/M', $em($vehicle->registrationYmDisplay())],
+        ['Manufacture Y/M', $em($vehicle->manufactureYmDisplay())],
+        ['Mileage', $vehicle->mileage_km ? number_format((int) $vehicle->mileage_km) . ' km' : $dash],
+        ['Fuel', $em(ucfirst((string) $vehicle->fuel))],
+        ['Steering', $steeringDisplay],
+        ['Doors', $em($vehicle->doors)],
+        ['Seats', $em($vehicle->seats)],
+        ['Exterior colour', $em($vehicle->exterior_color)],
+        ['Interior colour', $em($vehicle->interior_color)],
+        ['Dimension', $dimension],
+        ['M3', $vehicle->m3 ? number_format((float) $vehicle->m3, 3) : $dash],
+    ];
 @endphp
 
 <x-layouts.site :title="$title" :description="$seoDescription" :ogImage="$photoUrls->first()">
@@ -628,36 +667,32 @@
                     </div>
                 @endunless
 
-                {{-- Specs --}}
-                <div class="bg-white border border-line rounded-sm p-5 text-sm">
-                    <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">At a glance</p>
-                    <h2 class="font-bold text-toco-navy text-lg mt-1 mb-3">Specifications</h2>
-                    <dl class="grid grid-cols-2 gap-y-1.5">
-                        @foreach ([
-                            ['Stock no.', $vehicle->stock_no ?: '—'],
-                            ['Make', $vehicle->make->name ?? '—'],
-                            ['Model', $vehicle->vehicleModel->name ?? '—'],
-                            ['Body type', $vehicle->bodyType->name ?? '—'],
-                            ['Year', $vehicle->year_first_reg],
-                            ['Mileage', number_format((int) $vehicle->mileage_km).' km'],
-                            ['Engine', $vehicle->engine_cc.' cc'],
-                            ['Fuel', ucfirst((string) $vehicle->fuel)],
-                            ['Transmission', ucfirst((string) $vehicle->transmission)],
-                            ['Drive', strtoupper((string) $vehicle->drive)],
-                            ['Steering', $vehicle->steering_side === 'right' ? 'RHD' : 'LHD'],
-                            ['Doors / Seats', $vehicle->doors.' / '.$vehicle->seats],
-                            ['Exterior', $vehicle->exterior_color ?? '—'],
-                            ['Interior', $vehicle->interior_color ?? '—'],
-                            ['Dimensions', $vehicle->length_cm.'×'.$vehicle->width_cm.'×'.$vehicle->height_cm.' cm'],
-                            ['Warranty', $vehicle->warranty_period ?? '—'],
-                        ] as $row)
-                            <dt class="text-ink-soft font-mono text-[10px] uppercase tracking-widest pt-1">{{ $row[0] }}</dt>
-                            <dd class="text-right font-semibold pt-1">{{ $row[1] }}</dd>
-                        @endforeach
-                    </dl>
-                </div>
             </aside>
         </div>
+
+        {{-- ============ Vehicle Details (full-width, 2-column layout per design) ============ --}}
+        <section class="bg-white border border-line rounded-sm p-6 md:p-8 mt-8">
+            <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">At a glance</p>
+            <h2 class="font-extrabold text-toco-navy text-2xl mt-1 mb-5">Vehicle Details</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-0 text-sm">
+                <dl class="divide-y divide-line">
+                    @foreach ($detailsLeft as $row)
+                        <div class="grid grid-cols-[150px_minmax(0,1fr)] gap-3 py-2.5">
+                            <dt class="font-mono text-[11px] uppercase tracking-widest text-ink-soft self-center">{{ $row[0] }}</dt>
+                            <dd class="font-semibold text-ink break-words self-center">{{ $row[1] }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+                <dl class="divide-y divide-line">
+                    @foreach ($detailsRight as $row)
+                        <div class="grid grid-cols-[150px_minmax(0,1fr)] gap-3 py-2.5">
+                            <dt class="font-mono text-[11px] uppercase tracking-widest text-ink-soft self-center">{{ $row[0] }}</dt>
+                            <dd class="font-semibold text-ink break-words self-center">{{ $row[1] }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+            </div>
+        </section>
 
         @auth
         @if (! $isSold)
