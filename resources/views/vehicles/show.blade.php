@@ -667,32 +667,21 @@
                     </div>
                 @endunless
 
+                {{-- ============ Vehicle Details (right sidebar) ============ --}}
+                <div class="bg-white border border-line rounded-sm p-5">
+                    <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">At a glance</p>
+                    <h2 class="font-bold text-toco-navy text-lg mt-1 mb-3">Vehicle Details</h2>
+                    <dl class="divide-y divide-line text-sm">
+                        @foreach (array_merge($detailsLeft, $detailsRight) as $row)
+                            <div class="grid grid-cols-[130px_minmax(0,1fr)] gap-3 py-2">
+                                <dt class="font-mono text-[10px] uppercase tracking-widest text-ink-soft self-center">{{ $row[0] }}</dt>
+                                <dd class="font-semibold text-ink break-words self-center text-right">{{ $row[1] }}</dd>
+                            </div>
+                        @endforeach
+                    </dl>
+                </div>
             </aside>
         </div>
-
-        {{-- ============ Vehicle Details (full-width, 2-column layout per design) ============ --}}
-        <section class="bg-white border border-line rounded-sm p-6 md:p-8 mt-8">
-            <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">At a glance</p>
-            <h2 class="font-extrabold text-toco-navy text-2xl mt-1 mb-5">Vehicle Details</h2>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-0 text-sm">
-                <dl class="divide-y divide-line">
-                    @foreach ($detailsLeft as $row)
-                        <div class="grid grid-cols-[150px_minmax(0,1fr)] gap-3 py-2.5">
-                            <dt class="font-mono text-[11px] uppercase tracking-widest text-ink-soft self-center">{{ $row[0] }}</dt>
-                            <dd class="font-semibold text-ink break-words self-center">{{ $row[1] }}</dd>
-                        </div>
-                    @endforeach
-                </dl>
-                <dl class="divide-y divide-line">
-                    @foreach ($detailsRight as $row)
-                        <div class="grid grid-cols-[150px_minmax(0,1fr)] gap-3 py-2.5">
-                            <dt class="font-mono text-[11px] uppercase tracking-widest text-ink-soft self-center">{{ $row[0] }}</dt>
-                            <dd class="font-semibold text-ink break-words self-center">{{ $row[1] }}</dd>
-                        </div>
-                    @endforeach
-                </dl>
-            </div>
-        </section>
 
         @auth
         @if (! $isSold)
