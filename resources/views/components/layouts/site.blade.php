@@ -55,8 +55,9 @@
         </div>
     </div>
 
-    {{-- Top bar --}}
-    <div class="bg-toco-navy text-white/80 text-[12px] tracking-wide border-b border-white/5">
+    {{-- Top bar — relative z-40 so its absolute-positioned dropdowns
+         (language + currency) paint above the sticky header (z-30). --}}
+    <div class="relative z-40 bg-toco-navy text-white/80 text-[12px] tracking-wide border-b border-white/5">
         <div class="max-w-[1600px] mx-auto px-4 sm:px-6 2xl:px-8 py-0.5 sm:py-2 flex items-center justify-between gap-4 [&_select]:h-7 [&_select]:py-0 sm:[&_select]:h-auto sm:[&_select]:py-1.5">
             <div class="flex items-center gap-3 sm:gap-5">
                 @isset($topBarLeft)
@@ -95,7 +96,7 @@
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" :class="open ? 'rotate-180' : ''" class="transition-transform"><path d="m6 9 6 6 6-6"/></svg>
                         </button>
                         <ul x-show="open" x-cloak x-transition.opacity
-                            class="absolute left-0 top-full mt-1 z-30 min-w-[160px] bg-white border border-line rounded-sm shadow-lg overflow-hidden text-toco-navy text-[12px]">
+                            class="absolute left-0 top-full mt-1 z-50 min-w-[160px] bg-white border border-line rounded-sm shadow-lg overflow-hidden text-toco-navy text-[12px]">
                             @foreach ($languages as $lng)
                                 <li>
                                     <button type="button" @click="current = '{{ $lng['code'] }}'; open = false; window.setSiteLanguage('{{ $lng['code'] }}')"
@@ -121,7 +122,7 @@
                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" :class="open ? 'rotate-180' : ''" class="transition-transform"><path d="m6 9 6 6 6-6"/></svg>
                             </button>
                             <ul x-show="open" x-cloak x-transition.opacity
-                                class="absolute left-0 top-full mt-1 z-30 min-w-[140px] bg-white border border-line rounded-sm shadow-lg overflow-hidden text-toco-navy text-[12px]">
+                                class="absolute left-0 top-full mt-1 z-50 min-w-[140px] bg-white border border-line rounded-sm shadow-lg overflow-hidden text-toco-navy text-[12px]">
                                 @foreach ($currencyOptions as $c)
                                     <li>
                                         <form method="POST" action="/currency/{{ $c['code'] }}">@csrf
