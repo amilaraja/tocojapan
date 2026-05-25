@@ -46,6 +46,10 @@
         'discounted' => ($filters['discounted'] ?? null) ? 'Discounted' : null,
         'new_only' => ($filters['new_only'] ?? null) ? 'New arrivals' : null,
     ];
+
+    // Filter dropdown options
+    $yearRange = range(1999, (int) date('Y'));
+    $priceTiers = [500, 1000, 1500, 2000, 3000, 5000, 8000, 12000, 16000, 20000, 25000, 30000, 35000, 40000, 50000];
 @endphp
 
 <x-layouts.site :title="$title" :description="$description">
@@ -156,15 +160,35 @@
                             <div>
                                 <label class="block font-mono text-[9px] uppercase tracking-widest text-ink-soft mb-1">Registration Year</label>
                                 <div class="grid grid-cols-2 gap-1.5">
-                                    <input type="number" name="year_from" min="1980" max="{{ (int) date('Y') + 1 }}" placeholder="1999" value="{{ $filters['year_from'] ?? '' }}" class="text-sm">
-                                    <input type="number" name="year_to" min="1980" max="{{ (int) date('Y') + 1 }}" placeholder="{{ (int) date('Y') }}" value="{{ $filters['year_to'] ?? '' }}" class="text-sm">
+                                    <select name="year_from" class="text-sm">
+                                        <option value="">From</option>
+                                        @foreach ($yearRange as $y)
+                                            <option value="{{ $y }}" {{ (string) ($filters['year_from'] ?? '') === (string) $y ? 'selected' : '' }}>{{ $y }}</option>
+                                        @endforeach
+                                    </select>
+                                    <select name="year_to" class="text-sm">
+                                        <option value="">To</option>
+                                        @foreach (array_reverse($yearRange) as $y)
+                                            <option value="{{ $y }}" {{ (string) ($filters['year_to'] ?? '') === (string) $y ? 'selected' : '' }}>{{ $y }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
                             <div>
                                 <label class="block font-mono text-[9px] uppercase tracking-widest text-ink-soft mb-1">Price Range (USD)</label>
                                 <div class="grid grid-cols-2 gap-1.5">
-                                    <input type="number" name="price_from" min="0" placeholder="500" value="{{ $filters['price_from'] ?? '' }}" class="text-sm">
-                                    <input type="number" name="price_to" min="0" placeholder="50000" value="{{ $filters['price_to'] ?? '' }}" class="text-sm">
+                                    <select name="price_from" class="text-sm">
+                                        <option value="">From</option>
+                                        @foreach ($priceTiers as $p)
+                                            <option value="{{ $p }}" {{ (string) ($filters['price_from'] ?? '') === (string) $p ? 'selected' : '' }}>${{ number_format($p) }}</option>
+                                        @endforeach
+                                    </select>
+                                    <select name="price_to" class="text-sm">
+                                        <option value="">To</option>
+                                        @foreach (array_reverse($priceTiers) as $p)
+                                            <option value="{{ $p }}" {{ (string) ($filters['price_to'] ?? '') === (string) $p ? 'selected' : '' }}>${{ number_format($p) }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
                         </div>
