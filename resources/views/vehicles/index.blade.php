@@ -156,15 +156,15 @@
                             <div>
                                 <label class="block font-mono text-[9px] uppercase tracking-widest text-ink-soft mb-1">Registration Year</label>
                                 <div class="grid grid-cols-2 gap-1.5">
-                                    <input type="number" name="year_from" min="1980" max="{{ (int) date('Y') + 1 }}" placeholder="FROM" value="{{ $filters['year_from'] ?? '' }}" class="text-sm">
-                                    <input type="number" name="year_to" min="1980" max="{{ (int) date('Y') + 1 }}" placeholder="TO" value="{{ $filters['year_to'] ?? '' }}" class="text-sm">
+                                    <input type="number" name="year_from" min="1980" max="{{ (int) date('Y') + 1 }}" placeholder="1999" value="{{ $filters['year_from'] ?? '' }}" class="text-sm">
+                                    <input type="number" name="year_to" min="1980" max="{{ (int) date('Y') + 1 }}" placeholder="{{ (int) date('Y') }}" value="{{ $filters['year_to'] ?? '' }}" class="text-sm">
                                 </div>
                             </div>
                             <div>
                                 <label class="block font-mono text-[9px] uppercase tracking-widest text-ink-soft mb-1">Price Range (USD)</label>
                                 <div class="grid grid-cols-2 gap-1.5">
-                                    <input type="number" name="price_from" min="0" placeholder="MIN" value="{{ $filters['price_from'] ?? '' }}" class="text-sm">
-                                    <input type="number" name="price_to" min="0" placeholder="MAX" value="{{ $filters['price_to'] ?? '' }}" class="text-sm">
+                                    <input type="number" name="price_from" min="0" placeholder="500" value="{{ $filters['price_from'] ?? '' }}" class="text-sm">
+                                    <input type="number" name="price_to" min="0" placeholder="50000" value="{{ $filters['price_to'] ?? '' }}" class="text-sm">
                                 </div>
                             </div>
                         </div>
