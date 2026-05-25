@@ -98,7 +98,7 @@
         ['Make', $em(optional($vehicle->make)->name)],
         ['Model', $em(optional($vehicle->vehicleModel)->name)],
         ['Grade', $em($vehicle->grade)],
-        ['VIN / Chassis no.', $em($vehicle->chassisNumberRedacted())],
+        ['VIN / Chassis no.', $em($vehicle->chassis_number)],
         ['Model code', $em($vehicle->model_code)],
         ['Engine', $vehicle->engine_cc ? number_format((int) $vehicle->engine_cc) . ' cc' : $dash],
         ['Drive', $em(strtoupper((string) $vehicle->drive))],

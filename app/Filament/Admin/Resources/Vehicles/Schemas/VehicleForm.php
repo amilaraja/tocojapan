@@ -48,7 +48,7 @@ class VehicleForm
                         TextInput::make('chassis_number')
                             ->label('Chassis number')
                             ->maxLength(80)
-                            ->helperText('Optional. Full VIN / chassis number. Stored privately — only a redacted form is shown publicly.'),
+                            ->helperText('Optional. Full VIN / chassis number, shown as-is on the public detail page.'),
                         TextInput::make('model_code')
                             ->label('Model code')
                             ->maxLength(60)
