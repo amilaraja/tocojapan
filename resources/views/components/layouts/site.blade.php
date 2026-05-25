@@ -285,7 +285,7 @@
             @php($headerLogo = app(\App\Settings\GeneralSettings::class)->header_logo ?? null)
             <a href="{{ route('home') }}" class="inline-flex items-center gap-2.5 shrink-0">
                 @if ($headerLogo)
-                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($headerLogo) }}" alt="{{ config('app.name', 'Toco Japan') }}" class="h-10 sm:h-[3.85rem] w-auto">
+                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($headerLogo) }}" alt="{{ config('app.name', 'Toco Japan') }}" class="h-12 sm:h-[5rem] w-auto">
                 @else
                     <span class="inline-flex items-center justify-center w-11 h-11 rounded-sm bg-toco-red text-white font-bold text-base font-mono">TJ</span>
                     <span class="font-extrabold tracking-tight text-toco-navy text-xl hidden sm:inline">Toco Japan</span>
