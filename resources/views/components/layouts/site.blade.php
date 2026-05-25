@@ -62,36 +62,85 @@
                 @isset($topBarLeft)
                     {{ $topBarLeft }}
                 @else
-                    <span class="inline-flex items-center notranslate" translate="no">
-                        <select
-                            id="lang_picker"
-                            aria-label="Select language"
-                            onchange="window.setSiteLanguage(this.value)"
-                            class="bg-transparent border-0 text-white/80 hover:text-white text-[12px] cursor-pointer focus:outline-none pr-1"
-                        >
-                            <option value="en" class="text-toco-navy">🇬🇧 English</option>
-                            <option value="ja" class="text-toco-navy">🇯🇵 日本語</option>
-                            <option value="fr" class="text-toco-navy">🇫🇷 Français</option>
-                            <option value="pt" class="text-toco-navy">🇵🇹 Português</option>
-                            <option value="es" class="text-toco-navy">🇪🇸 Español</option>
-                            <option value="sw" class="text-toco-navy">🇹🇿 Kiswahili</option>
-                        </select>
+                    @php
+                        // Language picker — flag SVGs live in public/img/flags/.
+                        $languages = [
+                            ['code' => 'en', 'label' => 'English',  'flag' => '/img/flags/gb.svg'],
+                            ['code' => 'ja', 'label' => '日本語',     'flag' => '/img/flags/jp.svg'],
+                            ['code' => 'fr', 'label' => 'Français', 'flag' => '/img/flags/fr.svg'],
+                            ['code' => 'pt', 'label' => 'Português','flag' => '/img/flags/pt.svg'],
+                            ['code' => 'es', 'label' => 'Español',  'flag' => '/img/flags/es.svg'],
+                            ['code' => 'sw', 'label' => 'Kiswahili','flag' => '/img/flags/tz.svg'],
+                        ];
+                        // Map currency codes → flag file. Falls back to a generic globe if unmapped.
+                        $currencyFlags = [
+                            'USD' => '/img/flags/us.svg',
+                            'JPY' => '/img/flags/jp.svg',
+                            'EUR' => '/img/flags/eu.svg',
+                            'GBP' => '/img/flags/gb.svg',
+                        ];
+                    @endphp
+
+                    {{-- Language picker (custom — native <select> can't render flag images) --}}
+                    <div class="relative notranslate" translate="no"
+                         x-data="{ open: false, current: (window.tocoCurrentLang && window.tocoCurrentLang()) || 'en' }">
+                        <button type="button" @click="open = !open" @click.outside="open = false"
+                                class="inline-flex items-center gap-1.5 text-white/80 hover:text-white text-[12px] focus:outline-none">
+                            @foreach ($languages as $lng)
+                                <img src="{{ $lng['flag'] }}" alt="" width="18" height="12" loading="lazy"
+                                     x-show="current === '{{ $lng['code'] }}'" x-cloak
+                                     class="block rounded-[1px] ring-1 ring-white/30 shadow-sm">
+                            @endforeach
+                            <span class="ml-1" x-text="({ en: 'English', ja: '日本語', fr: 'Français', pt: 'Português', es: 'Español', sw: 'Kiswahili' })[current] || 'Language'"></span>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" :class="open ? 'rotate-180' : ''" class="transition-transform"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        <ul x-show="open" x-cloak x-transition.opacity
+                            class="absolute left-0 top-full mt-1 z-30 min-w-[160px] bg-white border border-line rounded-sm shadow-lg overflow-hidden text-toco-navy text-[12px]">
+                            @foreach ($languages as $lng)
+                                <li>
+                                    <button type="button" @click="current = '{{ $lng['code'] }}'; open = false; window.setSiteLanguage('{{ $lng['code'] }}')"
+                                            class="w-full px-3 py-2 flex items-center gap-2 hover:bg-toco-silver-2 text-left">
+                                        <img src="{{ $lng['flag'] }}" alt="" width="20" height="14" loading="lazy" class="block shrink-0 rounded-[1px] ring-1 ring-line">
+                                        <span class="font-semibold">{{ $lng['label'] }}</span>
+                                    </button>
+                                </li>
+                            @endforeach
+                        </ul>
                         <span id="google_translate_element" class="hidden"></span>
-                    </span>
+                    </div>
+
+                    {{-- Currency picker (custom — flag image + currency code) --}}
                     @if (! empty($currencyOptions))
-                        <form method="POST" action="#" id="currencyForm" class="inline">
-                            @csrf
-                            <select
-                                name="code"
-                                aria-label="Select currency"
-                                onchange="document.getElementById('currencyForm').action = '/currency/' + this.value; document.getElementById('currencyForm').submit();"
-                                class="bg-transparent border-0 text-white/80 hover:text-white text-[12px] cursor-pointer focus:outline-none notranslate"
-                            >
+                        <div class="relative notranslate" translate="no" x-data="{ open: false }">
+                            <button type="button" @click="open = !open" @click.outside="open = false"
+                                    class="inline-flex items-center gap-1.5 text-white/80 hover:text-white text-[12px] focus:outline-none">
+                                @if (! empty($currencyFlags[$currentCurrency]))
+                                    <img src="{{ $currencyFlags[$currentCurrency] }}" alt="" width="18" height="12" loading="lazy" class="block rounded-[1px] ring-1 ring-white/30 shadow-sm">
+                                @endif
+                                <span class="ml-1 font-semibold tabular-nums">{{ $currentCurrency }}</span>
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" :class="open ? 'rotate-180' : ''" class="transition-transform"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <ul x-show="open" x-cloak x-transition.opacity
+                                class="absolute left-0 top-full mt-1 z-30 min-w-[140px] bg-white border border-line rounded-sm shadow-lg overflow-hidden text-toco-navy text-[12px]">
                                 @foreach ($currencyOptions as $c)
-                                    <option value="{{ $c['code'] }}" {{ $c['code'] === $currentCurrency ? 'selected' : '' }} class="text-toco-navy">{{ $c['code'] }}</option>
+                                    <li>
+                                        <form method="POST" action="/currency/{{ $c['code'] }}">@csrf
+                                            <button type="submit" class="w-full px-3 py-2 flex items-center gap-2 hover:bg-toco-silver-2 text-left {{ $c['code'] === $currentCurrency ? 'bg-toco-silver-2' : '' }}">
+                                                @if (! empty($currencyFlags[$c['code']]))
+                                                    <img src="{{ $currencyFlags[$c['code']] }}" alt="" width="20" height="14" loading="lazy" class="block shrink-0 rounded-[1px] ring-1 ring-line">
+                                                @else
+                                                    <span class="w-[20px] h-[14px] grid place-items-center bg-toco-silver-2 text-[9px] font-bold">{{ substr($c['code'], 0, 1) }}</span>
+                                                @endif
+                                                <span class="font-semibold tabular-nums">{{ $c['code'] }}</span>
+                                                @if (! empty($c['symbol']) && $c['symbol'] !== $c['code'])
+                                                    <span class="text-ink-soft text-[11px] ml-auto">{{ $c['symbol'] }}</span>
+                                                @endif
+                                            </button>
+                                        </form>
+                                    </li>
                                 @endforeach
-                            </select>
-                        </form>
+                            </ul>
+                        </div>
                     @endif
 
                     {{-- Destination picker — opens a country + port dialog --}}
@@ -224,7 +273,7 @@
         {{-- Header — 3 columns: logo · (menu + search) · actions --}}
         @php($nav = [
             ['Home', route('home'), request()->is('/')],
-            ['Buy Vehicles', route('vehicles.index'), request()->is('vehicles*')],
+            ['Stock List', route('vehicles.index'), request()->is('vehicles*')],
             ['Spareparts', route('cms.page', 'order-spareparts'), request()->is('order-spareparts')],
             ['How to Buy', route('cms.page', 'how-to-buy-cars-and-other-vehicles'), request()->is('how-to-buy-cars-and-other-vehicles')],
             ['FAQs', route('cms.page', 'faqs'), request()->is('faqs')],
@@ -322,7 +371,7 @@
                 </form>
                 <ul class="divide-y divide-line text-base font-semibold text-ink border-t border-line">
                     <li><a href="{{ route('home') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Home</a></li>
-                    <li><a href="{{ route('vehicles.index') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Buy Vehicles</a></li>
+                    <li><a href="{{ route('vehicles.index') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Stock List</a></li>
                     <li><a href="{{ route('cms.page', 'order-spareparts') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Spareparts</a></li>
                     <li><a href="{{ route('cms.page', 'how-to-buy-cars-and-other-vehicles') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">How to Buy</a></li>
                     <li><a href="{{ route('cms.page', 'faqs') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">FAQs</a></li>
@@ -481,6 +530,16 @@
             var current = (document.cookie.match(/(?:^|;\s*)googtrans=\/en\/([\w-]+)/) || [])[1] || 'en';
             var sel = document.getElementById('lang_picker');
             if (sel) sel.value = current;
+        };
+
+        window.tocoCurrentLang = function () {
+            try {
+                var m = document.cookie.match(/(?:^|; )googtrans=\/[^\/]+\/([a-z]+)/);
+                if (m) return m[1];
+                m = document.cookie.match(/(?:^|; )toco_lang=([a-z]+)/);
+                if (m) return m[1];
+            } catch (e) {}
+            return 'en';
         };
 
         window.setSiteLanguage = function (lang) {
