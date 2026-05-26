@@ -161,6 +161,38 @@ class Vehicle extends Model implements HasMedia
     }
 
     /**
+     * IDs of the 7 most-recently-published vehicles — the badge population.
+     * Cached per request (static) so a card grid only fires one query no
+     * matter how many cards render.
+     *
+     * @return array<int, int>
+     */
+    public static function latestArrivalIds(int $limit = 7): array
+    {
+        static $cache = [];
+
+        if (! isset($cache[$limit])) {
+            $cache[$limit] = static::query()
+                ->where('status', 'published')
+                ->whereNotNull('published_at')
+                ->orderByDesc('published_at')
+                ->orderByDesc('id')
+                ->limit($limit)
+                ->pluck('id')
+                ->all();
+        }
+
+        return $cache[$limit];
+    }
+
+    /** Whether this vehicle is among the latest-N new arrivals. */
+    public function isNewArrival(int $limit = 7): bool
+    {
+        return $this->status === 'published'
+            && in_array($this->id, static::latestArrivalIds($limit), true);
+    }
+
+    /**
      * Related vehicles for the detail page. Ranks by a fixed priority:
      *
      *   tier 1 — same make AND same model       (highest)

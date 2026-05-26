@@ -4,7 +4,7 @@
     $photo = $vehicle->cardPhotoUrl();
     $photo2x = $vehicle->galleryPhotoUrl();
     $isSold = $vehicle->status === 'sold';
-    $isNew = ! $isSold && $vehicle->published_at && $vehicle->published_at->gt(now()->subDays(14));
+    $isNew = ! $isSold && $vehicle->isNewArrival();
     $fallbackPhoto = '/img/v5/car-'.((($vehicle->id % 4) + 1)).'.jpg';
     $isFavorited = in_array($vehicle->id, $favoritedIds ?? [], true);
     $isDiscounted = $vehicle->isDiscounted();
