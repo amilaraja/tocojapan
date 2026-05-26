@@ -49,6 +49,14 @@ class CifCalculator
             ?? ($port->insurance_pct !== null ? (float) $port->insurance_pct : null)
             ?? $this->settings->insurance_pct;
 
+        // insurance_pct is a fraction (0.015 = 1.5%). A value >= 1 means the
+        // data was entered as a whole-number percentage by mistake — at that
+        // scale insurance can dwarf the vehicle price. Clamp it back below 1
+        // before it hits the multiplication.
+        if ($insurancePct >= 1) {
+            $insurancePct = (float) $this->settings->insurance_pct;
+        }
+
         $ratePerM3 = (float) $port->rate_per_m3;
 
         $freight = round($m3 * $ratePerM3, 2);

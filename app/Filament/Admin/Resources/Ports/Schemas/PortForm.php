@@ -41,7 +41,11 @@ class PortForm
                     ->required()
                     ->numeric(),
                 TextInput::make('insurance_pct')
-                    ->numeric(),
+                    ->label('Insurance % (per-port override)')
+                    ->numeric()
+                    ->step('0.0001')
+                    ->minValue(0)->maxValue(1)
+                    ->helperText('Stored as a fraction (e.g. 0.015 = 1.5%). Leave blank to use the global default from /admin/settings. Values ≥ 1 are rejected — they would multiply the price 100×.'),
                 Toggle::make('is_active')
                     ->required(),
                 TextInput::make('sort_order')
