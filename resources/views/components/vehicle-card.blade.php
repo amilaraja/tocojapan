@@ -23,8 +23,10 @@
                  class="w-full h-full object-cover transition group-hover:scale-[1.02] {{ $isSold ? 'grayscale' : '' }}">
             @if ($isSold)
                 <span class="absolute top-2 left-2 bg-toco-red text-white text-[11px] font-bold uppercase tracking-widest px-2.5 py-1 font-mono rounded-sm shadow">SOLD</span>
+            @elseif ($vehicle->is_featured)
+                <span class="absolute top-2 left-2 bg-orange-500 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1 font-mono">Hot Deal</span>
             @elseif ($isNew)
-                <span class="absolute top-2 left-2 bg-toco-red text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1 font-mono">New</span>
+                <span class="absolute top-2 left-2 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1 font-mono">New</span>
             @endif
         </div>
         <div class="p-3">

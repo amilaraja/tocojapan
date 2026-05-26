@@ -27,7 +27,7 @@
                     <div class="relative">
                         {{-- diagonal HOT ribbon (top-left) --}}
                         <div class="absolute top-0 left-0 z-10 pointer-events-none">
-                            <div class="bg-toco-red text-white font-extrabold uppercase tracking-widest text-[10px] px-3 py-1 shadow-md"
+                            <div class="bg-orange-500 text-white font-extrabold uppercase tracking-widest text-[10px] px-3 py-1 shadow-md"
                                  style="clip-path: polygon(0 0, 100% 0, 90% 100%, 0 100%);">
                                 Hot Deal
                             </div>
