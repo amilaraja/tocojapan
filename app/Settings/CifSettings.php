@@ -12,6 +12,10 @@ class CifSettings extends Settings
 
     public bool $price_on_request_default;
 
+    public float $maintenance_package_usd;
+
+    public float $pre_inspection_fee_usd;
+
     public static function group(): string
     {
         return 'cif';

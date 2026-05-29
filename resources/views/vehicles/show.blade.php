@@ -119,6 +119,15 @@
         ['Dimension', $dimension],
         ['M3', $vehicle->m3 ? number_format((float) $vehicle->m3, 3) : $dash],
     ];
+
+    // CIF add-ons + global options list (CR-2026-05-28). Loaded here to
+    // avoid opening a second @php block further down — see
+    // feedback_blade_php_shortform memory.
+    $cifSettings = app(\App\Settings\CifSettings::class);
+    $vehicleOptions = \App\Models\VehicleOption::query()
+        ->where('is_active', true)
+        ->orderBy('sort_order')->orderBy('id')
+        ->get(['id', 'name', 'price', 'tooltip']);
 @endphp
 
 <x-layouts.site :title="$title" :description="$seoDescription" :ogImage="$photoUrls->first()">
@@ -200,6 +209,77 @@
                 localStorage.setItem(KEY, JSON.stringify(list));
             } catch (e) { /* localStorage blocked — ignore */ }
         })();
+
+        // CIF estimator with add-ons + options. Lives in a window-scoped factory
+        // so the Alpine x-data on the calculator card stays a one-liner.
+        window.cifCalc = function (cfg) {
+            return {
+                countries: cfg.countries,
+                options: cfg.options,
+                maintenanceFee: cfg.maintenanceFee,
+                preInspectionFee: cfg.preInspectionFee,
+                countryId: '', portId: '', ports: [],
+                result: null, error: null, loading: false,
+                marine: true,                  // marine insurance opt-in default ON
+                maintenance: false,            // maintenance package default OFF
+                selectedOptions: [],           // array of vehicle_option ids
+                init() {
+                    if (cfg.preCountryId) {
+                        const c = this.countries.find(c => c.id == cfg.preCountryId);
+                        if (c) {
+                            this.ports = c.ports;
+                            this.$nextTick(() => {
+                                this.countryId = cfg.preCountryId;
+                                this.$nextTick(() => { this.portId = cfg.prePortId; });
+                            });
+                        }
+                    }
+                },
+                onCountry() {
+                    this.portId = '';
+                    const c = this.countries.find(c => c.id == this.countryId);
+                    this.ports = c ? c.ports : [];
+                },
+                regulation() {
+                    const p = this.ports.find(p => p.id == this.portId);
+                    return p && p.regulation ? p.regulation : null;
+                },
+                async submit() {
+                    this.error = null; this.result = null;
+                    if (!this.portId) { this.error = 'Pick a port.'; return; }
+                    this.loading = true;
+                    try {
+                        const r = await fetch('/api/v1/cif/calculate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                            body: JSON.stringify({ port_id: this.portId, vehicle_slug: cfg.slug })
+                        });
+                        const j = await r.json();
+                        if (!r.ok) { this.error = j.errors?.message || j.message || 'Calculation failed.'; }
+                        else { this.result = j.data; }
+                    } finally { this.loading = false; }
+                },
+                marineFee() { return this.marine ? Number(this.result?.insurance ?? 0) : 0; },
+                pricedOptionsTotal() {
+                    return this.options
+                        .filter(o => this.selectedOptions.includes(o.id) && o.price !== null)
+                        .reduce((sum, o) => sum + Number(o.price), 0);
+                },
+                hasAskSelected() {
+                    return this.options.some(o => this.selectedOptions.includes(o.id) && o.price === null);
+                },
+                grandTotal() {
+                    if (!this.result) return 0;
+                    const base = Number(this.result.price_fob ?? 0) + Number(this.result.freight ?? 0);
+                    const extras = this.marineFee()
+                        + (this.maintenance ? this.maintenanceFee : 0)
+                        + this.preInspectionFee
+                        + this.pricedOptionsTotal();
+                    return base + extras;
+                },
+                fmt(n) { return '$' + Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 0 }); }
+            };
+        };
     </script>
     @endpush
 
@@ -578,52 +658,20 @@
                     </div>
                 </div>
 
-                {{-- CIF estimator --}}
+                {{-- CIF estimator with add-ons + option upsells --}}
                 @unless ($vehicle->price_on_request || $vehicle->m3 === null || (float) $vehicle->m3 === 0.0)
                     <div class="bg-white border border-line rounded-sm p-5"
-                        x-data="{
-                            countryId: '', portId: '', ports: [], result: null, error: null, loading: false,
-                            countries: @js($countriesData),
-                            init() {
-                                // Pre-fill from the destination saved earlier (toco_port cookie).
-                                // Values are applied via $nextTick so the <option> x-for
-                                // templates have rendered before the <select>s sync.
-                                const dc = '{{ $destPort?->country_id }}', dp = '{{ $destPort?->id }}';
-                                if (! dc) return;
-                                const c = this.countries.find(c => c.id == dc);
-                                this.ports = c ? c.ports : [];
-                                this.$nextTick(() => {
-                                    this.countryId = dc;
-                                    this.$nextTick(() => { this.portId = dp; });
-                                });
-                            },
-                            onCountry() {
-                                this.portId = '';
-                                const c = this.countries.find(c => c.id == this.countryId);
-                                this.ports = c ? c.ports : [];
-                            },
-                            regulation() {
-                                const p = this.ports.find(p => p.id == this.portId);
-                                return p && p.regulation ? p.regulation : null;
-                            },
-                            async submit() {
-                                this.error = null; this.result = null;
-                                if (!this.portId) { this.error = 'Pick a port.'; return; }
-                                this.loading = true;
-                                try {
-                                    const r = await fetch('/api/v1/cif/calculate', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                                        body: JSON.stringify({ port_id: this.portId, vehicle_slug: '{{ $vehicle->slug }}' })
-                                    });
-                                    const j = await r.json();
-                                    if (!r.ok) { this.error = j.errors?.message || 'Calculation failed.'; }
-                                    else { this.result = j.data; }
-                                } finally { this.loading = false; }
-                            }
-                        }">
-                        <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">Landed cost</p>
-                        <h3 class="font-bold text-toco-navy text-base mb-3">Estimate CIF to your port</h3>
+                        x-data="cifCalc({
+                            countries: {{ collect($countriesData)->toJson() }},
+                            preCountryId: '{{ $destPort?->country_id }}',
+                            prePortId: '{{ $destPort?->id }}',
+                            slug: '{{ $vehicle->slug }}',
+                            options: {{ $vehicleOptions->map(fn ($o) => ['id' => (int) $o->id, 'name' => $o->name, 'price' => $o->price === null ? null : (float) $o->price, 'tooltip' => $o->tooltip])->toJson() }},
+                            maintenanceFee: {{ (float) $cifSettings->maintenance_package_usd }},
+                            preInspectionFee: {{ (float) $cifSettings->pre_inspection_fee_usd }},
+                        })">
+                        <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">Calculate Your Total Price</p>
+                        <h3 class="font-bold text-toco-navy text-base mb-3">Estimate landed cost</h3>
 
                         <div class="space-y-2 text-sm">
                             <select x-model="countryId" @change="onCountry()" class="w-full border-line rounded-sm">
@@ -638,7 +686,7 @@
                                     <option :value="p.id" x-text="p.name"></option>
                                 </template>
                             </select>
-                            <button type="button" @click="submit()" :disabled="loading" class="w-full bg-toco-navy hover:bg-toco-navy-deep disabled:opacity-50 text-white font-bold uppercase tracking-widest text-xs px-4 py-2.5 rounded-sm">
+                            <button type="button" @click="submit()" :disabled="loading || !portId" class="w-full bg-toco-navy hover:bg-toco-navy-deep disabled:opacity-50 text-white font-bold uppercase tracking-widest text-xs px-4 py-2.5 rounded-sm">
                                 <span x-show="!loading">Calculate</span>
                                 <span x-show="loading" x-cloak>Calculating…</span>
                             </button>
@@ -649,29 +697,71 @@
                             <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold mb-1.5">Import rules — your port</p>
                             <p x-show="regulation()?.description" x-text="regulation()?.description" class="text-ink mb-2"></p>
                             <dl class="space-y-1">
-                                <div x-show="regulation()?.age_limit" class="flex gap-2">
-                                    <dt class="text-ink-soft w-28 shrink-0">Age limit</dt>
-                                    <dd class="font-semibold text-toco-navy" x-text="regulation()?.age_limit"></dd>
-                                </div>
-                                <div x-show="regulation()?.shipment_time" class="flex gap-2">
-                                    <dt class="text-ink-soft w-28 shrink-0">Shipment time</dt>
-                                    <dd class="font-semibold text-toco-navy" x-text="regulation()?.shipment_time"></dd>
-                                </div>
-                                <div x-show="regulation()?.notes" class="flex gap-2">
-                                    <dt class="text-ink-soft w-28 shrink-0">Notes</dt>
-                                    <dd class="text-ink whitespace-pre-line" x-text="regulation()?.notes"></dd>
-                                </div>
+                                <div x-show="regulation()?.age_limit" class="flex gap-2"><dt class="text-ink-soft w-28 shrink-0">Age limit</dt><dd class="font-semibold text-toco-navy" x-text="regulation()?.age_limit"></dd></div>
+                                <div x-show="regulation()?.shipment_time" class="flex gap-2"><dt class="text-ink-soft w-28 shrink-0">Shipment time</dt><dd class="font-semibold text-toco-navy" x-text="regulation()?.shipment_time"></dd></div>
+                                <div x-show="regulation()?.notes" class="flex gap-2"><dt class="text-ink-soft w-28 shrink-0">Notes</dt><dd class="text-ink whitespace-pre-line" x-text="regulation()?.notes"></dd></div>
                             </dl>
                         </div>
 
                         <div x-show="error" x-cloak class="text-toco-red text-[12px] mt-3" x-text="error"></div>
 
+                        {{-- Add-on rows + total — visible once CIF result is in --}}
                         <template x-if="result">
-                            <dl class="mt-4 pt-4 border-t border-line space-y-1.5 text-sm">
-                                <div class="flex justify-between"><dt class="text-ink-soft text-[12px]">FOB</dt><dd class="font-semibold tabular-nums" x-text="'$' + Number(result.price_fob).toLocaleString(undefined, {maximumFractionDigits: 0})"></dd></div>
-                                <div class="flex justify-between border-t border-line pt-1.5 mt-1"><dt class="font-bold text-toco-navy">CIF</dt><dd class="font-extrabold text-toco-navy tabular-nums" x-text="'$' + Number(result.cif_total).toLocaleString(undefined, {maximumFractionDigits: 0})"></dd></div>
-                                <p class="text-[11px] text-ink-soft leading-snug pt-1">CIF includes ocean freight &amp; marine insurance. Estimate only — land charges in destination country not included.</p>
-                            </dl>
+                            <div class="mt-4 pt-4 border-t border-line space-y-2 text-sm">
+                                <label class="flex items-center justify-between gap-2 cursor-pointer">
+                                    <span class="inline-flex items-center gap-2">
+                                        <input type="checkbox" x-model="marine" class="text-toco-red">
+                                        <span class="font-semibold text-ink">Marine Insurance</span>
+                                        <span class="text-ink-soft text-[11px]" title="Computed from (FOB + Freight) × destination port insurance %.">?</span>
+                                    </span>
+                                    <span class="font-semibold tabular-nums" x-text="fmt(marineFee())"></span>
+                                </label>
+                                <label class="flex items-center justify-between gap-2 cursor-pointer">
+                                    <span class="inline-flex items-center gap-2">
+                                        <input type="checkbox" x-model="maintenance" class="text-toco-red">
+                                        <span class="font-semibold text-ink">Maintenance Package</span>
+                                    </span>
+                                    <span class="font-semibold tabular-nums" x-text="fmt(maintenanceFee)"></span>
+                                </label>
+                                <div class="flex items-center justify-between gap-2 text-ink">
+                                    <span class="font-semibold pl-6">Pre-inspection Fee <span class="text-[10px] text-toco-red uppercase tracking-widest font-bold ml-1">required</span></span>
+                                    <span class="font-semibold tabular-nums" x-text="fmt(preInspectionFee)"></span>
+                                </div>
+
+                                {{-- Options accordion --}}
+                                <div x-data="{ open: false }" class="border border-line rounded-sm mt-2">
+                                    <button type="button" @click="open = !open" class="w-full px-3 py-2.5 flex items-center justify-between bg-toco-silver-2 text-toco-navy font-bold text-[12px] uppercase tracking-widest">
+                                        <span>Option (Enhance your drive)</span>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" :class="open ? 'rotate-180' : ''" class="transition-transform"><path d="m6 9 6 6 6-6"/></svg>
+                                    </button>
+                                    <ul x-show="open" x-cloak class="divide-y divide-line">
+                                        <template x-for="opt in options" :key="opt.id">
+                                            <li>
+                                                <label class="flex items-center justify-between gap-2 px-3 py-2 cursor-pointer hover:bg-toco-silver-2/50">
+                                                    <span class="inline-flex items-center gap-2 text-[13px]">
+                                                        <input type="checkbox" :value="opt.id" x-model="selectedOptions" class="text-toco-red">
+                                                        <span class="font-semibold text-ink" x-text="opt.name"></span>
+                                                        <span x-show="opt.tooltip" :title="opt.tooltip" class="text-ink-soft text-[11px]">?</span>
+                                                    </span>
+                                                    <span class="font-semibold tabular-nums text-[13px]"
+                                                          :class="opt.price === null ? 'text-toco-red uppercase tracking-widest text-[11px]' : ''"
+                                                          x-text="opt.price === null ? 'ASK' : fmt(opt.price)"></span>
+                                                </label>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                    <p x-show="open && hasAskSelected()" x-cloak class="px-3 py-2 text-[11px] text-ink-soft italic border-t border-line">
+                                        * ASK options will be quoted separately by our sales team — they don't affect the total below.
+                                    </p>
+                                </div>
+
+                                <dl class="border-t border-line pt-2 mt-2 space-y-1">
+                                    <div class="flex justify-between"><dt class="text-ink-soft text-[12px]">Car Price (FOB)</dt><dd class="tabular-nums" x-text="fmt(result.price_fob)"></dd></div>
+                                    <div class="flex justify-between"><dt class="text-ink-soft text-[12px]">Freight to <span x-text="result.port?.name"></span></dt><dd class="tabular-nums" x-text="fmt(result.freight)"></dd></div>
+                                    <div class="flex justify-between text-base font-bold border-t border-line pt-2 mt-1"><dt class="text-toco-navy">Total Price</dt><dd class="font-extrabold text-toco-red tabular-nums" x-text="fmt(grandTotal())"></dd></div>
+                                </dl>
+                                <p class="text-[10px] text-ink-soft leading-snug">Total = Car + Shipping + Marine Insurance (if ticked) + Maintenance (if ticked) + Pre-inspection + priced options. Land charges in destination country not included.</p>
+                            </div>
                         </template>
                     </div>
                 @endunless

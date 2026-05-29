@@ -63,6 +63,8 @@ class Settings extends Page implements HasForms
                 'insurance_pct_display' => $cif->insurance_pct * 100, // shown as %
                 'default_currency' => $cif->default_currency,
                 'price_on_request_default' => $cif->price_on_request_default,
+                'maintenance_package_usd' => $cif->maintenance_package_usd,
+                'pre_inspection_fee_usd' => $cif->pre_inspection_fee_usd,
             ],
             'social' => [
                 'facebook_enabled' => $social->facebook_enabled,
@@ -180,6 +182,17 @@ class Settings extends Page implements HasForms
                                             ->label('Default currency')
                                             ->maxLength(3)
                                             ->required(),
+                                    ]),
+                                Section::make('CIF add-ons (shown on vehicle detail)')
+                                    ->description('The vehicle detail page now shows a Maintenance Package opt-in, a mandatory Pre-inspection Fee, and a Marine Insurance toggle (which uses the per-port insurance %). Edit the two USD defaults here. Marine Insurance is computed from (FOB + Freight) × port.insurance_pct.')
+                                    ->columns(2)
+                                    ->schema([
+                                        TextInput::make('cif.maintenance_package_usd')
+                                            ->label('Maintenance Package (optional, USD)')
+                                            ->numeric()->prefix('$')->minValue(0)->required(),
+                                        TextInput::make('cif.pre_inspection_fee_usd')
+                                            ->label('Pre-inspection Fee (mandatory, USD)')
+                                            ->numeric()->prefix('$')->minValue(0)->required(),
                                     ]),
                             ]),
                         Tab::make('Vehicle images')
@@ -347,6 +360,8 @@ class Settings extends Page implements HasForms
         $cif->insurance_pct = ((float) $state['cif']['insurance_pct_display']) / 100;
         $cif->default_currency = strtoupper((string) $state['cif']['default_currency']);
         $cif->price_on_request_default = (bool) ($state['cif']['price_on_request_default'] ?? false);
+        $cif->maintenance_package_usd = (float) ($state['cif']['maintenance_package_usd'] ?? 195);
+        $cif->pre_inspection_fee_usd = (float) ($state['cif']['pre_inspection_fee_usd'] ?? 500);
         $cif->save();
 
         $social = app(SocialSettings::class);
