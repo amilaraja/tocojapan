@@ -260,13 +260,18 @@
                     } finally { this.loading = false; }
                 },
                 marineFee() { return this.marine ? Number(this.result?.insurance ?? 0) : 0; },
+                isSelected(optId) {
+                    // Checkbox :value pushes strings to the array; option ids are
+                    // numbers. Compare loosely so the totals actually update.
+                    return this.selectedOptions.some(s => Number(s) === Number(optId));
+                },
                 pricedOptionsTotal() {
                     return this.options
-                        .filter(o => this.selectedOptions.includes(o.id) && o.price !== null)
+                        .filter(o => this.isSelected(o.id) && o.price !== null)
                         .reduce((sum, o) => sum + Number(o.price), 0);
                 },
                 hasAskSelected() {
-                    return this.options.some(o => this.selectedOptions.includes(o.id) && o.price === null);
+                    return this.options.some(o => this.isSelected(o.id) && o.price === null);
                 },
                 grandTotal() {
                     if (!this.result) return 0;
