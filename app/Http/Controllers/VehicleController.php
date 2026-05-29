@@ -173,11 +173,11 @@ class VehicleController extends Controller
         $countries = Country::query()
             ->where('is_active', true)
             ->with([
-                'ports' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order'),
+                'ports' => fn ($q) => $q->where('is_active', true)->orderBy('name'),
                 'importRegulations' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order'),
                 'importRegulations.ports',
             ])
-            ->orderBy('sort_order')->orderBy('name')
+            ->orderBy('name')
             ->get();
 
         return view('vehicles.show', [
