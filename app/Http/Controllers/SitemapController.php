@@ -23,9 +23,13 @@ class SitemapController extends Controller
                     Page::query()->max('updated_at')),
                 self::sitemapEntry(self::abs(route('sitemap.vehicles', absolute: false)),
                     Vehicle::query()->max('updated_at')),
-                self::sitemapEntry(self::abs(route('sitemap.news', absolute: false)),
-                    Post::query()->max('updated_at')),
             ];
+            // Only advertise the news sitemap once there's at least one published
+            // post — Search Console rejects an empty <urlset> as "missing url tag".
+            $newsLastmod = Post::query()->published()->max('updated_at');
+            if ($newsLastmod) {
+                $entries[] = self::sitemapEntry(self::abs(route('sitemap.news', absolute: false)), $newsLastmod);
+            }
 
             return '<?xml version="1.0" encoding="UTF-8"?>'."\n"
                 .'<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n"
@@ -105,6 +109,12 @@ class SitemapController extends Controller
      */
     public function news(): Response
     {
+        // 404 when there are no published posts so the URL doesn't ship an
+        // empty <urlset> that Search Console flags as schema-invalid.
+        if (! Post::query()->published()->exists()) {
+            abort(404);
+        }
+
         $xml = Cache::remember('sitemap.news.xml', now()->addHour(), function (): string {
             $entries = [];
             Post::query()
