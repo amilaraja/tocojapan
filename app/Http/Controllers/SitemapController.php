@@ -152,9 +152,33 @@ class SitemapController extends Controller
             .'</urlset>';
     }
 
+    /**
+     * Normalise any timestamp (Carbon, DateTime, "YYYY-MM-DD HH:MM:SS" string,
+     * null) into an ISO-8601 sitemap-friendly string. Returns null when the
+     * input is null/empty so the helper can skip the <lastmod> tag.
+     *
+     * `Model::max('updated_at')` returns a raw MySQL string, not a Carbon —
+     * the previous "is_string ? leave alone" branch let invalid dates straight
+     * through to Search Console, which then flagged them.
+     */
+    private static function iso8601(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        if ($value instanceof \DateTimeInterface) {
+            return \Carbon\Carbon::instance($value)->toIso8601String();
+        }
+        try {
+            return \Carbon\Carbon::parse((string) $value)->toIso8601String();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     private static function urlEntry(string $loc, mixed $lastmod = null, string $priority = '0.5', string $changefreq = 'weekly'): string
     {
-        $lm = $lastmod ? (is_string($lastmod) ? $lastmod : $lastmod->toIso8601String()) : null;
+        $lm = self::iso8601($lastmod);
 
         return '  <url>'
             .'<loc>'.htmlspecialchars($loc, ENT_XML1).'</loc>'
@@ -166,7 +190,7 @@ class SitemapController extends Controller
 
     private static function sitemapEntry(string $loc, mixed $lastmod = null): string
     {
-        $lm = $lastmod ? (is_string($lastmod) ? $lastmod : $lastmod->toIso8601String()) : null;
+        $lm = self::iso8601($lastmod);
 
         return '  <sitemap>'
             .'<loc>'.htmlspecialchars($loc, ENT_XML1).'</loc>'
