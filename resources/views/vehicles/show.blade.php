@@ -216,12 +216,14 @@
             return {
                 countries: cfg.countries,
                 options: cfg.options,
+                marineInsuranceFee: cfg.marineInsuranceFee,
                 maintenanceFee: cfg.maintenanceFee,
                 preInspectionFee: cfg.preInspectionFee,
                 countryId: '', portId: '', ports: [],
                 result: null, error: null, loading: false,
                 marine: true,                  // marine insurance opt-in default ON
                 maintenance: false,            // maintenance package default OFF
+                preInspection: false,          // pre-inspection fee default OFF
                 selectedOptions: [],           // array of vehicle_option ids
                 init() {
                     if (cfg.preCountryId) {
@@ -259,7 +261,7 @@
                         else { this.result = j.data; }
                     } finally { this.loading = false; }
                 },
-                marineFee() { return this.marine ? Number(this.result?.insurance ?? 0) : 0; },
+                marineFee() { return this.marine ? Number(this.marineInsuranceFee ?? 0) : 0; },
                 isSelected(optId) {
                     // Checkbox :value pushes strings to the array; option ids are
                     // numbers. Compare loosely so the totals actually update.
@@ -278,7 +280,7 @@
                     const base = Number(this.result.price_fob ?? 0) + Number(this.result.freight ?? 0);
                     const extras = this.marineFee()
                         + (this.maintenance ? this.maintenanceFee : 0)
-                        + this.preInspectionFee
+                        + (this.preInspection ? this.preInspectionFee : 0)
                         + this.pricedOptionsTotal();
                     return base + extras;
                 },
@@ -672,6 +674,7 @@
                             prePortId: '{{ $destPort?->id }}',
                             slug: '{{ $vehicle->slug }}',
                             options: {{ $vehicleOptions->map(fn ($o) => ['id' => (int) $o->id, 'name' => $o->name, 'price' => $o->price === null ? null : (float) $o->price, 'tooltip' => $o->tooltip])->toJson() }},
+                            marineInsuranceFee: {{ (float) $cifSettings->marine_insurance_usd }},
                             maintenanceFee: {{ (float) $cifSettings->maintenance_package_usd }},
                             preInspectionFee: {{ (float) $cifSettings->pre_inspection_fee_usd }},
                         })">
@@ -717,9 +720,9 @@
                                     <span class="inline-flex items-center gap-2">
                                         <input type="checkbox" x-model="marine" class="text-toco-red">
                                         <span class="font-semibold text-ink">Marine Insurance</span>
-                                        <span class="text-ink-soft text-[11px]" title="Computed from (FOB + Freight) × destination port insurance %.">?</span>
+                                        <span class="text-ink-soft text-[11px]" title="Flat per-shipment marine insurance fee.">?</span>
                                     </span>
-                                    <span class="font-semibold tabular-nums" x-text="fmt(marineFee())"></span>
+                                    <span class="font-semibold tabular-nums" x-text="fmt(marineInsuranceFee)"></span>
                                 </label>
                                 <label class="flex items-center justify-between gap-2 cursor-pointer">
                                     <span class="inline-flex items-center gap-2">
@@ -728,10 +731,13 @@
                                     </span>
                                     <span class="font-semibold tabular-nums" x-text="fmt(maintenanceFee)"></span>
                                 </label>
-                                <div class="flex items-center justify-between gap-2 text-ink">
-                                    <span class="font-semibold pl-6">Pre-inspection Fee <span class="text-[10px] text-toco-red uppercase tracking-widest font-bold ml-1">required</span></span>
+                                <label class="flex items-center justify-between gap-2 cursor-pointer">
+                                    <span class="inline-flex items-center gap-2">
+                                        <input type="checkbox" x-model="preInspection" class="text-toco-red">
+                                        <span class="font-semibold text-ink">Pre-inspection Fee</span>
+                                    </span>
                                     <span class="font-semibold tabular-nums" x-text="fmt(preInspectionFee)"></span>
-                                </div>
+                                </label>
 
                                 {{-- Options accordion --}}
                                 <div x-data="{ open: false }" class="border border-line rounded-sm mt-2">
@@ -765,7 +771,7 @@
                                     <div class="flex justify-between"><dt class="text-ink-soft text-[12px]">Freight to <span x-text="result.port?.name"></span></dt><dd class="tabular-nums" x-text="fmt(result.freight)"></dd></div>
                                     <div class="flex justify-between text-base font-bold border-t border-line pt-2 mt-1"><dt class="text-toco-navy">Total Price</dt><dd class="font-extrabold text-toco-red tabular-nums" x-text="fmt(grandTotal())"></dd></div>
                                 </dl>
-                                <p class="text-[10px] text-ink-soft leading-snug">Total = Car + Shipping + Marine Insurance (if ticked) + Maintenance (if ticked) + Pre-inspection + priced options. Land charges in destination country not included.</p>
+                                <p class="text-[10px] text-ink-soft leading-snug">Total = Car + Shipping + the add-ons you ticked + priced options. Land charges in destination country not included.</p>
                             </div>
                         </template>
                     </div>
