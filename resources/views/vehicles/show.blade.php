@@ -128,6 +128,20 @@
         ->where('is_active', true)
         ->orderBy('sort_order')->orderBy('id')
         ->get(['id', 'name', 'price', 'tooltip']);
+
+    // Initial CIF total shown in the top buy card. Computed server-side for
+    // the visitor's saved destination port; once they recalculate via the
+    // sidebar calculator, Alpine swaps to the live grandTotal so both
+    // numbers always tally.
+    $initialCif = 0.0;
+    $initialCifPortName = $destPort?->name;
+    if (! $vehicle->price_on_request && $destPort && $vehicle->m3 > 0 && (float) $vehicle->effectivePriceFob() > 0) {
+        $initialCif = (float) app(\App\Services\CifCalculator::class)->calculate(
+            priceFob: (float) $vehicle->effectivePriceFob(),
+            m3: (float) $vehicle->m3,
+            port: $destPort,
+        )['cif_total'];
+    }
 @endphp
 
 <x-layouts.site :title="$title" :description="$seoDescription" :ogImage="$photoUrls->first()">
@@ -219,8 +233,14 @@
                 marineInsuranceFee: cfg.marineInsuranceFee,
                 maintenanceFee: cfg.maintenanceFee,
                 preInspectionFee: cfg.preInspectionFee,
+                initialCif: Number(cfg.initialCif ?? 0),
+                initialPortName: cfg.initialPortName || '',
                 countryId: '', portId: '', ports: [],
                 result: null, error: null, loading: false,
+                // True once the visitor has changed port/country from the
+                // preset. While true and `result` is null, the top-card CIF
+                // strip hides itself rather than show a stale number.
+                touched: false,
                 marine: true,                  // marine insurance opt-in default ON
                 maintenance: false,            // maintenance package default OFF
                 preInspection: false,          // pre-inspection fee default OFF
@@ -232,15 +252,29 @@
                             this.ports = c.ports;
                             this.$nextTick(() => {
                                 this.countryId = cfg.preCountryId;
-                                this.$nextTick(() => { this.portId = cfg.prePortId; });
+                                this.$nextTick(() => {
+                                    this.portId = cfg.prePortId;
+                                    // Both @change handlers above just fired
+                                    // during prefill — undo the touched flag
+                                    // so the top CIF strip stays visible.
+                                    this.$nextTick(() => { this.touched = false; this.result = null; });
+                                });
                             });
                         }
                     }
                 },
                 onCountry() {
                     this.portId = '';
+                    this.result = null;
+                    this.touched = true;
                     const c = this.countries.find(c => c.id == this.countryId);
                     this.ports = c ? c.ports : [];
+                },
+                onPort() {
+                    // Stale result from the previous port would leave the top
+                    // CIF strip showing a number that doesn't match the picker.
+                    this.result = null;
+                    this.touched = true;
                 },
                 regulation() {
                     const p = this.ports.find(p => p.id == this.portId);
@@ -581,8 +615,26 @@
                 @endif
             </div>
 
-            {{-- Sticky aside --}}
-            <aside class="space-y-4 md:sticky md:top-20 self-start">
+            {{-- Sticky aside.
+                 cifCalc Alpine scope is hoisted here so the top "CIF to X"
+                 strip and the calculator below share state: changing port or
+                 ticking add-ons updates both numbers in lockstep. --}}
+            <aside class="space-y-4 md:sticky md:top-20 self-start"
+                @if (! $vehicle->price_on_request && $vehicle->m3 !== null && (float) $vehicle->m3 > 0)
+                    x-data="cifCalc({
+                        countries: {{ collect($countriesData)->toJson() }},
+                        preCountryId: '{{ $destPort?->country_id }}',
+                        prePortId: '{{ $destPort?->id }}',
+                        slug: '{{ $vehicle->slug }}',
+                        options: {{ $vehicleOptions->map(fn ($o) => ['id' => (int) $o->id, 'name' => $o->name, 'price' => $o->price === null ? null : (float) $o->price, 'tooltip' => $o->tooltip])->toJson() }},
+                        marineInsuranceFee: {{ (float) $cifSettings->marine_insurance_usd }},
+                        maintenanceFee: {{ (float) $cifSettings->maintenance_package_usd }},
+                        preInspectionFee: {{ (float) $cifSettings->pre_inspection_fee_usd }},
+                        initialCif: {{ (float) $initialCif }},
+                        initialPortName: @json($initialCifPortName),
+                    })"
+                @endif>
+
                 <div class="bg-white border border-line rounded-sm">
                     <div class="border-b-4 border-toco-red px-5 py-5 relative">
                         @php($isFavorited = in_array($vehicle->id, $favoritedIds ?? [], true))
@@ -613,9 +665,16 @@
                             <p class="font-extrabold text-3xl text-toco-red mt-1">@money($vehicle->price_fob)</p>
                         @endif
                         @if (! $vehicle->price_on_request && $vehicle->price_fob > 0 && ($destPort ?? null) && $vehicle->m3 > 0)
-                            <p class="text-[12px] text-ink-soft mt-2 leading-tight">
-                                CIF to <span class="font-semibold text-toco-navy">{{ $destPort->name }}</span>:
-                                <span class="font-bold text-toco-navy">@cif($vehicle, $destPort)</span>
+                            {{-- Reads cifCalc state hoisted to <aside>. Shows the
+                                 SSR-computed CIF for the saved destination until
+                                 the visitor recalculates — then it follows the
+                                 calculator's port + ticked add-ons so the two
+                                 numbers never disagree. Hides itself while the
+                                 picker is dirty without a fresh result. --}}
+                            <p class="text-[12px] text-ink-soft mt-2 leading-tight"
+                                x-show="result || ! touched" x-cloak>
+                                CIF to <span class="font-semibold text-toco-navy" x-text="result?.port?.name || initialPortName"></span>:
+                                <span class="font-bold text-toco-navy" x-text="fmt(result ? grandTotal() : initialCif)"></span>
                             </p>
                         @endif
                     </div>
@@ -665,19 +724,11 @@
                     </div>
                 </div>
 
-                {{-- CIF estimator with add-ons + option upsells --}}
+                {{-- CIF estimator with add-ons + option upsells.
+                     x-data is hoisted to the parent <aside> so the top-card
+                     CIF label can read the same state. --}}
                 @unless ($vehicle->price_on_request || $vehicle->m3 === null || (float) $vehicle->m3 === 0.0)
-                    <div class="bg-white border border-line rounded-sm p-5"
-                        x-data="cifCalc({
-                            countries: {{ collect($countriesData)->toJson() }},
-                            preCountryId: '{{ $destPort?->country_id }}',
-                            prePortId: '{{ $destPort?->id }}',
-                            slug: '{{ $vehicle->slug }}',
-                            options: {{ $vehicleOptions->map(fn ($o) => ['id' => (int) $o->id, 'name' => $o->name, 'price' => $o->price === null ? null : (float) $o->price, 'tooltip' => $o->tooltip])->toJson() }},
-                            marineInsuranceFee: {{ (float) $cifSettings->marine_insurance_usd }},
-                            maintenanceFee: {{ (float) $cifSettings->maintenance_package_usd }},
-                            preInspectionFee: {{ (float) $cifSettings->pre_inspection_fee_usd }},
-                        })">
+                    <div class="bg-white border border-line rounded-sm p-5">
                         <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">Calculate Your Total Price</p>
                         <h3 class="font-bold text-toco-navy text-base mb-3">Estimate landed cost</h3>
 
@@ -688,7 +739,7 @@
                                     <option :value="c.id" x-text="c.name + ' (' + c.iso2 + ')'"></option>
                                 </template>
                             </select>
-                            <select x-model="portId" :disabled="!ports.length" class="w-full border-line rounded-sm disabled:bg-toco-silver-2">
+                            <select x-model="portId" @change="onPort()" :disabled="!ports.length" class="w-full border-line rounded-sm disabled:bg-toco-silver-2">
                                 <option value="">— Port —</option>
                                 <template x-for="p in ports" :key="p.id">
                                     <option :value="p.id" x-text="p.name"></option>
