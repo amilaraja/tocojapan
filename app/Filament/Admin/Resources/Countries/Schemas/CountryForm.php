@@ -21,6 +21,9 @@ class CountryForm
                 TextInput::make('currency_code'),
                 Toggle::make('is_active')
                     ->required(),
+                Toggle::make('pre_inspection_required')
+                    ->label('Pre-inspection mandatory')
+                    ->helperText('When on, the Pre-inspection Fee in the CIF estimator is force-ticked for buyers shipping to this country.'),
                 TextInput::make('sort_order')
                     ->required()
                     ->numeric()

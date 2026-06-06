@@ -15,6 +15,7 @@
         'id' => $c->id,
         'name' => $c->name,
         'iso2' => $c->iso2,
+        'pre_inspection_required' => (bool) $c->pre_inspection_required,
         'ports' => $c->ports->map(function ($p) use ($c) {
             $reg = $c->importRegulations->first(fn ($r) => $r->ports->contains('id', $p->id))
                 ?: $c->importRegulations->first(fn ($r) => $r->ports->isEmpty());
@@ -132,7 +133,8 @@
     // Initial CIF total shown in the top buy card. Computed server-side for
     // the visitor's saved destination port; once they recalculate via the
     // sidebar calculator, Alpine swaps to the live grandTotal so both
-    // numbers always tally.
+    // numbers always tally. Includes the Pre-inspection Fee when the
+    // saved destination country mandates it (e.g. Sri Lanka).
     $initialCif = 0.0;
     $initialCifPortName = $destPort?->name;
     if (! $vehicle->price_on_request && $destPort && $vehicle->m3 > 0 && (float) $vehicle->effectivePriceFob() > 0) {
@@ -141,6 +143,9 @@
             m3: (float) $vehicle->m3,
             port: $destPort,
         )['cif_total'];
+        if ($destPort->country?->pre_inspection_required) {
+            $initialCif += (float) $cifSettings->pre_inspection_fee_usd;
+        }
     }
 @endphp
 
@@ -269,12 +274,22 @@
                     this.touched = true;
                     const c = this.countries.find(c => c.id == this.countryId);
                     this.ports = c ? c.ports : [];
+                    // Some countries mandate pre-inspection (e.g. Sri Lanka).
+                    // Force-tick the checkbox so the total reflects the
+                    // mandatory line; the checkbox is also disabled below.
+                    if (c && c.pre_inspection_required) {
+                        this.preInspection = true;
+                    }
                 },
                 onPort() {
                     // Stale result from the previous port would leave the top
                     // CIF strip showing a number that doesn't match the picker.
                     this.result = null;
                     this.touched = true;
+                },
+                preInspectionMandatory() {
+                    const c = this.countries.find(c => c.id == this.countryId);
+                    return !!(c && c.pre_inspection_required);
                 },
                 regulation() {
                     const p = this.ports.find(p => p.id == this.portId);
@@ -782,10 +797,15 @@
                                     </span>
                                     <span class="font-semibold tabular-nums" x-text="fmt(maintenanceFee)"></span>
                                 </label>
-                                <label class="flex items-center justify-between gap-2 cursor-pointer">
+                                <label class="flex items-center justify-between gap-2"
+                                    :class="preInspectionMandatory() ? 'cursor-not-allowed' : 'cursor-pointer'">
                                     <span class="inline-flex items-center gap-2">
-                                        <input type="checkbox" x-model="preInspection" class="text-toco-red">
+                                        <input type="checkbox" x-model="preInspection"
+                                            :disabled="preInspectionMandatory()"
+                                            class="text-toco-red disabled:opacity-60 disabled:cursor-not-allowed">
                                         <span class="font-semibold text-ink">Pre-inspection Fee</span>
+                                        <span x-show="preInspectionMandatory()" x-cloak
+                                            class="text-[10px] text-toco-red uppercase tracking-widest font-bold ml-1">required</span>
                                     </span>
                                     <span class="font-semibold tabular-nums" x-text="fmt(preInspectionFee)"></span>
                                 </label>
