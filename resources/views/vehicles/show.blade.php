@@ -255,13 +255,16 @@
                         const c = this.countries.find(c => c.id == cfg.preCountryId);
                         if (c) {
                             this.ports = c.ports;
+                            // Programmatic x-model assignment doesn't fire
+                            // @change, so apply the mandatory pre-inspection
+                            // rule (e.g. Sri Lanka) manually during prefill.
+                            if (c.pre_inspection_required) {
+                                this.preInspection = true;
+                            }
                             this.$nextTick(() => {
                                 this.countryId = cfg.preCountryId;
                                 this.$nextTick(() => {
                                     this.portId = cfg.prePortId;
-                                    // Both @change handlers above just fired
-                                    // during prefill — undo the touched flag
-                                    // so the top CIF strip stays visible.
                                     this.$nextTick(() => { this.touched = false; this.result = null; });
                                 });
                             });
@@ -646,7 +649,7 @@
                         maintenanceFee: {{ (float) $cifSettings->maintenance_package_usd }},
                         preInspectionFee: {{ (float) $cifSettings->pre_inspection_fee_usd }},
                         initialCif: {{ (float) $initialCif }},
-                        initialPortName: @json($initialCifPortName),
+                        initialPortName: '{{ $initialCifPortName }}',
                     })"
                 @endif>
 
