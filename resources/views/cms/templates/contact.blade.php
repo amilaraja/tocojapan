@@ -65,7 +65,7 @@
                     @if ($whatsapp)
                         <div class="flex items-center justify-between py-2.5">
                             <dt class="font-mono text-[10px] uppercase tracking-widest text-ink-soft inline-flex items-center gap-1.5">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="#25D366" class="shrink-0"><path d="M17.5 14.4c-.3-.15-1.74-.86-2.01-.96-.27-.1-.47-.15-.66.15-.2.29-.76.96-.93 1.16-.17.2-.34.22-.63.07-.29-.15-1.24-.46-2.36-1.46-.87-.78-1.46-1.74-1.63-2.03-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.49.1-.2.05-.36-.02-.51-.07-.15-.66-1.59-.9-2.18-.24-.57-.48-.49-.66-.5l-.56-.01c-.2 0-.51.07-.78.36-.27.29-1.02 1-1.02 2.43 0 1.44 1.04 2.82 1.19 3.02.15.2 2.06 3.14 4.99 4.4.7.3 1.24.48 1.66.62.7.22 1.33.19 1.83.12.56-.08 1.74-.71 1.98-1.4.24-.68.24-1.27.17-1.39-.07-.12-.27-.2-.56-.34M12 2a10 10 0 0 0-8.55 15.16L2 22l4.96-1.43A10 10 0 1 0 12 2"/></svg>
+                                <x-icons.whatsapp class="w-3.5 h-3.5 shrink-0" />
                                 WhatsApp
                             </dt>
                             <dd><a href="https://wa.me/{{ $waDigits }}" target="_blank" rel="noopener" class="font-semibold text-toco-navy hover:text-toco-red">{{ $whatsapp }}</a></dd>

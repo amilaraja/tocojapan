@@ -261,7 +261,7 @@
                         <span>Live: {{ rand(10, 20) }} buyers viewing now</span>
                     </a>
                     <a href="https://wa.me/819057628702" target="_blank" rel="noopener" class="hidden sm:inline-flex items-center gap-1.5 hover:text-white notranslate" translate="no">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#25D366" class="shrink-0"><path d="M17.5 14.4c-.3-.15-1.74-.86-2.01-.96-.27-.1-.47-.15-.66.15-.2.29-.76.96-.93 1.16-.17.2-.34.22-.63.07-.29-.15-1.24-.46-2.36-1.46-.87-.78-1.46-1.74-1.63-2.03-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.49.1-.2.05-.36-.02-.51-.07-.15-.66-1.59-.9-2.18-.24-.57-.48-.49-.66-.5l-.56-.01c-.2 0-.51.07-.78.36-.27.29-1.02 1-1.02 2.43 0 1.44 1.04 2.82 1.19 3.02.15.2 2.06 3.14 4.99 4.4.7.3 1.24.48 1.66.62.7.22 1.33.19 1.83.12.56-.08 1.74-.71 1.98-1.4.24-.68.24-1.27.17-1.39-.07-.12-.27-.2-.56-.34M12 2a10 10 0 0 0-8.55 15.16L2 22l4.96-1.43A10 10 0 1 0 12 2"/></svg>
+                        <x-icons.whatsapp class="w-3.5 h-3.5 shrink-0" />
                         <span>+81 90 5762 8702</span>
                     </a>
                 @endisset
@@ -285,7 +285,7 @@
             @php($headerLogo = app(\App\Settings\GeneralSettings::class)->header_logo ?? null)
             <a href="{{ route('home') }}" class="inline-flex items-center gap-2.5 shrink-0">
                 @if ($headerLogo)
-                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($headerLogo) }}" alt="{{ config('app.name', 'Toco Japan') }}" class="h-12 sm:h-[5rem] w-auto">
+                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($headerLogo) }}" alt="{{ config('app.name', 'Toco Japan') }}" class="h-10 sm:h-16 w-auto">
                 @else
                     <span class="inline-flex items-center justify-center w-11 h-11 rounded-sm bg-toco-red text-white font-bold text-base font-mono">TJ</span>
                     <span class="font-extrabold tracking-tight text-toco-navy text-xl hidden sm:inline">Toco Japan</span>
@@ -419,7 +419,7 @@
                         <span>+81 283 24 4569</span>
                     </li>
                     <li class="flex items-center gap-2.5">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="#25D366" class="shrink-0"><path d="M17.5 14.4c-.3-.15-1.74-.86-2.01-.96-.27-.1-.47-.15-.66.15-.2.29-.76.96-.93 1.16-.17.2-.34.22-.63.07-.29-.15-1.24-.46-2.36-1.46-.87-.78-1.46-1.74-1.63-2.03-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.49.1-.2.05-.36-.02-.51-.07-.15-.66-1.59-.9-2.18-.24-.57-.48-.49-.66-.5l-.56-.01c-.2 0-.51.07-.78.36-.27.29-1.02 1-1.02 2.43 0 1.44 1.04 2.82 1.19 3.02.15.2 2.06 3.14 4.99 4.4.7.3 1.24.48 1.66.62.7.22 1.33.19 1.83.12.56-.08 1.74-.71 1.98-1.4.24-.68.24-1.27.17-1.39-.07-.12-.27-.2-.56-.34M12 2a10 10 0 0 0-8.55 15.16L2 22l4.96-1.43A10 10 0 1 0 12 2"/></svg>
+                        <x-icons.whatsapp class="w-[15px] h-[15px] shrink-0" />
                         <a href="https://wa.me/819057628702" target="_blank" rel="noopener" class="hover:text-white">+81 90 5762 8702</a>
                     </li>
                     <li class="flex items-center gap-2.5">
