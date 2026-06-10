@@ -39,8 +39,13 @@ class ImportRegulationsTemplate implements PageTemplate
     public static function render(Page $page): View
     {
         $countries = Country::query()
-            ->with(['importRegulations' => fn ($q) => $q->where('is_active', true)
-                ->orderBy('sort_order')->with('ports')])
+            ->with([
+                'importRegulations' => fn ($q) => $q->where('is_active', true)
+                    ->orderBy('sort_order')->with('ports'),
+                // The country's own active ports — used to set the global
+                // destination (first port) from each country popup.
+                'ports' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order'),
+            ])
             ->whereHas('importRegulations', fn ($q) => $q->where('is_active', true))
             ->orderBy('name')
             ->get()
