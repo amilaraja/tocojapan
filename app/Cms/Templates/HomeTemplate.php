@@ -217,10 +217,19 @@ class HomeTemplate implements PageTemplate
                             ->schema([
                                 TextInput::make('num')->required()->placeholder('01')->maxLength(4)->columnSpan(1),
                                 Select::make('icon')
+                                    ->label('Built-in icon')
                                     ->options(\App\Support\HowToBuyIcons::options())
                                     ->searchable()
-                                    ->required()
+                                    ->helperText('Used when no icon image is uploaded.')
                                     ->columnSpan(2),
+                                FileUpload::make('icon_image')
+                                    ->label('Icon image (optional)')
+                                    ->helperText('Overrides the built-in icon. PNG/SVG with transparent background works best.')
+                                    ->image()
+                                    ->disk('public')->directory('home/how')
+                                    ->imagePreviewHeight('60')
+                                    ->maxSize(1024)
+                                    ->columnSpan(3),
                                 TextInput::make('title')->required()->columnSpan(3),
                                 Textarea::make('body')
                                     ->label('Body text (below the title)')
@@ -234,13 +243,22 @@ class HomeTemplate implements PageTemplate
                                         TextInput::make('label')->required()->columnSpan(2),
                                         TextInput::make('url')->placeholder('https://… or /vehicles')->required()->columnSpan(2),
                                         Select::make('icon')
+                                            ->label('Built-in icon')
                                             ->options(\App\Support\HowToBuyIcons::options())
                                             ->searchable()
                                             ->columnSpan(1),
                                         Select::make('style')
-                                            ->options(['solid' => 'Red filled', 'outline' => 'White outline'])
+                                            ->options(['solid' => 'Filled (navy)', 'outline' => 'Outline'])
                                             ->default('solid')
                                             ->columnSpan(1),
+                                        FileUpload::make('icon_image')
+                                            ->label('Icon image (optional)')
+                                            ->helperText('Overrides the built-in icon, e.g. a PayPal logo.')
+                                            ->image()
+                                            ->disk('public')->directory('home/how')
+                                            ->imagePreviewHeight('40')
+                                            ->maxSize(1024)
+                                            ->columnSpan(2),
                                     ])
                                     ->columns(2)
                                     ->itemLabel(fn (array $state): ?string => $state['label'] ?? null)
