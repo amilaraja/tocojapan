@@ -118,7 +118,13 @@
                             <div class="max-h-[70vh] overflow-y-auto p-5 space-y-4">
                                 @forelse ($country->importRegulations as $reg)
                                     @php
-                                        $portNames = $reg->ports->pluck('name')->join(', ') ?: 'All ports';
+                                        // Prefer linked Port records; otherwise fall back to the
+                                        // scraped port names stored in short_description.
+                                        $pivotPorts = $reg->ports->pluck('name')->join(', ');
+                                        $portNames = $pivotPorts ?: ($reg->short_description ?: 'All ports');
+                                        // Only show short_description as a sub-note when it isn't
+                                        // already being used as the port value.
+                                        $portSubNote = $pivotPorts ? $reg->short_description : null;
                                         $rows = array_filter([
                                             'Age limit' => $reg->year_restriction,
                                             'Shipment time' => $reg->time_of_shipment,
@@ -131,8 +137,8 @@
                                         <div class="px-4 py-2.5 bg-toco-silver-2 border-b border-line">
                                             <p class="font-mono text-[10px] uppercase tracking-widest text-ink-soft">Destination port</p>
                                             <p class="font-bold text-toco-navy text-sm">{{ $portNames }}</p>
-                                            @if ($reg->short_description)
-                                                <p class="text-[12px] text-ink-soft mt-0.5">{{ $reg->short_description }}</p>
+                                            @if ($portSubNote)
+                                                <p class="text-[12px] text-ink-soft mt-0.5">{{ $portSubNote }}</p>
                                             @endif
                                         </div>
                                         @if (! empty($rows))
