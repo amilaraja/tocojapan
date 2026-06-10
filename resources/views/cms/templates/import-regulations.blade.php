@@ -1,4 +1,8 @@
 <x-layouts.cms :page="$page">
+    {{-- This page is itself a destination/country picker — don't let the global
+         "Set your destination" dialog auto-open over the flag grid. --}}
+    <script>window.tocoSuppressDestPrompt = true;</script>
+
     @php
         $d = $page->data ?? [];
 

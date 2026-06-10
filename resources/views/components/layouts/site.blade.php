@@ -165,8 +165,12 @@
                                 const dc = '{{ $destPort?->country_id }}', dp = '{{ $destPort?->id }}';
                                 if (! dc) {
                                     // No destination yet — prompt the visitor to set one,
-                                    // once per browser session so it isn't naggy.
-                                    if (! sessionStorage.getItem('toco_dest_prompted')) {
+                                    // once per browser session so it isn't naggy. Skip the
+                                    // auto-prompt when a page opts out (e.g. the import-
+                                    // regulations picker) or the URL deep-links to content
+                                    // via a #hash, so the dialog never covers what they came for.
+                                    const suppress = window.tocoSuppressDestPrompt || !! window.location.hash;
+                                    if (! suppress && ! sessionStorage.getItem('toco_dest_prompted')) {
                                         sessionStorage.setItem('toco_dest_prompted', '1');
                                         this.$nextTick(() => { this.open = true; });
                                     }
