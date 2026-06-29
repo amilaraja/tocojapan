@@ -31,9 +31,6 @@ class PortsTable
                 TextColumn::make('rate_per_m3')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('insurance_pct')
-                    ->numeric()
-                    ->sortable(),
                 IconColumn::make('is_active')
                     ->boolean(),
                 TextColumn::make('sort_order')

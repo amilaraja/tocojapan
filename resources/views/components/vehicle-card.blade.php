@@ -4,7 +4,7 @@
     $photo = $vehicle->cardPhotoUrl();
     $photo2x = $vehicle->galleryPhotoUrl();
     $isSold = $vehicle->status === 'sold';
-    $isNew = ! $isSold && $vehicle->published_at && $vehicle->published_at->gt(now()->subDays(14));
+    $isNew = ! $isSold && $vehicle->isNewArrival();
     $fallbackPhoto = '/img/v5/car-'.((($vehicle->id % 4) + 1)).'.jpg';
     $isFavorited = in_array($vehicle->id, $favoritedIds ?? [], true);
 @endphp
@@ -15,7 +15,7 @@
             <img src="{{ $photo ?: $fallbackPhoto }}" alt="{{ $vehicle->title }}"
                  @if ($photo && $photo2x)
                  srcset="{{ $photo }} 560w, {{ $photo2x }} 1280w"
-                 sizes="(min-width:1280px) 300px, (min-width:768px) 33vw, (min-width:640px) 50vw, 100vw"
+                 sizes="(min-width:1280px) 300px, (min-width:768px) 33vw, (min-width:640px) 50vw, 50vw"
                  @endif
                  width="560" height="420" decoding="async"
                  loading="{{ $priority ? 'eager' : 'lazy' }}"
@@ -23,8 +23,10 @@
                  class="w-full h-full object-cover transition group-hover:scale-[1.02] {{ $isSold ? 'grayscale' : '' }}">
             @if ($isSold)
                 <span class="absolute top-2 left-2 bg-toco-red text-white text-[11px] font-bold uppercase tracking-widest px-2.5 py-1 font-mono rounded-sm shadow">SOLD</span>
+            @elseif ($vehicle->is_featured)
+                <span class="absolute top-2 left-2 bg-orange-700 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1 font-mono">Hot Deal</span>
             @elseif ($isNew)
-                <span class="absolute top-2 left-2 bg-toco-red text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1 font-mono">New</span>
+                <span class="absolute top-2 left-2 bg-emerald-700 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1 font-mono">New</span>
             @endif
         </div>
         <div class="p-3">

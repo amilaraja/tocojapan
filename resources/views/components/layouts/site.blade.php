@@ -55,44 +55,93 @@
         </div>
     </div>
 
-    {{-- Top bar --}}
-    <div class="bg-toco-navy text-white/80 text-[12px] tracking-wide border-b border-white/5">
+    {{-- Top bar — relative z-40 so its absolute-positioned dropdowns
+         (language + currency) paint above the sticky header (z-30). --}}
+    <div class="relative z-40 bg-toco-navy text-white/80 text-[12px] tracking-wide border-b border-white/5">
         <div class="max-w-[1600px] mx-auto px-4 sm:px-6 2xl:px-8 py-0.5 sm:py-2 flex items-center justify-between gap-4 [&_select]:h-7 [&_select]:py-0 sm:[&_select]:h-auto sm:[&_select]:py-1.5">
             <div class="flex items-center gap-3 sm:gap-5">
                 @isset($topBarLeft)
                     {{ $topBarLeft }}
                 @else
-                    <span class="inline-flex items-center gap-1.5 notranslate" translate="no">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
-                        <select
-                            id="lang_picker"
-                            aria-label="Select language"
-                            onchange="window.setSiteLanguage(this.value)"
-                            class="bg-transparent border-0 text-white/80 hover:text-white text-[12px] cursor-pointer focus:outline-none pr-1"
-                        >
-                            <option value="en" class="text-toco-navy">English</option>
-                            <option value="ja" class="text-toco-navy">日本語</option>
-                            <option value="fr" class="text-toco-navy">Français</option>
-                            <option value="pt" class="text-toco-navy">Português</option>
-                            <option value="es" class="text-toco-navy">Español</option>
-                            <option value="sw" class="text-toco-navy">Kiswahili</option>
-                        </select>
+                    @php
+                        // Language picker — flag SVGs live in public/img/flags/.
+                        $languages = [
+                            ['code' => 'en', 'label' => 'English',  'flag' => '/img/flags/gb.svg'],
+                            ['code' => 'ja', 'label' => '日本語',     'flag' => '/img/flags/jp.svg'],
+                            ['code' => 'fr', 'label' => 'Français', 'flag' => '/img/flags/fr.svg'],
+                            ['code' => 'pt', 'label' => 'Português','flag' => '/img/flags/pt.svg'],
+                            ['code' => 'es', 'label' => 'Español',  'flag' => '/img/flags/es.svg'],
+                            ['code' => 'sw', 'label' => 'Kiswahili','flag' => '/img/flags/tz.svg'],
+                        ];
+                        // Map currency codes → flag file. Falls back to a generic globe if unmapped.
+                        $currencyFlags = [
+                            'USD' => '/img/flags/us.svg',
+                            'JPY' => '/img/flags/jp.svg',
+                            'EUR' => '/img/flags/eu.svg',
+                            'GBP' => '/img/flags/gb.svg',
+                        ];
+                    @endphp
+
+                    {{-- Language picker (custom — native <select> can't render flag images) --}}
+                    <div class="relative notranslate" translate="no"
+                         x-data="{ open: false, current: (window.tocoCurrentLang && window.tocoCurrentLang()) || 'en' }">
+                        <button type="button" @click="open = !open" @click.outside="open = false"
+                                class="inline-flex items-center gap-1.5 text-white/80 hover:text-white text-[12px] focus:outline-none">
+                            @foreach ($languages as $lng)
+                                <img src="{{ $lng['flag'] }}" alt="" width="18" height="12" loading="lazy"
+                                     x-show="current === '{{ $lng['code'] }}'" x-cloak
+                                     class="block rounded-[1px] ring-1 ring-white/30 shadow-sm">
+                            @endforeach
+                            <span class="ml-1" x-text="({ en: 'English', ja: '日本語', fr: 'Français', pt: 'Português', es: 'Español', sw: 'Kiswahili' })[current] || 'Language'"></span>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" :class="open ? 'rotate-180' : ''" class="transition-transform"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        <ul x-show="open" x-cloak x-transition.opacity
+                            class="absolute left-0 top-full mt-1 z-50 min-w-[160px] bg-white border border-line rounded-sm shadow-lg overflow-hidden text-toco-navy text-[12px]">
+                            @foreach ($languages as $lng)
+                                <li>
+                                    <button type="button" @click="current = '{{ $lng['code'] }}'; open = false; window.setSiteLanguage('{{ $lng['code'] }}')"
+                                            class="w-full px-3 py-2 flex items-center gap-2 hover:bg-toco-silver-2 text-left">
+                                        <img src="{{ $lng['flag'] }}" alt="" width="20" height="14" loading="lazy" class="block shrink-0 rounded-[1px] ring-1 ring-line">
+                                        <span class="font-semibold">{{ $lng['label'] }}</span>
+                                    </button>
+                                </li>
+                            @endforeach
+                        </ul>
                         <span id="google_translate_element" class="hidden"></span>
-                    </span>
+                    </div>
+
+                    {{-- Currency picker (custom — flag image + currency code) --}}
                     @if (! empty($currencyOptions))
-                        <form method="POST" action="#" id="currencyForm" class="inline">
-                            @csrf
-                            <select
-                                name="code"
-                                aria-label="Select currency"
-                                onchange="document.getElementById('currencyForm').action = '/currency/' + this.value; document.getElementById('currencyForm').submit();"
-                                class="bg-transparent border-0 text-white/80 hover:text-white text-[12px] cursor-pointer focus:outline-none notranslate"
-                            >
+                        <div class="relative notranslate" translate="no" x-data="{ open: false }">
+                            <button type="button" @click="open = !open" @click.outside="open = false"
+                                    class="inline-flex items-center gap-1.5 text-white/80 hover:text-white text-[12px] focus:outline-none">
+                                @if (! empty($currencyFlags[$currentCurrency]))
+                                    <img src="{{ $currencyFlags[$currentCurrency] }}" alt="" width="18" height="12" loading="lazy" class="block rounded-[1px] ring-1 ring-white/30 shadow-sm">
+                                @endif
+                                <span class="ml-1 font-semibold tabular-nums">{{ $currentCurrency }}</span>
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" :class="open ? 'rotate-180' : ''" class="transition-transform"><path d="m6 9 6 6 6-6"/></svg>
+                            </button>
+                            <ul x-show="open" x-cloak x-transition.opacity
+                                class="absolute left-0 top-full mt-1 z-50 min-w-[140px] bg-white border border-line rounded-sm shadow-lg overflow-hidden text-toco-navy text-[12px]">
                                 @foreach ($currencyOptions as $c)
-                                    <option value="{{ $c['code'] }}" {{ $c['code'] === $currentCurrency ? 'selected' : '' }} class="text-toco-navy">{{ $c['code'] }}</option>
+                                    <li>
+                                        <form method="POST" action="/currency/{{ $c['code'] }}">@csrf
+                                            <button type="submit" class="w-full px-3 py-2 flex items-center gap-2 hover:bg-toco-silver-2 text-left {{ $c['code'] === $currentCurrency ? 'bg-toco-silver-2' : '' }}">
+                                                @if (! empty($currencyFlags[$c['code']]))
+                                                    <img src="{{ $currencyFlags[$c['code']] }}" alt="" width="20" height="14" loading="lazy" class="block shrink-0 rounded-[1px] ring-1 ring-line">
+                                                @else
+                                                    <span class="w-[20px] h-[14px] grid place-items-center bg-toco-silver-2 text-[9px] font-bold">{{ substr($c['code'], 0, 1) }}</span>
+                                                @endif
+                                                <span class="font-semibold tabular-nums">{{ $c['code'] }}</span>
+                                                @if (! empty($c['symbol']) && $c['symbol'] !== $c['code'])
+                                                    <span class="text-ink-soft text-[11px] ml-auto">{{ $c['symbol'] }}</span>
+                                                @endif
+                                            </button>
+                                        </form>
+                                    </li>
                                 @endforeach
-                            </select>
-                        </form>
+                            </ul>
+                        </div>
                     @endif
 
                     {{-- Destination picker — opens a country + port dialog --}}
@@ -115,12 +164,11 @@
                             init() {
                                 const dc = '{{ $destPort?->country_id }}', dp = '{{ $destPort?->id }}';
                                 if (! dc) {
-                                    // No destination yet — prompt the visitor to set one,
-                                    // once per browser session so it isn't naggy.
-                                    if (! sessionStorage.getItem('toco_dest_prompted')) {
-                                        sessionStorage.setItem('toco_dest_prompted', '1');
-                                        this.$nextTick(() => { this.open = true; });
-                                    }
+                                    // No destination yet. The dialog is NOT auto-opened: doing so
+                                    // covered the hero (it is a full-screen fixed inset-0 overlay)
+                                    // before Largest Contentful Paint could be measured, which made
+                                    // Lighthouse report NO_LCP. Visitors open it from the
+                                    // "Set destination" button in the header instead.
                                     return;
                                 }
                                 const c = this.countries.find(c => c.id == dc);
@@ -167,7 +215,7 @@
                                     <p class="text-[12px] text-ink-soft">Pick your country and nearest port — CIF prices across the site update to that port.</p>
                                     <div>
                                         <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Country</label>
-                                        <select x-model="countryId" @change="onCountry()" class="w-full border-line rounded-sm text-sm">
+                                        <select x-model="countryId" @change="onCountry()" aria-label="Country" class="w-full border-line rounded-sm text-sm">
                                             <option value="">— Select country —</option>
                                             <template x-for="c in countries" :key="c.id">
                                                 <option :value="c.id" x-text="c.name"></option>
@@ -176,7 +224,7 @@
                                     </div>
                                     <div>
                                         <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Port</label>
-                                        <select name="port_id" x-model="portId" :disabled="!ports.length" class="w-full border-line rounded-sm text-sm disabled:bg-toco-silver-2">
+                                        <select name="port_id" x-model="portId" :disabled="!ports.length" aria-label="Port" class="w-full border-line rounded-sm text-sm disabled:bg-toco-silver-2">
                                             <option value="">— Select port —</option>
                                             <template x-for="p in ports" :key="p.id">
                                                 <option :value="p.id" x-text="p.name"></option>
@@ -209,10 +257,10 @@
                     </span>
                     <a href="#" class="hidden lg:inline-flex items-center gap-1.5 hover:text-white">
                         <span class="inline-block w-1.5 h-1.5 rounded-full bg-toco-red"></span>
-                        <span>Live: {{ rand(45, 70) }} buyers viewing now</span>
+                        <span>Live: {{ rand(10, 20) }} buyers viewing now</span>
                     </a>
                     <a href="https://wa.me/819057628702" target="_blank" rel="noopener" class="hidden sm:inline-flex items-center gap-1.5 hover:text-white notranslate" translate="no">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#25D366" class="shrink-0"><path d="M17.5 14.4c-.3-.15-1.74-.86-2.01-.96-.27-.1-.47-.15-.66.15-.2.29-.76.96-.93 1.16-.17.2-.34.22-.63.07-.29-.15-1.24-.46-2.36-1.46-.87-.78-1.46-1.74-1.63-2.03-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.49.1-.2.05-.36-.02-.51-.07-.15-.66-1.59-.9-2.18-.24-.57-.48-.49-.66-.5l-.56-.01c-.2 0-.51.07-.78.36-.27.29-1.02 1-1.02 2.43 0 1.44 1.04 2.82 1.19 3.02.15.2 2.06 3.14 4.99 4.4.7.3 1.24.48 1.66.62.7.22 1.33.19 1.83.12.56-.08 1.74-.71 1.98-1.4.24-.68.24-1.27.17-1.39-.07-.12-.27-.2-.56-.34M12 2a10 10 0 0 0-8.55 15.16L2 22l4.96-1.43A10 10 0 1 0 12 2"/></svg>
+                        <x-icons.whatsapp class="w-3.5 h-3.5 shrink-0" />
                         <span>+81 90 5762 8702</span>
                     </a>
                 @endisset
@@ -225,7 +273,7 @@
         {{-- Header — 3 columns: logo · (menu + search) · actions --}}
         @php($nav = [
             ['Home', route('home'), request()->is('/')],
-            ['Buy Vehicles', route('vehicles.index'), request()->is('vehicles*')],
+            ['Stock List', route('vehicles.index'), request()->is('vehicles*')],
             ['Spareparts', route('cms.page', 'order-spareparts'), request()->is('order-spareparts')],
             ['How to Buy', route('cms.page', 'how-to-buy-cars-and-other-vehicles'), request()->is('how-to-buy-cars-and-other-vehicles')],
             ['FAQs', route('cms.page', 'faqs'), request()->is('faqs')],
@@ -236,7 +284,7 @@
             @php($headerLogo = app(\App\Settings\GeneralSettings::class)->header_logo ?? null)
             <a href="{{ route('home') }}" class="inline-flex items-center gap-2.5 shrink-0">
                 @if ($headerLogo)
-                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($headerLogo) }}" alt="{{ config('app.name', 'Toco Japan') }}" class="h-10 sm:h-[3.85rem] w-auto">
+                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($headerLogo) }}" alt="{{ config('app.name', 'Toco Japan') }}" class="h-10 sm:h-16 w-auto">
                 @else
                     <span class="inline-flex items-center justify-center w-11 h-11 rounded-sm bg-toco-red text-white font-bold text-base font-mono">TJ</span>
                     <span class="font-extrabold tracking-tight text-toco-navy text-xl hidden sm:inline">Toco Japan</span>
@@ -323,7 +371,7 @@
                 </form>
                 <ul class="divide-y divide-line text-base font-semibold text-ink border-t border-line">
                     <li><a href="{{ route('home') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Home</a></li>
-                    <li><a href="{{ route('vehicles.index') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Buy Vehicles</a></li>
+                    <li><a href="{{ route('vehicles.index') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Stock List</a></li>
                     <li><a href="{{ route('cms.page', 'order-spareparts') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Spareparts</a></li>
                     <li><a href="{{ route('cms.page', 'how-to-buy-cars-and-other-vehicles') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">How to Buy</a></li>
                     <li><a href="{{ route('cms.page', 'faqs') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">FAQs</a></li>
@@ -370,7 +418,7 @@
                         <span>+81 283 24 4569</span>
                     </li>
                     <li class="flex items-center gap-2.5">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="#25D366" class="shrink-0"><path d="M17.5 14.4c-.3-.15-1.74-.86-2.01-.96-.27-.1-.47-.15-.66.15-.2.29-.76.96-.93 1.16-.17.2-.34.22-.63.07-.29-.15-1.24-.46-2.36-1.46-.87-.78-1.46-1.74-1.63-2.03-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.49.1-.2.05-.36-.02-.51-.07-.15-.66-1.59-.9-2.18-.24-.57-.48-.49-.66-.5l-.56-.01c-.2 0-.51.07-.78.36-.27.29-1.02 1-1.02 2.43 0 1.44 1.04 2.82 1.19 3.02.15.2 2.06 3.14 4.99 4.4.7.3 1.24.48 1.66.62.7.22 1.33.19 1.83.12.56-.08 1.74-.71 1.98-1.4.24-.68.24-1.27.17-1.39-.07-.12-.27-.2-.56-.34M12 2a10 10 0 0 0-8.55 15.16L2 22l4.96-1.43A10 10 0 1 0 12 2"/></svg>
+                        <x-icons.whatsapp class="w-[15px] h-[15px] shrink-0" />
                         <a href="https://wa.me/819057628702" target="_blank" rel="noopener" class="hover:text-white">+81 90 5762 8702</a>
                     </li>
                     <li class="flex items-center gap-2.5">
@@ -482,6 +530,16 @@
             var current = (document.cookie.match(/(?:^|;\s*)googtrans=\/en\/([\w-]+)/) || [])[1] || 'en';
             var sel = document.getElementById('lang_picker');
             if (sel) sel.value = current;
+        };
+
+        window.tocoCurrentLang = function () {
+            try {
+                var m = document.cookie.match(/(?:^|; )googtrans=\/[^\/]+\/([a-z]+)/);
+                if (m) return m[1];
+                m = document.cookie.match(/(?:^|; )toco_lang=([a-z]+)/);
+                if (m) return m[1];
+            } catch (e) {}
+            return 'en';
         };
 
         window.setSiteLanguage = function (lang) {

@@ -18,7 +18,7 @@
         @endphp
         <div
             class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6"
-            x-data="bankCheckout(@js($countryPayload), {{ (float) ($vehicle->effectivePriceFob() ?? $vehicle->price_fob) }}, {{ (float) ($vehicle->m3 ?: 0) }}, {{ (float) (app(\App\Settings\CifSettings::class)->insurance_pct ?: 0) }}, {{ $destPort?->country_id ? (int) $destPort->country_id : 0 }}, {{ $destPort?->id ? (int) $destPort->id : 0 }})"
+            x-data="bankCheckout(@js($countryPayload), {{ (float) ($vehicle->effectivePriceFob() ?? $vehicle->price_fob) }}, {{ (float) ($vehicle->m3 ?: 0) }}, {{ (float) (app(\App\Settings\CifSettings::class)->marine_insurance_usd ?: 0) }}, {{ $destPort?->country_id ? (int) $destPort->country_id : 0 }}, {{ $destPort?->id ? (int) $destPort->id : 0 }})"
         >
             <form method="POST" action="{{ route('checkout.bank.store', $vehicle->slug) }}" class="space-y-6">
                 @csrf
@@ -136,12 +136,12 @@
 
     @push('scripts')
     <script>
-        function bankCheckout(countries, fob, m3, defaultInsurancePct, presetCountryId, presetPortId) {
+        function bankCheckout(countries, fob, m3, marineInsuranceUsd, presetCountryId, presetPortId) {
             return {
                 countries,
                 fob,
                 m3,
-                defaultInsurancePct,
+                marineInsuranceUsd,
                 countryId: presetCountryId ? String(presetCountryId) : '',
                 portId: presetPortId ? String(presetPortId) : '',
                 get selectedCountry() { return this.countries.find(c => c.id == this.countryId); },
@@ -151,7 +151,7 @@
                     const p = this.selectedPort;
                     const rate = p ? Number(p.rate_per_m3 ?? 0) : 0;
                     const freight = +(this.m3 * rate).toFixed(2);
-                    const ins = +((this.fob + freight) * this.defaultInsurancePct).toFixed(2);
+                    const ins = p ? +Number(this.marineInsuranceUsd || 0).toFixed(2) : 0;
                     const total = p ? +(this.fob + freight + ins).toFixed(2) : this.fob;
                     return { fob: this.fob, m3: this.m3, rate, freight, insurance: ins, total };
                 },

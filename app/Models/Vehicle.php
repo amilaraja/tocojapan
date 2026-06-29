@@ -53,9 +53,55 @@ class Vehicle extends Model implements HasMedia
         'sold_at' => 'datetime',
         'fb_shared_at' => 'datetime',
         'year_first_reg' => 'integer',
+        'registration_month' => 'integer',
+        'manufacture_year' => 'integer',
+        'manufacture_month' => 'integer',
         'mileage_km' => 'integer',
         'engine_cc' => 'integer',
     ];
+
+    /** Registration YYYY/MM string for display. Returns just the year when month is unknown. */
+    public function registrationYmDisplay(): ?string
+    {
+        if (! $this->year_first_reg) {
+            return null;
+        }
+
+        return $this->registration_month
+            ? sprintf('%04d/%02d', $this->year_first_reg, $this->registration_month)
+            : (string) $this->year_first_reg;
+    }
+
+    /** Manufacture YYYY/MM string for display. */
+    public function manufactureYmDisplay(): ?string
+    {
+        if (! $this->manufacture_year) {
+            return null;
+        }
+
+        return $this->manufacture_month
+            ? sprintf('%04d/%02d', $this->manufacture_year, $this->manufacture_month)
+            : (string) $this->manufacture_year;
+    }
+
+    /**
+     * Public-facing chassis number with the bulk of the digits masked.
+     * Pattern: keep the first 4 characters, mask the rest with asterisks
+     * preserving any dashes. Returns null when no chassis is recorded.
+     */
+    public function chassisNumberRedacted(): ?string
+    {
+        $raw = (string) ($this->chassis_number ?? '');
+        if ($raw === '') {
+            return null;
+        }
+        $keep = 4;
+        $head = mb_substr($raw, 0, $keep);
+        $tail = mb_substr($raw, $keep);
+        $masked = preg_replace_callback('/[A-Za-z0-9]/u', fn () => '*', $tail) ?? $tail;
+
+        return $head.$masked;
+    }
 
     /** @return BelongsTo<Make, $this> */
     public function make(): BelongsTo
@@ -112,6 +158,72 @@ class Vehicle extends Model implements HasMedia
     public function isSold(): bool
     {
         return $this->status === 'sold';
+    }
+
+    /**
+     * IDs of the 7 most-recently-published vehicles — the badge population.
+     * Cached per request (static) so a card grid only fires one query no
+     * matter how many cards render.
+     *
+     * @return array<int, int>
+     */
+    public static function latestArrivalIds(int $limit = 7): array
+    {
+        static $cache = [];
+
+        if (! isset($cache[$limit])) {
+            $cache[$limit] = static::query()
+                ->where('status', 'published')
+                ->whereNotNull('published_at')
+                ->orderByDesc('published_at')
+                ->orderByDesc('id')
+                ->limit($limit)
+                ->pluck('id')
+                ->all();
+        }
+
+        return $cache[$limit];
+    }
+
+    /** Whether this vehicle is among the latest-N new arrivals. */
+    public function isNewArrival(int $limit = 7): bool
+    {
+        return $this->status === 'published'
+            && in_array($this->id, static::latestArrivalIds($limit), true);
+    }
+
+    /**
+     * Related vehicles for the detail page. Ranks by a fixed priority:
+     *
+     *   tier 1 — same make AND same model       (highest)
+     *   tier 2 — same make AND same body type
+     *   tier 3 — same make
+     *   tier 4 — same body type
+     *   then  — nearest effective price, then nearest year
+     *
+     * One query, no N+1; sold-within-90-days are included (the public scope
+     * keeps them visible for that window) but the current vehicle itself is
+     * excluded.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, Vehicle>
+     */
+    public function relatedVehicles(int $limit = 8): \Illuminate\Database\Eloquent\Collection
+    {
+        $currentPrice = (float) ($this->effectivePriceFob() ?? $this->price_fob ?? 0);
+        $currentYear = (int) ($this->year_first_reg ?? 0);
+
+        return static::query()
+            ->published()
+            ->where('id', '<>', $this->id)
+            ->with(['make', 'vehicleModel', 'bodyType', 'media'])
+            ->orderByRaw('CASE WHEN make_id = ? AND vehicle_model_id = ? THEN 1 ELSE 0 END DESC', [$this->make_id, $this->vehicle_model_id])
+            ->orderByRaw('CASE WHEN make_id = ? AND body_type_id = ? THEN 1 ELSE 0 END DESC', [$this->make_id, $this->body_type_id])
+            ->orderByRaw('CASE WHEN make_id = ? THEN 1 ELSE 0 END DESC', [$this->make_id])
+            ->orderByRaw('CASE WHEN body_type_id = ? THEN 1 ELSE 0 END DESC', [$this->body_type_id])
+            ->orderByRaw('ABS(COALESCE(price_fob_discount, price_fob, 0) - ?) ASC', [$currentPrice])
+            ->orderByRaw('ABS(COALESCE(year_first_reg, 0) - ?) ASC', [$currentYear])
+            ->limit($limit)
+            ->get();
     }
 
     /**
@@ -189,12 +301,17 @@ class Vehicle extends Model implements HasMedia
             // without excluding the row.
             ->when(! empty($filters['price_from']), fn ($q) => $q->whereRaw('COALESCE(price_fob_discount, price_fob) >= ?', [(float) $filters['price_from']]))
             ->when(! empty($filters['price_to']), fn ($q) => $q->whereRaw('COALESCE(price_fob_discount, price_fob) <= ?', [(float) $filters['price_to']]))
+            ->when(! empty($filters['mileage_min']), fn ($q) => $q->where('mileage_km', '>=', (int) $filters['mileage_min']))
             ->when(! empty($filters['mileage_max']), fn ($q) => $q->where('mileage_km', '<=', (int) $filters['mileage_max']))
+            ->when(! empty($filters['engine_from']), fn ($q) => $q->where('engine_cc', '>=', (int) $filters['engine_from']))
+            ->when(! empty($filters['engine_to']), fn ($q) => $q->where('engine_cc', '<=', (int) $filters['engine_to']))
             ->when(! empty($filters['transmission']), fn ($q) => $q->where('transmission', $filters['transmission']))
             ->when(! empty($filters['fuel']), fn ($q) => $q->where('fuel', $filters['fuel']))
             ->when(! empty($filters['steering']), fn ($q) => $q->where('steering_side', $filters['steering']))
             ->when(! empty($filters['drive']), fn ($q) => $q->where('drive', $filters['drive']))
             ->when(! empty($filters['featured']), fn ($q) => $q->where('is_featured', true))
+            ->when(! empty($filters['discounted']), fn ($q) => $q->whereNotNull('price_fob_discount')->where('price_fob_discount', '>', 0))
+            ->when(! empty($filters['new_only']), fn ($q) => $q->where('published_at', '>=', now()->subDays(14)))
             ->when(! empty($filters['q']), fn ($q) => $q->where(function ($q) use ($filters) {
                 $term = '%'.$filters['q'].'%';
                 $q->where('title', 'like', $term)

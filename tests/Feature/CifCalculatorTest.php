@@ -5,7 +5,7 @@ use App\Models\Port;
 use App\Services\CifCalculator;
 use App\Settings\CifSettings;
 
-function makePort(?float $insurancePct = null): Port
+function makePort(): Port
 {
     $country = Country::create([
         'iso2' => 'TS',
@@ -19,15 +19,14 @@ function makePort(?float $insurancePct = null): Port
         'name' => 'Testport',
         'slug' => 'testport',
         'rate_per_m3' => 30.0,
-        'insurance_pct' => $insurancePct,
         'is_active' => true,
     ]);
 }
 
-it('computes CIF using settings insurance pct when port has none', function () {
+it('computes CIF with a flat marine insurance fee', function () {
     $port = makePort();
     $settings = app(CifSettings::class);
-    $settings->insurance_pct = 0.015;
+    $settings->marine_insurance_usd = 35.0;
     $settings->default_currency = 'USD';
     $settings->price_on_request_default = false;
     $settings->save();
@@ -36,20 +35,19 @@ it('computes CIF using settings insurance pct when port has none', function () {
     $r = $calc->calculate(priceFob: 5000.00, m3: 12.5, port: $port);
 
     // freight = 12.5 * 30 = 375
-    // insurance = (5000 + 375) * 0.015 = 80.625 → 80.63
-    // cif = 5000 + 375 + 80.63 = 5455.63
+    // insurance = 35 (flat)
+    // cif = 5000 + 375 + 35 = 5410
     expect($r['freight'])->toBe(375.00);
-    expect($r['insurance'])->toBe(80.63);
-    expect($r['cif_total'])->toBe(5455.63);
-    expect($r['insurance_pct'])->toBe(0.015);
+    expect($r['insurance'])->toBe(35.00);
+    expect($r['cif_total'])->toBe(5410.00);
     expect($r['currency'])->toBe('USD');
     expect($r['port']['country'])->toBe('Testland');
 });
 
-it('uses port-level insurance pct override when present', function () {
-    $port = makePort(insurancePct: 0.025);
+it('honours a non-default marine insurance amount', function () {
+    $port = makePort();
     $settings = app(CifSettings::class);
-    $settings->insurance_pct = 0.015;
+    $settings->marine_insurance_usd = 50.0;
     $settings->default_currency = 'USD';
     $settings->price_on_request_default = false;
     $settings->save();
@@ -57,25 +55,8 @@ it('uses port-level insurance pct override when present', function () {
     $calc = new CifCalculator($settings);
     $r = $calc->calculate(priceFob: 5000.00, m3: 12.5, port: $port);
 
-    // insurance = (5000 + 375) * 0.025 = 134.375 → 134.38
-    expect($r['insurance'])->toBe(134.38);
-    expect($r['insurance_pct'])->toBe(0.025);
-});
-
-it('uses explicit override above port and settings', function () {
-    $port = makePort(insurancePct: 0.025);
-    $settings = app(CifSettings::class);
-    $settings->insurance_pct = 0.015;
-    $settings->default_currency = 'USD';
-    $settings->price_on_request_default = false;
-    $settings->save();
-
-    $calc = new CifCalculator($settings);
-    $r = $calc->calculate(priceFob: 5000.00, m3: 12.5, port: $port, insurancePctOverride: 0.05);
-
-    // insurance = (5000 + 375) * 0.05 = 268.75
-    expect($r['insurance'])->toBe(268.75);
-    expect($r['insurance_pct'])->toBe(0.05);
+    expect($r['insurance'])->toBe(50.00);
+    expect($r['cif_total'])->toBe(5425.00);
 });
 
 it('rejects non-positive m3', function () {

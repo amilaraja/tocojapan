@@ -12,6 +12,7 @@ class Country extends Model
     protected $casts = [
         'is_active' => 'bool',
         'sort_order' => 'integer',
+        'pre_inspection_required' => 'bool',
     ];
 
     /** @return HasMany<Port, $this> */

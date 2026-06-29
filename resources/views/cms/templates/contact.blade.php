@@ -64,7 +64,10 @@
                     @endif
                     @if ($whatsapp)
                         <div class="flex items-center justify-between py-2.5">
-                            <dt class="font-mono text-[10px] uppercase tracking-widest text-ink-soft">WhatsApp</dt>
+                            <dt class="font-mono text-[10px] uppercase tracking-widest text-ink-soft inline-flex items-center gap-1.5">
+                                <x-icons.whatsapp class="w-3.5 h-3.5 shrink-0" />
+                                WhatsApp
+                            </dt>
                             <dd><a href="https://wa.me/{{ $waDigits }}" target="_blank" rel="noopener" class="font-semibold text-toco-navy hover:text-toco-red">{{ $whatsapp }}</a></dd>
                         </div>
                     @endif

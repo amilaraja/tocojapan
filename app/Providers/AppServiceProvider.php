@@ -78,6 +78,8 @@ class AppServiceProvider extends ServiceProvider
 
         // @cif($vehicle, $port) → small inline CIF label for the visitor's
         // chosen currency. Returns nothing if vehicle has no m3 or no port.
+        // Adds the Pre-inspection Fee when the destination country mandates
+        // it (countries.pre_inspection_required = 1, e.g. Sri Lanka).
         Blade::directive('cif', function (string $expr) {
             return "<?php
                 [\$__cifVeh, \$__cifPort] = [{$expr}];
@@ -88,7 +90,11 @@ class AppServiceProvider extends ServiceProvider
                         m3: (float) \$__cifVeh->m3,
                         port: \$__cifPort,
                     );
-                    echo app(\App\Services\CurrencyRates::class)->format((float) \$__cifBreak['cif_total'], app(\App\Services\CurrencyRates::class)->userCurrencyCode());
+                    \$__cifTotal = (float) \$__cifBreak['cif_total'];
+                    if (\$__cifPort->country?->pre_inspection_required) {
+                        \$__cifTotal += (float) app(\App\Settings\CifSettings::class)->pre_inspection_fee_usd;
+                    }
+                    echo app(\App\Services\CurrencyRates::class)->format(\$__cifTotal, app(\App\Services\CurrencyRates::class)->userCurrencyCode());
                 }
             ?>";
         });

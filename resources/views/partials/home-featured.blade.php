@@ -57,6 +57,7 @@
 
             {{-- RIGHT SIDEBARS --}}
             <div class="hidden lg:flex flex-col gap-6">
+                @include('partials.home-sidebar-top-banner', ['content' => $content ?? []])
                 @include('partials.home-sidebar-bodytypes', ['bodyTypesWithCounts' => $bodyTypesWithCounts, 'showStockCounts' => $showStockCounts])
                 @include('partials.home-sidebar-seasonal', ['content' => $content ?? []])
             </div>

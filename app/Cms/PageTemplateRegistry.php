@@ -2,6 +2,7 @@
 
 namespace App\Cms;
 
+use App\Cms\Templates\AboutUsTemplate;
 use App\Cms\Templates\ContactTemplate;
 use App\Cms\Templates\CountryLandingTemplate;
 use App\Cms\Templates\CustomerReviewsTemplate;
@@ -25,6 +26,7 @@ class PageTemplateRegistry
             DefaultTemplate::class,
             CountryLandingTemplate::class,
             ContactTemplate::class,
+            AboutUsTemplate::class,
             FaqTemplate::class,
             SparePartsTemplate::class,
             ImportRegulationsTemplate::class,

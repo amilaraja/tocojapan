@@ -60,9 +60,11 @@ class Settings extends Page implements HasForms
                 'google_analytics_id' => $general->google_analytics_id,
             ],
             'cif' => [
-                'insurance_pct_display' => $cif->insurance_pct * 100, // shown as %
+                'marine_insurance_usd' => $cif->marine_insurance_usd,
                 'default_currency' => $cif->default_currency,
                 'price_on_request_default' => $cif->price_on_request_default,
+                'maintenance_package_usd' => $cif->maintenance_package_usd,
+                'pre_inspection_fee_usd' => $cif->pre_inspection_fee_usd,
             ],
             'social' => [
                 'facebook_enabled' => $social->facebook_enabled,
@@ -163,23 +165,28 @@ class Settings extends Page implements HasForms
                             ]),
                         Tab::make('CIF calculator')
                             ->schema([
-                                Section::make('Default insurance & currency')
-                                    ->description('These defaults apply when a destination port has no explicit override.')
-                                    ->columns(2)
+                                Section::make('Default currency')
+                                    ->description('Used when a destination port has no currency override.')
                                     ->schema([
-                                        TextInput::make('cif.insurance_pct_display')
-                                            ->label('Insurance %')
-                                            ->numeric()
-                                            ->step('0.01')
-                                            ->minValue(0)
-                                            ->maxValue(100)
-                                            ->suffix('%')
-                                            ->helperText('Stored internally as a fraction (e.g. 1.5% → 0.015).')
-                                            ->required(),
                                         TextInput::make('cif.default_currency')
                                             ->label('Default currency')
                                             ->maxLength(3)
                                             ->required(),
+                                    ]),
+                                Section::make('CIF add-ons (shown on vehicle detail)')
+                                    ->description('Three opt-in add-ons appear on the vehicle detail page: Marine Insurance (flat USD per shipment), Maintenance Package and Pre-inspection Fee. All three are optional — the customer chooses what to include in the total.')
+                                    ->columns(3)
+                                    ->schema([
+                                        TextInput::make('cif.marine_insurance_usd')
+                                            ->label('Marine Insurance (USD, flat)')
+                                            ->numeric()->prefix('$')->minValue(0)->required()
+                                            ->helperText('Flat per-shipment fee. Default $35.'),
+                                        TextInput::make('cif.maintenance_package_usd')
+                                            ->label('Maintenance Package (USD)')
+                                            ->numeric()->prefix('$')->minValue(0)->required(),
+                                        TextInput::make('cif.pre_inspection_fee_usd')
+                                            ->label('Pre-inspection Fee (USD)')
+                                            ->numeric()->prefix('$')->minValue(0)->required(),
                                     ]),
                             ]),
                         Tab::make('Vehicle images')
@@ -344,9 +351,11 @@ class Settings extends Page implements HasForms
         $general->save();
 
         $cif = app(CifSettings::class);
-        $cif->insurance_pct = ((float) $state['cif']['insurance_pct_display']) / 100;
+        $cif->marine_insurance_usd = (float) ($state['cif']['marine_insurance_usd'] ?? 35);
         $cif->default_currency = strtoupper((string) $state['cif']['default_currency']);
         $cif->price_on_request_default = (bool) ($state['cif']['price_on_request_default'] ?? false);
+        $cif->maintenance_package_usd = (float) ($state['cif']['maintenance_package_usd'] ?? 195);
+        $cif->pre_inspection_fee_usd = (float) ($state['cif']['pre_inspection_fee_usd'] ?? 500);
         $cif->save();
 
         $social = app(SocialSettings::class);

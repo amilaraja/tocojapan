@@ -9,7 +9,7 @@ use App\Settings\CifSettings;
 
 beforeEach(function () {
     $settings = app(CifSettings::class);
-    $settings->insurance_pct = 0.015;
+    $settings->marine_insurance_usd = 35.0;
     $settings->default_currency = 'USD';
     $settings->price_on_request_default = false;
     $settings->save();
@@ -24,7 +24,7 @@ beforeEach(function () {
     ]);
 });
 
-it('calculates CIF from manual price + m3', function () {
+it('calculates CIF from manual price + m3 with a flat insurance fee', function () {
     $this->postJson('/api/v1/cif/calculate', [
         'port_id' => $this->port->id,
         'price_fob' => 5000,
@@ -32,8 +32,8 @@ it('calculates CIF from manual price + m3', function () {
     ])
         ->assertOk()
         ->assertJsonPath('data.freight', 250) // 10 * 25
-        ->assertJsonPath('data.insurance', 78.75) // (5000+250)*0.015
-        ->assertJsonPath('data.cif_total', 5328.75)
+        ->assertJsonPath('data.insurance', 35) // flat
+        ->assertJsonPath('data.cif_total', 5285)
         ->assertJsonPath('data.port.name', 'Colombo');
 });
 
@@ -57,7 +57,7 @@ it('calculates CIF from a vehicle slug', function () {
         'vehicle_slug' => $vehicle->slug,
     ])
         ->assertOk()
-        ->assertJsonPath('data.cif_total', 5328.75)
+        ->assertJsonPath('data.cif_total', 5285)
         ->assertJsonPath('meta.vehicle.slug', 'cif-test-vehicle');
 });
 
@@ -87,17 +87,4 @@ it('rejects when neither vehicle nor manual fields are provided', function () {
     $this->postJson('/api/v1/cif/calculate', [
         'port_id' => $this->port->id,
     ])->assertStatus(422);
-});
-
-it('uses port-level insurance pct override when present', function () {
-    $this->port->update(['insurance_pct' => 0.025]);
-
-    $this->postJson('/api/v1/cif/calculate', [
-        'port_id' => $this->port->id,
-        'price_fob' => 5000,
-        'm3' => 10,
-    ])
-        ->assertOk()
-        ->assertJsonPath('data.insurance', 131.25) // (5000+250)*0.025
-        ->assertJsonPath('data.insurance_pct', 0.025);
 });

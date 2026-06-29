@@ -23,9 +23,13 @@ class SitemapController extends Controller
                     Page::query()->max('updated_at')),
                 self::sitemapEntry(self::abs(route('sitemap.vehicles', absolute: false)),
                     Vehicle::query()->max('updated_at')),
-                self::sitemapEntry(self::abs(route('sitemap.news', absolute: false)),
-                    Post::query()->max('updated_at')),
             ];
+            // Only advertise the news sitemap once there's at least one published
+            // post — Search Console rejects an empty <urlset> as "missing url tag".
+            $newsLastmod = Post::query()->published()->max('updated_at');
+            if ($newsLastmod) {
+                $entries[] = self::sitemapEntry(self::abs(route('sitemap.news', absolute: false)), $newsLastmod);
+            }
 
             return '<?xml version="1.0" encoding="UTF-8"?>'."\n"
                 .'<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n"
@@ -105,6 +109,12 @@ class SitemapController extends Controller
      */
     public function news(): Response
     {
+        // 404 when there are no published posts so the URL doesn't ship an
+        // empty <urlset> that Search Console flags as schema-invalid.
+        if (! Post::query()->published()->exists()) {
+            abort(404);
+        }
+
         $xml = Cache::remember('sitemap.news.xml', now()->addHour(), function (): string {
             $entries = [];
             Post::query()
@@ -152,9 +162,33 @@ class SitemapController extends Controller
             .'</urlset>';
     }
 
+    /**
+     * Normalise any timestamp (Carbon, DateTime, "YYYY-MM-DD HH:MM:SS" string,
+     * null) into an ISO-8601 sitemap-friendly string. Returns null when the
+     * input is null/empty so the helper can skip the <lastmod> tag.
+     *
+     * `Model::max('updated_at')` returns a raw MySQL string, not a Carbon —
+     * the previous "is_string ? leave alone" branch let invalid dates straight
+     * through to Search Console, which then flagged them.
+     */
+    private static function iso8601(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        if ($value instanceof \DateTimeInterface) {
+            return \Carbon\Carbon::instance($value)->toIso8601String();
+        }
+        try {
+            return \Carbon\Carbon::parse((string) $value)->toIso8601String();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     private static function urlEntry(string $loc, mixed $lastmod = null, string $priority = '0.5', string $changefreq = 'weekly'): string
     {
-        $lm = $lastmod ? (is_string($lastmod) ? $lastmod : $lastmod->toIso8601String()) : null;
+        $lm = self::iso8601($lastmod);
 
         return '  <url>'
             .'<loc>'.htmlspecialchars($loc, ENT_XML1).'</loc>'
@@ -166,7 +200,7 @@ class SitemapController extends Controller
 
     private static function sitemapEntry(string $loc, mixed $lastmod = null): string
     {
-        $lm = $lastmod ? (is_string($lastmod) ? $lastmod : $lastmod->toIso8601String()) : null;
+        $lm = self::iso8601($lastmod);
 
         return '  <sitemap>'
             .'<loc>'.htmlspecialchars($loc, ENT_XML1).'</loc>'

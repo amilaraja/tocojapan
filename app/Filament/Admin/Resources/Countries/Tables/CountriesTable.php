@@ -25,6 +25,9 @@ class CountriesTable
                     ->searchable(),
                 IconColumn::make('is_active')
                     ->boolean(),
+                IconColumn::make('pre_inspection_required')
+                    ->label('Pre-insp.')
+                    ->boolean(),
                 TextColumn::make('sort_order')
                     ->numeric()
                     ->sortable(),

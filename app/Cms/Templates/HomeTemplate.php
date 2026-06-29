@@ -13,6 +13,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -112,17 +113,34 @@ class HomeTemplate implements PageTemplate
                                 TextInput::make('data.seasonal.cta_label')->label('CTA label')->default('Shop sale'),
                                 TextInput::make('data.seasonal.cta_url')->label('CTA URL (used by both strip and sidebar)'),
                             ]),
-                        Section::make('Right-column sidebar banner')
-                            ->description('Tall image shown in the right sidebar alongside the Hot Deal and Latest Stock blocks. Leave empty to hide.')
+                        Section::make('Right sidebar — TOP banner (above Body type)')
+                            ->description('Sits at the very top of the right sidebar, above the Body type widget. Leave the image empty to hide the block.')
+                            ->columnSpanFull()
+                            ->columns(2)
+                            ->schema([
+                                FileUpload::make('data.sidebar_top_banner.image')
+                                    ->label('Banner image')
+                                    ->disk('public')->directory('home/sidebar-banners')
+                                    ->image()->imageEditor()
+                                    ->columnSpanFull(),
+                                TextInput::make('data.sidebar_top_banner.title')
+                                    ->label('Title (alt text / tooltip)')
+                                    ->placeholder('e.g. New Year Sale'),
+                                TextInput::make('data.sidebar_top_banner.url')
+                                    ->label('Link URL')
+                                    ->placeholder('https://… or /vehicles?featured=1'),
+                            ]),
+                        Section::make('Right sidebar — BOTTOM banner (below Body type)')
+                            ->description('Sits below the Body type widget. Leave empty to hide.')
                             ->columnSpanFull()
                             ->schema([
                                 FileUpload::make('data.seasonal.sidebar_image')
-                                    ->label('Sidebar banner image')
+                                    ->label('Banner image')
                                     ->disk('public')->directory('home/seasonal')
                                     ->image()->imageEditor()
                                     ->columnSpanFull(),
                                 TextInput::make('data.seasonal.sidebar_url')
-                                    ->label('Sidebar link URL (optional)')
+                                    ->label('Link URL (optional)')
                                     ->placeholder('Defaults to the CTA URL above if left blank.')
                                     ->columnSpanFull(),
                             ]),
@@ -161,6 +179,10 @@ class HomeTemplate implements PageTemplate
 
                 Tab::make('Stats')
                     ->schema([
+                        Toggle::make('data.stats.enabled')
+                            ->label('Show the “By the numbers” stats block')
+                            ->helperText('Turn off to hide the entire stats section on the homepage.')
+                            ->default(true),
                         Section::make('Lead text')->columns(2)->schema([
                             TextInput::make('data.stats.lead_a')->label('Lead part A')
                                 ->default('By the numbers,'),
@@ -200,10 +222,19 @@ class HomeTemplate implements PageTemplate
                             ->schema([
                                 TextInput::make('num')->required()->placeholder('01')->maxLength(4)->columnSpan(1),
                                 Select::make('icon')
+                                    ->label('Built-in icon')
                                     ->options(\App\Support\HowToBuyIcons::options())
                                     ->searchable()
-                                    ->required()
+                                    ->helperText('Used when no icon image is uploaded.')
                                     ->columnSpan(2),
+                                FileUpload::make('icon_image')
+                                    ->label('Icon image (optional)')
+                                    ->helperText('Overrides the built-in icon. PNG/SVG with transparent background works best.')
+                                    ->image()
+                                    ->disk('public')->directory('home/how')
+                                    ->imagePreviewHeight('60')
+                                    ->maxSize(1024)
+                                    ->columnSpan(3),
                                 TextInput::make('title')->required()->columnSpan(3),
                                 Textarea::make('body')
                                     ->label('Body text (below the title)')
@@ -217,13 +248,22 @@ class HomeTemplate implements PageTemplate
                                         TextInput::make('label')->required()->columnSpan(2),
                                         TextInput::make('url')->placeholder('https://… or /vehicles')->required()->columnSpan(2),
                                         Select::make('icon')
+                                            ->label('Built-in icon')
                                             ->options(\App\Support\HowToBuyIcons::options())
                                             ->searchable()
                                             ->columnSpan(1),
                                         Select::make('style')
-                                            ->options(['solid' => 'Red filled', 'outline' => 'White outline'])
+                                            ->options(['solid' => 'Filled (navy)', 'outline' => 'Outline'])
                                             ->default('solid')
                                             ->columnSpan(1),
+                                        FileUpload::make('icon_image')
+                                            ->label('Icon image (optional)')
+                                            ->helperText('Overrides the built-in icon, e.g. a PayPal logo.')
+                                            ->image()
+                                            ->disk('public')->directory('home/how')
+                                            ->imagePreviewHeight('40')
+                                            ->maxSize(1024)
+                                            ->columnSpan(2),
                                     ])
                                     ->columns(2)
                                     ->itemLabel(fn (array $state): ?string => $state['label'] ?? null)
@@ -270,7 +310,7 @@ class HomeTemplate implements PageTemplate
         $bodyTypesWithCounts = BodyType::where('is_active', true)
             ->with('media')
             ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
-            ->orderByDesc('published_count')->orderBy('name')->limit(8)->get();
+            ->orderBy('sort_order')->orderBy('name')->limit(12)->get();
 
         return view('home', [
             'content' => $page->data ?? [],

@@ -38,6 +38,11 @@
 
 <x-layouts.site :title="$title" :description="$description">
     @push('head')
+        {{-- Preload the first hero slide — it is the LCP element, so start its
+             download before CSS/JS parse to cut Largest Contentful Paint time. --}}
+        @if (! empty($heroSlides[0]['image'] ?? null))
+            <link rel="preload" as="image" href="{{ $heroSlides[0]['image'] }}" fetchpriority="high">
+        @endif
         <script type="application/ld+json">
         {!! json_encode([
             '@context' => 'https://schema.org',
@@ -106,13 +111,22 @@
                          absolutely and cross-fade. Hero banners are 1500x250
                          (6:1) but this works for any matching-ratio set. --}}
                     <div class="relative bg-toco-silver border border-white/10 overflow-hidden">
-                        <template x-for="(slide, i) in slides" :key="slide">
-                            <img :src="slide" alt="" width="1500" height="250" decoding="async"
-                                 class="block w-full h-auto transition-opacity duration-700"
-                                 :class="{
-                                     'opacity-100 relative': i === idx,
-                                     'opacity-0 absolute inset-0 h-full object-cover pointer-events-none': i !== idx
-                                 }">
+                        {{-- Slide 0 is rendered statically with a real src so it is
+                             present in the initial HTML: the browser's preload
+                             scanner can fetch it immediately and Lighthouse can
+                             detect it as the LCP element (the old all-in-x-for
+                             markup left the hero empty until Alpine booted →
+                             NO_LCP). It stays in-flow to set the box height;
+                             Alpine only toggles its opacity for the cross-fade. --}}
+                        <img src="{{ $heroSlides[0]['image'] ?? '' }}" alt="" width="1500" height="250"
+                             fetchpriority="high" decoding="async"
+                             class="block w-full h-auto relative transition-opacity duration-700"
+                             :class="idx === 0 ? 'opacity-100' : 'opacity-0'">
+                        {{-- Remaining slides are absolute cross-fade overlays, hydrated by Alpine. --}}
+                        <template x-for="(slide, i) in slides.slice(1)" :key="slide">
+                            <img :src="slide" alt="" width="1500" height="250" decoding="async" loading="lazy"
+                                 class="block w-full h-full object-cover absolute inset-0 pointer-events-none transition-opacity duration-700"
+                                 :class="(i + 1) === idx ? 'opacity-100' : 'opacity-0'">
                         </template>
                         <button type="button" @click="prev" class="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 grid place-items-center bg-white/85 hover:bg-white text-toco-navy rounded-sm" aria-label="Previous">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m15 6-6 6 6 6"/></svg>
@@ -290,8 +304,10 @@
     {{-- Why Toco --}}
     @include('partials.home-why', ['content' => $content])
 
-    {{-- Stats — "By the numbers, since 2009." --}}
-    @include('partials.home-stats', ['content' => $content])
+    {{-- Stats — "By the numbers, since 2009." (toggleable; on by default) --}}
+    @if (($content['stats']['enabled'] ?? true))
+        @include('partials.home-stats', ['content' => $content])
+    @endif
 
     {{-- Customer testimonials — 6-column compact grid --}}
     @include('partials.home-testimonials', ['content' => $content])

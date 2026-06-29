@@ -45,6 +45,14 @@ class VehicleForm
                             ->label('Reference number')
                             ->maxLength(50)
                             ->helperText('External / auction reference (optional).'),
+                        TextInput::make('chassis_number')
+                            ->label('Chassis number')
+                            ->maxLength(80)
+                            ->helperText('Optional. Full VIN / chassis number, shown as-is on the public detail page.'),
+                        TextInput::make('model_code')
+                            ->label('Model code')
+                            ->maxLength(60)
+                            ->helperText('Optional. Japanese vehicle model code (e.g. DBA-NV150, GH-Z11).'),
                         TextInput::make('slug')->required()->maxLength(220)->columnSpan(2),
                         Select::make('status')
                             ->options([
@@ -118,12 +126,38 @@ class VehicleForm
                                 Toggle::make('is_active')->default(true),
                             ])
                             ->createOptionUsing(fn (array $data) => BodyType::create($data + ['is_active' => true, 'sort_order' => 0])->id),
+                        TextInput::make('grade')
+                            ->label('Grade / trim')
+                            ->maxLength(60)
+                            ->helperText('Optional. Trim level e.g. Z, GT, LX.'),
+                        TextInput::make('location')
+                            ->label('Location')
+                            ->maxLength(80)
+                            ->default('Tochigi, Japan')
+                            ->helperText('Where the vehicle is physically stored. Defaults to "Tochigi, Japan" for new vehicles.'),
                         TextInput::make('year_first_reg')
-                            ->label('Year (first reg.)')
+                            ->label('Registration year')
                             ->required()
                             ->numeric()
                             ->minValue(1980)
                             ->maxValue((int) date('Y') + 1),
+                        TextInput::make('registration_month')
+                            ->label('Registration month')
+                            ->numeric()
+                            ->minValue(1)->maxValue(12)
+                            ->placeholder('1-12')
+                            ->helperText('Optional. 1 (Jan) to 12 (Dec).'),
+                        TextInput::make('manufacture_year')
+                            ->label('Manufacture year')
+                            ->numeric()
+                            ->minValue(1980)
+                            ->maxValue((int) date('Y') + 1)
+                            ->helperText('Optional. Counts for destination-country age-limit rules.'),
+                        TextInput::make('manufacture_month')
+                            ->label('Manufacture month')
+                            ->numeric()
+                            ->minValue(1)->maxValue(12)
+                            ->placeholder('1-12'),
                     ]),
 
                 Tab::make('Spec')

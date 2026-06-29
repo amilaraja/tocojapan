@@ -14,10 +14,8 @@ class CifCalculator
      *
      * Formula:
      *   freight     = m3 × port.rate_per_m3
-     *   insurance   = (price_fob + freight) × insurance_pct
+     *   insurance   = settings.cif.marine_insurance_usd (flat USD, default $35)
      *   cif_total   = price_fob + freight + insurance
-     *
-     * Insurance pct precedence: $override → $port->insurance_pct → settings.cif.insurance_pct.
      *
      * @return array{
      *   price_fob: float,
@@ -27,7 +25,6 @@ class CifCalculator
      *   currency: string,
      *   m3: float,
      *   rate_per_m3: float,
-     *   insurance_pct: float,
      *   port: array{id:int, name:string, country:string},
      * }
      */
@@ -36,7 +33,6 @@ class CifCalculator
         float $m3,
         Port $port,
         ?string $currency = null,
-        ?float $insurancePctOverride = null,
     ): array {
         if ($priceFob < 0) {
             throw new \InvalidArgumentException('price_fob must be >= 0');
@@ -45,14 +41,10 @@ class CifCalculator
             throw new \InvalidArgumentException('m3 must be > 0');
         }
 
-        $insurancePct = $insurancePctOverride
-            ?? ($port->insurance_pct !== null ? (float) $port->insurance_pct : null)
-            ?? $this->settings->insurance_pct;
-
         $ratePerM3 = (float) $port->rate_per_m3;
+        $insurance = round((float) $this->settings->marine_insurance_usd, 2);
 
         $freight = round($m3 * $ratePerM3, 2);
-        $insurance = round(($priceFob + $freight) * $insurancePct, 2);
         $cifTotal = round($priceFob + $freight + $insurance, 2);
 
         return [
@@ -63,7 +55,6 @@ class CifCalculator
             'currency' => $currency ?? $this->settings->default_currency,
             'm3' => round($m3, 4),
             'rate_per_m3' => $ratePerM3,
-            'insurance_pct' => round($insurancePct, 4),
             'port' => [
                 'id' => $port->id,
                 'name' => $port->name,
