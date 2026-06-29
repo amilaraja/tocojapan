@@ -164,37 +164,11 @@
                             init() {
                                 const dc = '{{ $destPort?->country_id }}', dp = '{{ $destPort?->id }}';
                                 if (! dc) {
-                                    // No destination yet — prompt the visitor to set one,
-                                    // once per browser session so it isn't naggy. Skip the
-                                    // auto-prompt when a page opts out (e.g. the import-
-                                    // regulations picker) or the URL deep-links to content
-                                    // via a #hash, so the dialog never covers what they came for.
-                                    const suppress = window.tocoSuppressDestPrompt || !! window.location.hash;
-                                    if (! suppress && ! sessionStorage.getItem('toco_dest_prompted')) {
-                                        // Defer the prompt until the visitor interacts, or a short
-                                        // idle window after the page has loaded. Auto-opening this
-                                        // full-screen dialog on load covered the hero before
-                                        // Largest Contentful Paint could be measured, which made
-                                        // Lighthouse report NO_LCP (and hurt FCP). Gating on
-                                        // interaction keeps the prompt for real users while letting
-                                        // the LCP element paint unobstructed.
-                                        const fire = () => {
-                                            if (sessionStorage.getItem('toco_dest_prompted')) return;
-                                            sessionStorage.setItem('toco_dest_prompted', '1');
-                                            this.open = true;
-                                            teardown();
-                                        };
-                                        const events = ['pointerdown', 'keydown', 'touchstart', 'scroll'];
-                                        let idleTimer;
-                                        const teardown = () => {
-                                            events.forEach(e => window.removeEventListener(e, fire, true));
-                                            clearTimeout(idleTimer);
-                                        };
-                                        events.forEach(e => window.addEventListener(e, fire, { capture: true, passive: true }));
-                                        const arm = () => { idleTimer = setTimeout(fire, 4000); };
-                                        if (document.readyState === 'complete') arm();
-                                        else window.addEventListener('load', arm, { once: true });
-                                    }
+                                    // No destination yet. The dialog is NOT auto-opened: doing so
+                                    // covered the hero (it is a full-screen fixed inset-0 overlay)
+                                    // before Largest Contentful Paint could be measured, which made
+                                    // Lighthouse report NO_LCP. Visitors open it from the
+                                    // "Set destination" button in the header instead.
                                     return;
                                 }
                                 const c = this.countries.find(c => c.id == dc);
