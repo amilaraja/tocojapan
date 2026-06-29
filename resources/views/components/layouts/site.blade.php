@@ -164,11 +164,11 @@
                             init() {
                                 const dc = '{{ $destPort?->country_id }}', dp = '{{ $destPort?->id }}';
                                 if (! dc) {
-                                    // No destination yet. The dialog is NOT auto-opened: doing so
-                                    // covered the hero (it is a full-screen fixed inset-0 overlay)
-                                    // before Largest Contentful Paint could be measured, which made
-                                    // Lighthouse report NO_LCP. Visitors open it from the
-                                    // "Set destination" button in the header instead.
+                                    // No destination yet. The dialog is intentionally NOT
+                                    // auto-opened here: it is a full-screen overlay and opening it
+                                    // on load covered the hero before Largest Contentful Paint
+                                    // could be measured, which made Lighthouse report NO_LCP.
+                                    // Visitors open it from the header destination button instead.
                                     return;
                                 }
                                 const c = this.countries.find(c => c.id == dc);
