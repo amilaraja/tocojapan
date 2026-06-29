@@ -45,7 +45,7 @@
         @endif
         <script type="application/ld+json">
         {!! json_encode([
-            '@context' => 'https://schema.org',
+            '@'.'context' => 'https://schema.org',
             '@type' => 'AutoDealer',
             'name' => config('app.name', 'Toco Japan'),
             'url' => url('/'),
