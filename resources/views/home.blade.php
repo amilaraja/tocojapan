@@ -290,8 +290,10 @@
     {{-- Why Toco --}}
     @include('partials.home-why', ['content' => $content])
 
-    {{-- Stats — "By the numbers, since 2009." --}}
-    @include('partials.home-stats', ['content' => $content])
+    {{-- Stats — "By the numbers, since 2009." (toggleable; on by default) --}}
+    @if (($content['stats']['enabled'] ?? true))
+        @include('partials.home-stats', ['content' => $content])
+    @endif
 
     {{-- Customer testimonials — 6-column compact grid --}}
     @include('partials.home-testimonials', ['content' => $content])

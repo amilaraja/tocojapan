@@ -13,6 +13,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -178,6 +179,10 @@ class HomeTemplate implements PageTemplate
 
                 Tab::make('Stats')
                     ->schema([
+                        Toggle::make('data.stats.enabled')
+                            ->label('Show the “By the numbers” stats block')
+                            ->helperText('Turn off to hide the entire stats section on the homepage.')
+                            ->default(true),
                         Section::make('Lead text')->columns(2)->schema([
                             TextInput::make('data.stats.lead_a')->label('Lead part A')
                                 ->default('By the numbers,'),
