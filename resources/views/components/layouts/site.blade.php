@@ -220,7 +220,7 @@
                                     <p class="text-[12px] text-ink-soft">Pick your country and nearest port — CIF prices across the site update to that port.</p>
                                     <div>
                                         <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Country</label>
-                                        <select x-model="countryId" @change="onCountry()" class="w-full border-line rounded-sm text-sm">
+                                        <select x-model="countryId" @change="onCountry()" aria-label="Country" class="w-full border-line rounded-sm text-sm">
                                             <option value="">— Select country —</option>
                                             <template x-for="c in countries" :key="c.id">
                                                 <option :value="c.id" x-text="c.name"></option>
@@ -229,7 +229,7 @@
                                     </div>
                                     <div>
                                         <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Port</label>
-                                        <select name="port_id" x-model="portId" :disabled="!ports.length" class="w-full border-line rounded-sm text-sm disabled:bg-toco-silver-2">
+                                        <select name="port_id" x-model="portId" :disabled="!ports.length" aria-label="Port" class="w-full border-line rounded-sm text-sm disabled:bg-toco-silver-2">
                                             <option value="">— Select port —</option>
                                             <template x-for="p in ports" :key="p.id">
                                                 <option :value="p.id" x-text="p.name"></option>
