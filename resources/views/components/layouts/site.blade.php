@@ -171,8 +171,29 @@
                                     // via a #hash, so the dialog never covers what they came for.
                                     const suppress = window.tocoSuppressDestPrompt || !! window.location.hash;
                                     if (! suppress && ! sessionStorage.getItem('toco_dest_prompted')) {
-                                        sessionStorage.setItem('toco_dest_prompted', '1');
-                                        this.$nextTick(() => { this.open = true; });
+                                        // Defer the prompt until the visitor interacts, or a short
+                                        // idle window after the page has loaded. Auto-opening this
+                                        // full-screen dialog on load covered the hero before
+                                        // Largest Contentful Paint could be measured, which made
+                                        // Lighthouse report NO_LCP (and hurt FCP). Gating on
+                                        // interaction keeps the prompt for real users while letting
+                                        // the LCP element paint unobstructed.
+                                        const fire = () => {
+                                            if (sessionStorage.getItem('toco_dest_prompted')) return;
+                                            sessionStorage.setItem('toco_dest_prompted', '1');
+                                            this.open = true;
+                                            teardown();
+                                        };
+                                        const events = ['pointerdown', 'keydown', 'touchstart', 'scroll'];
+                                        let idleTimer;
+                                        const teardown = () => {
+                                            events.forEach(e => window.removeEventListener(e, fire, true));
+                                            clearTimeout(idleTimer);
+                                        };
+                                        events.forEach(e => window.addEventListener(e, fire, { capture: true, passive: true }));
+                                        const arm = () => { idleTimer = setTimeout(fire, 4000); };
+                                        if (document.readyState === 'complete') arm();
+                                        else window.addEventListener('load', arm, { once: true });
                                     }
                                     return;
                                 }
