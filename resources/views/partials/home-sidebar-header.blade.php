@@ -12,6 +12,6 @@
         @if ($kicker)
             <p class="font-mono text-[10px] uppercase tracking-widest text-white/70">{{ $kicker }}</p>
         @endif
-        <h3 class="font-bold text-white text-[15px] leading-tight">{{ $title }}</h3>
+        <h2 class="font-bold text-white text-[15px] leading-tight">{{ $title }}</h2>
     </div>
 </div>
