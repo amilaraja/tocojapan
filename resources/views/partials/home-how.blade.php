@@ -138,7 +138,7 @@
 
         <div class="mt-6 text-right">
             <a href="{{ \Illuminate\Support\Facades\Route::has('cms.page') ? route('cms.page', 'how-to-buy-cars-and-other-vehicles') : '#' }}"
-               class="text-sm font-bold text-toco-navy hover:text-toco-red inline-flex items-center gap-1">
+               class="text-sm font-bold text-toco-navy hover:text-toco-red inline-flex items-center gap-1 py-2 -my-2">
                 How to buy Step by Step <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 6 6 6-6 6"/></svg>
             </a>
         </div>

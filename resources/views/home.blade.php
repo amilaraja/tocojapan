@@ -128,15 +128,15 @@
                                  class="block w-full h-full object-cover absolute inset-0 pointer-events-none transition-opacity duration-700"
                                  :class="(i + 1) === idx ? 'opacity-100' : 'opacity-0'">
                         </template>
-                        <button type="button" @click="prev" class="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 grid place-items-center bg-white/85 hover:bg-white text-toco-navy rounded-sm" aria-label="Previous">
+                        <button type="button" @click="prev" class="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 hidden md:grid place-items-center bg-white/85 hover:bg-white text-toco-navy rounded-sm" aria-label="Previous">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m15 6-6 6 6 6"/></svg>
                         </button>
-                        <button type="button" @click="next" class="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 grid place-items-center bg-white/85 hover:bg-white text-toco-navy rounded-sm" aria-label="Next">
+                        <button type="button" @click="next" class="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 hidden md:grid place-items-center bg-white/85 hover:bg-white text-toco-navy rounded-sm" aria-label="Next">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 6 6 6-6 6"/></svg>
                         </button>
                         <div class="absolute bottom-3 right-3 flex gap-1.5">
                             <template x-for="(slide, i) in slides" :key="'dot-'+slide">
-                                <button type="button" @click="idx = i" class="w-6 h-1 rounded-sm transition" :class="i === idx ? 'bg-toco-red' : 'bg-white/50 hover:bg-white/80'" aria-label="Go to slide"></button>
+                                <button type="button" @click="idx = i" class="grid place-items-center w-6 h-6 -my-2.5" aria-label="Go to slide"><span class="block w-6 h-1 rounded-sm transition" :class="i === idx ? 'bg-toco-red' : 'bg-white/50 hover:bg-white/80'"></span></button>
                             </template>
                         </div>
                     </div>

@@ -9,7 +9,7 @@
 <section id="testimonials" class="bg-surface">
     <div class="max-w-[1600px] mx-auto px-6 2xl:px-8 py-16">
         <div class="max-w-2xl mb-8">
-            <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-toco-red font-bold">{{ $txKicker }}</p>
+            <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-toco-red-deep font-bold">{{ $txKicker }}</p>
             <h2 class="text-2xl md:text-3xl font-extrabold text-toco-navy mt-1 leading-tight">{{ $txHeadline }}</h2>
             <p class="text-sm text-ink-soft mt-3">{{ $txBody }}</p>
         </div>
@@ -52,7 +52,7 @@
         </div>
 
         <div class="mt-8 text-center">
-            <a href="{{ route('cms.page', 'customer-reviews') }}" class="inline-flex items-center gap-1.5 text-sm font-bold text-toco-red hover:text-toco-red-deep">
+            <a href="{{ route('cms.page', 'customer-reviews') }}" class="inline-flex items-center gap-1.5 text-sm font-bold text-toco-red hover:text-toco-red-deep py-2 -my-2">
                 View all testimonials
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 6 6 6-6 6"/></svg>
             </a>

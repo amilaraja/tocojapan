@@ -488,7 +488,7 @@
 
             {{-- About Us --}}
             <div>
-                <h4 class="font-bold text-white text-[15px] mb-3">About Us</h4>
+                <h3 class="font-bold text-white text-[15px] mb-3">About Us</h3>
                 <ul class="space-y-2 text-white/75">
                     <li><a href="{{ route('cms.page', 'about-us') }}" class="hover:text-white">Company Profile</a></li>
                     <li><a href="{{ route('cms.page', 'bank-details') }}" class="hover:text-white">Bank Details</a></li>
@@ -499,7 +499,7 @@
 
             {{-- Other --}}
             <div>
-                <h4 class="font-bold text-white text-[15px] mb-3">Other</h4>
+                <h3 class="font-bold text-white text-[15px] mb-3">Other</h3>
                 <ul class="space-y-2 text-white/75">
                     <li><a href="{{ route('cms.page', 'how-to-buy-cars-and-other-vehicles') }}" class="hover:text-white">How to Buy</a></li>
                     <li><a href="{{ route('cms.page', 'import-regulations') }}" class="hover:text-white">Import Regulation</a></li>
@@ -510,7 +510,7 @@
 
             {{-- Help and Support --}}
             <div>
-                <h4 class="font-bold text-white text-[15px] mb-3">Help and Support</h4>
+                <h3 class="font-bold text-white text-[15px] mb-3">Help and Support</h3>
                 <ul class="space-y-2 text-white/75">
                     <li><a href="{{ route('cms.page', 'faqs') }}" class="hover:text-white">FAQs</a></li>
                     <li><a href="{{ route('cms.page', 'contact') }}" class="hover:text-white">Inquiry</a></li>

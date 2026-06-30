@@ -9,7 +9,7 @@
 <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-2 mb-4">
     <div>
         @if ($kicker)
-            <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-toco-red font-bold">{{ $kicker }}</p>
+            <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-toco-red-deep font-bold">{{ $kicker }}</p>
         @endif
         <h2 class="flex items-center gap-2 text-2xl md:text-[28px] font-extrabold text-toco-navy mt-1 leading-tight">
             @if ($icon === 'fire')
