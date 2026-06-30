@@ -72,7 +72,13 @@
            cost on mobile (a major Total Blocking Time contributor). The `auto`
            intrinsic size lets the browser store each section's real height
            after first paint, so there is no layout shift on scroll-back. */
-        .cv-section{content-visibility:auto;contain-intrinsic-size:auto 700px;}</style>
+        .cv-section{content-visibility:auto;contain-intrinsic-size:auto 700px;}
+        /* Google Translate widget overrides — a custom select drives translation and the
+           default widget is hidden. Kept in the head: a style element in body is invalid HTML. */
+        #google_translate_element, .goog-te-banner-frame.skiptranslate, .goog-te-gadget-icon, .goog-logo-link, .goog-te-balloon-frame, #goog-gt-tt, .goog-tooltip { display: none !important; }
+        body { top: 0 !important; position: static !important; }
+        .goog-te-spinner-pos { display: none !important; }
+        font[style*="background-color: rgb(255, 255, 102)"] { background-color: transparent !important; box-shadow: none !important; }</style>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('head')
 </head>
@@ -545,14 +551,8 @@
         </div>
     </footer>
 
-    {{-- Google Translate — driven by a custom select; the default widget is hidden. --}}
-    <style>
-        #google_translate_element, .goog-te-banner-frame.skiptranslate, .goog-te-gadget-icon, .goog-logo-link, .goog-te-balloon-frame, #goog-gt-tt, .goog-tooltip { display: none !important; }
-        body { top: 0 !important; position: static !important; }
-        .goog-te-spinner-pos { display: none !important; }
-        /* Kill Google's added top padding on body and any injected #goog-gt-tt tooltip on hover */
-        font[style*="background-color: rgb(255, 255, 102)"] { background-color: transparent !important; box-shadow: none !important; }
-    </style>
+    {{-- Google Translate — driven by a custom select; the default widget is hidden.
+         (Widget CSS overrides now live in the <head> — a <style> in <body> is invalid HTML.) --}}
     <script>
         window.googleTranslateElementInit = function () {
             new google.translate.TranslateElement({
