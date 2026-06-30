@@ -45,7 +45,7 @@
         @endif
         <script type="application/ld+json">
         {!! json_encode([
-            '@context' => 'https://schema.org',
+            '@'.'context' => 'https://schema.org',
             '@type' => 'AutoDealer',
             'name' => config('app.name', 'Toco Japan'),
             'url' => url('/'),
@@ -111,18 +111,18 @@
                          absolutely and cross-fade. Hero banners are 1500x250
                          (6:1) but this works for any matching-ratio set. --}}
                     <div class="relative bg-toco-silver border border-white/10 overflow-hidden">
-                        {{-- Slide 0 is rendered statically with a real src so it is
-                             present in the initial HTML: the browser's preload
-                             scanner can fetch it immediately and Lighthouse can
-                             detect it as the LCP element (the old all-in-x-for
-                             markup left the hero empty until Alpine booted →
-                             NO_LCP). It stays in-flow to set the box height;
-                             Alpine only toggles its opacity for the cross-fade. --}}
+                        {{-- Slide 0 is a static, ALWAYS-VISIBLE base image. It is the LCP
+                             element (preloaded, fetchpriority=high) and must never be
+                             hidden: the auto-rotate advances idx away from 0, and if the
+                             hero went opacity-0 Lighthouse dropped the LCP candidate with
+                             no replacement above the fold → NO_LCP. Keeping it visible
+                             underneath also sets the box height; the cross-fade overlays
+                             sit on top for slides 1..n. --}}
                         <img src="{{ $heroSlides[0]['image'] ?? '' }}" alt="" width="1500" height="250"
                              fetchpriority="high" decoding="async"
-                             class="block w-full h-auto relative transition-opacity duration-700"
-                             :class="idx === 0 ? 'opacity-100' : 'opacity-0'">
-                        {{-- Remaining slides are absolute cross-fade overlays, hydrated by Alpine. --}}
+                             class="block w-full h-auto relative">
+                        {{-- Slides 1..n are absolute cross-fade overlays. When the carousel
+                             returns to slide 0 they all fade out and the base shows through. --}}
                         <template x-for="(slide, i) in slides.slice(1)" :key="slide">
                             <img :src="slide" alt="" width="1500" height="250" decoding="async" loading="lazy"
                                  class="block w-full h-full object-cover absolute inset-0 pointer-events-none transition-opacity duration-700"
@@ -301,23 +301,21 @@
     {{-- Featured grid with browse-by-make and browse-by-body-type sidebars --}}
     @include('partials.home-featured', ['featured' => $featured, 'makesWithCounts' => $makesWithCounts, 'bodyTypesWithCounts' => $bodyTypesWithCounts, 'totalPublished' => $totalPublished])
 
-    {{-- Why Toco --}}
-    @include('partials.home-why', ['content' => $content])
+    {{-- Below-the-fold sections are wrapped in .cv-section (content-visibility:
+         auto) so the browser skips their layout/paint until scrolled near. --}}
 
-    {{-- Stats — "By the numbers, since 2009." (toggleable; on by default) --}}
-    @if (($content['stats']['enabled'] ?? true))
-        @include('partials.home-stats', ['content' => $content])
-    @endif
+    {{-- Why Toco --}}
+    <div class="cv-section">@include('partials.home-why', ['content' => $content])</div>
 
     {{-- Customer testimonials — 6-column compact grid --}}
-    @include('partials.home-testimonials', ['content' => $content])
+    <div class="cv-section">@include('partials.home-testimonials', ['content' => $content])</div>
 
     {{-- How it works --}}
-    @include('partials.home-how', ['content' => $content])
+    <div class="cv-section">@include('partials.home-how', ['content' => $content])</div>
 
     {{-- Buyer FAQ (with FAQPage JSON-LD for rich results) --}}
-    @include('partials.home-faq', ['content' => $content])
+    <div class="cv-section">@include('partials.home-faq', ['content' => $content])</div>
 
     {{-- Inquiry / Subscribe CTA strip --}}
-    @include('partials.home-cta-strip')
+    <div class="cv-section">@include('partials.home-cta-strip')</div>
 </x-layouts.site>

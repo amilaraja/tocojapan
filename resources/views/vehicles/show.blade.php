@@ -153,7 +153,7 @@
     @push('head')
         @php
             $vehicleSchema = [
-                '@context' => 'https://schema.org',
+                '@'.'context' => 'https://schema.org',
                 '@type' => ['Vehicle', 'Product'],
                 'name' => $vehTitleNice,
                 'sku' => $vehicle->ref_no,
