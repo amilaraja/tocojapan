@@ -8,13 +8,41 @@
         $gaId = app(\App\Settings\GeneralSettings::class)->google_analytics_id ?? null;
     @endphp
     @if ($gaId)
-        {{-- Google Analytics (GA4) — measurement ID set in Site settings --}}
-        <script async src="https://www.googletagmanager.com/gtag/js?id={{ $gaId }}"></script>
+        {{-- Google Analytics (GA4) — measurement ID set in Site settings.
+             The 161 KiB gtag.js library is the single biggest contributor to
+             mobile Total Blocking Time, so it is NOT loaded eagerly. We queue
+             events into dataLayer immediately (cheap, no network) and only
+             fetch the library on the first user interaction or when the
+             browser goes idle — whichever comes first. The session is still
+             recorded; queued hits flush once the library arrives. --}}
         <script>
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
             gtag('config', '{{ $gaId }}');
+            (function () {
+                var loaded = false;
+                var events = ['scroll', 'touchstart', 'mousedown', 'keydown', 'pointermove'];
+                function removeListeners() {
+                    events.forEach(function (e) { window.removeEventListener(e, loadGtag); });
+                }
+                function loadGtag() {
+                    if (loaded) return;
+                    loaded = true;
+                    removeListeners();
+                    var s = document.createElement('script');
+                    s.async = true;
+                    s.src = 'https://www.googletagmanager.com/gtag/js?id={{ $gaId }}';
+                    document.head.appendChild(s);
+                }
+                events.forEach(function (e) {
+                    window.addEventListener(e, loadGtag, { passive: true });
+                });
+                // Fallback for visitors who never interact. 10s is deliberately
+                // well past page-load so the heavy library never competes with
+                // first paint / LCP, while still recording idle real sessions.
+                setTimeout(loadGtag, 10000);
+            })();
         </script>
     @endif
     @php
@@ -38,7 +66,13 @@
     <meta name="twitter:image" content="{{ $resolvedOgImage }}">
     {{-- Hide Alpine elements until Alpine initialises — prevents modals/menus
          flashing on every page load. Must be inline so it applies pre-render. --}}
-    <style>[x-cloak]{display:none !important;}</style>
+    <style>[x-cloak]{display:none !important;}
+        /* Defer rendering + layout of below-the-fold sections until they are
+           scrolled near the viewport. This cuts the initial Style & Layout
+           cost on mobile (a major Total Blocking Time contributor). The `auto`
+           intrinsic size lets the browser store each section's real height
+           after first paint, so there is no layout shift on scroll-back. */
+        .cv-section{content-visibility:auto;contain-intrinsic-size:auto 700px;}</style>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('head')
 </head>

@@ -12,6 +12,7 @@ use App\Models\Testimonial;
 use App\Models\Vehicle;
 use App\Models\VehicleModel;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Cache;
 
 class VehicleController extends Controller
 {
@@ -76,7 +77,16 @@ class VehicleController extends Controller
                 ->with('media')
                 ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
                 ->orderBy('name')->get(),
-            'totalPublished' => Vehicle::query()->published()->count(),
+            // Cheap, serialization-safe cache: a single integer. The published
+            // COUNT(*) scans the vehicles table on every homepage hit; the
+            // number barely moves, so cache it for 10 minutes. (We deliberately
+            // do NOT cache the model collections — their Spatie media graph does
+            // not round-trip through the database cache store reliably.)
+            'totalPublished' => Cache::remember(
+                'home.total_published',
+                now()->addMinutes(10),
+                fn () => Vehicle::query()->published()->count(),
+            ),
             'testimonials' => $testimonials,
         ];
 

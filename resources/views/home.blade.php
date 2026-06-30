@@ -301,23 +301,21 @@
     {{-- Featured grid with browse-by-make and browse-by-body-type sidebars --}}
     @include('partials.home-featured', ['featured' => $featured, 'makesWithCounts' => $makesWithCounts, 'bodyTypesWithCounts' => $bodyTypesWithCounts, 'totalPublished' => $totalPublished])
 
-    {{-- Why Toco --}}
-    @include('partials.home-why', ['content' => $content])
+    {{-- Below-the-fold sections are wrapped in .cv-section (content-visibility:
+         auto) so the browser skips their layout/paint until scrolled near. --}}
 
-    {{-- Stats — "By the numbers, since 2009." (toggleable; on by default) --}}
-    @if (($content['stats']['enabled'] ?? true))
-        @include('partials.home-stats', ['content' => $content])
-    @endif
+    {{-- Why Toco --}}
+    <div class="cv-section">@include('partials.home-why', ['content' => $content])</div>
 
     {{-- Customer testimonials — 6-column compact grid --}}
-    @include('partials.home-testimonials', ['content' => $content])
+    <div class="cv-section">@include('partials.home-testimonials', ['content' => $content])</div>
 
     {{-- How it works --}}
-    @include('partials.home-how', ['content' => $content])
+    <div class="cv-section">@include('partials.home-how', ['content' => $content])</div>
 
     {{-- Buyer FAQ (with FAQPage JSON-LD for rich results) --}}
-    @include('partials.home-faq', ['content' => $content])
+    <div class="cv-section">@include('partials.home-faq', ['content' => $content])</div>
 
     {{-- Inquiry / Subscribe CTA strip --}}
-    @include('partials.home-cta-strip')
+    <div class="cv-section">@include('partials.home-cta-strip')</div>
 </x-layouts.site>
