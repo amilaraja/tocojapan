@@ -11,6 +11,7 @@ use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\PayPalWebhookController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\SitemapController;
@@ -40,6 +41,10 @@ Route::post('/subscribe', [SubscriberController::class, 'store'])
 
 Route::post('/currency/{code}', [CurrencyController::class, 'set'])->name('currency.set');
 
+// Server-to-server from PayPal: no session, no CSRF (see bootstrap/app.php),
+// authenticated by webhook signature inside the controller.
+Route::post('/webhooks/paypal', [PayPalWebhookController::class, 'handle'])->name('webhooks.paypal');
+
 Route::post('/destination', [DestinationController::class, 'set'])->name('destination.set');
 Route::delete('/destination', [DestinationController::class, 'clear'])->name('destination.clear');
 
@@ -62,6 +67,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::post('/orders/{order}/messages', [OrderController::class, 'postMessage'])->name('orders.messages.store');
 
+    // PayPal now runs the same collect-details → confirm step as bank
+    // transfer; the handoff to PayPal happens only after 'place'.
+    Route::get('/checkout/paypal/{slug}', [CheckoutController::class, 'show'])->name('checkout.paypal.show');
+    Route::post('/checkout/paypal/{slug}', [CheckoutController::class, 'place'])->name('checkout.paypal.place');
+
+    // Legacy: cached vehicle pages may still POST here — redirects to the form.
     Route::post('/checkout/{slug}', [CheckoutController::class, 'start'])->name('checkout.start');
     Route::get('/checkout/{order}/return', [CheckoutController::class, 'return'])->name('checkout.return');
     Route::get('/checkout/{order}/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');

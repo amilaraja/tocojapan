@@ -50,7 +50,7 @@
     @push('head')
         <script type="application/ld+json">
         {!! json_encode([
-            '@context' => 'https://schema.org',
+            '@'.'context' => 'https://schema.org',
             '@type' => 'FAQPage',
             'mainEntity' => $faqItems->map(fn ($i) => [
                 '@type' => 'Question',
@@ -64,7 +64,7 @@
     <section id="faq" class="bg-surface border-t border-line">
         <div class="max-w-[1100px] mx-auto px-6 py-16">
             <div class="max-w-2xl mb-8">
-                <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-toco-red font-bold">{{ $faqKicker }}</p>
+                <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-toco-red-deep font-bold">{{ $faqKicker }}</p>
                 <h2 class="text-2xl md:text-3xl font-extrabold text-toco-navy mt-1 leading-tight">{{ $faqHeadline }}</h2>
                 <p class="text-sm text-ink-soft mt-3">{{ $faqBody }}</p>
             </div>

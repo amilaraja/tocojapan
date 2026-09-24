@@ -3,7 +3,7 @@
         <div class="text-xs uppercase tracking-widest mb-2">
             <a href="{{ route('vehicles.show', $vehicle->slug) }}" class="text-ink-soft hover:text-toco-red">← Back to vehicle</a>
         </div>
-        <h1 class="text-2xl font-extrabold text-toco-navy mb-6">Bank-transfer checkout</h1>
+        <h1 class="text-2xl font-extrabold text-toco-navy mb-6">{{ $heading }}</h1>
 
         @php
             $countryPayload = $countries->map(fn ($c) => [
@@ -20,7 +20,7 @@
             class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6"
             x-data="bankCheckout(@js($countryPayload), {{ (float) ($vehicle->effectivePriceFob() ?? $vehicle->price_fob) }}, {{ (float) ($vehicle->m3 ?: 0) }}, {{ (float) (app(\App\Settings\CifSettings::class)->marine_insurance_usd ?: 0) }}, {{ $destPort?->country_id ? (int) $destPort->country_id : 0 }}, {{ $destPort?->id ? (int) $destPort->id : 0 }})"
         >
-            <form method="POST" action="{{ route('checkout.bank.store', $vehicle->slug) }}" class="space-y-6">
+            <form method="POST" action="{{ $action }}" class="space-y-6">
                 @csrf
 
                 {{-- Destination --}}
@@ -93,7 +93,7 @@
                 <div class="bg-white border border-line rounded-sm p-5 space-y-3">
                     <label class="flex items-start gap-2 text-sm cursor-pointer">
                         <input type="checkbox" name="confirm" value="1" required class="mt-0.5 rounded">
-                        <span>I confirm the destination port, address and amount above and want to place this order. After confirmation, bank transfer instructions will be shown.</span>
+                        <span>{{ $confirmText }}</span>
                     </label>
                     @error('confirm')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
                     <button
@@ -101,7 +101,7 @@
                         :disabled="!portId"
                         class="w-full bg-toco-red hover:bg-toco-red-deep disabled:bg-toco-silver-2 disabled:cursor-not-allowed text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm"
                     >
-                        Place order — <span x-text="formatUsd(cif.total)"></span>
+                        {{ $submitLabel }} — <span x-text="formatUsd(cif.total)"></span>
                     </button>
                 </div>
             </form>

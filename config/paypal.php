@@ -11,6 +11,9 @@ return [
         'client_id' => env('PAYPAL_SANDBOX_CLIENT_ID', ''),
         'client_secret' => env('PAYPAL_SANDBOX_CLIENT_SECRET', ''),
         'app_id' => 'APP-80W284485P519543T', // Sandbox app_id is always this fixed value.
+        // Webhook ID from developer.paypal.com -> My Apps & Credentials -> your
+        // app -> Webhooks. Required to verify inbound webhook signatures.
+        'webhook_id' => env('PAYPAL_SANDBOX_WEBHOOK_ID', ''),
     ],
     'live' => [
         'client_id' => env('PAYPAL_LIVE_CLIENT_ID', ''),
@@ -18,6 +21,7 @@ return [
         // Live app_id: log in to developer.paypal.com → My Apps & Credentials →
         // select your app → the App ID shown at the top (starts with "APP-").
         'app_id' => env('PAYPAL_LIVE_APP_ID', ''),
+        'webhook_id' => env('PAYPAL_LIVE_WEBHOOK_ID', ''),
     ],
 
     'payment_action' => env('PAYPAL_PAYMENT_ACTION', 'Sale'), // Can only be 'Sale', 'Authorization' or 'Order'

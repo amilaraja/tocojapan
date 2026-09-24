@@ -7,7 +7,7 @@
     @push('head')
         <script type="application/ld+json">
         {!! json_encode([
-            '@context' => 'https://schema.org',
+            '@'.'context' => 'https://schema.org',
             '@type' => 'NewsArticle',
             'headline' => $post->title,
             'datePublished' => optional($post->published_at)->toIso8601String(),

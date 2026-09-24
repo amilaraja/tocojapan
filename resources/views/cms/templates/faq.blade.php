@@ -12,7 +12,7 @@
         @push('head')
             <script type="application/ld+json">
             {!! json_encode([
-                '@context' => 'https://schema.org',
+                '@'.'context' => 'https://schema.org',
                 '@type' => 'FAQPage',
                 'mainEntity' => $faqItems,
             ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}

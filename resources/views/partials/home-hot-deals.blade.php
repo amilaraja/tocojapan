@@ -20,14 +20,14 @@
         </button>
 
         <div x-ref="track" @scroll.passive="updateBounds()"
-             class="flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2 -mx-2 px-2"
+             class="flex gap-3 overflow-x-auto snap-x pb-2 -mx-2 px-2"
              style="scrollbar-width: thin;">
             @foreach ($hotDeals as $vehicle)
                 <div class="snap-start shrink-0 w-[88%] sm:w-[48%] md:w-[32%] xl:w-[24%]">
                     <div class="relative">
                         {{-- diagonal HOT ribbon (top-left) --}}
                         <div class="absolute top-0 left-0 z-10 pointer-events-none">
-                            <div class="bg-orange-500 text-white font-extrabold uppercase tracking-widest text-[10px] px-3 py-1 shadow-md"
+                            <div class="bg-orange-700 text-white font-extrabold uppercase tracking-widest text-[10px] px-3 py-1 shadow-md"
                                  style="clip-path: polygon(0 0, 100% 0, 90% 100%, 0 100%);">
                                 Hot Deal
                             </div>

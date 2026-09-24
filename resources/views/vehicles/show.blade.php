@@ -153,7 +153,7 @@
     @push('head')
         @php
             $vehicleSchema = [
-                '@context' => 'https://schema.org',
+                '@'.'context' => 'https://schema.org',
                 '@type' => ['Vehicle', 'Product'],
                 'name' => $vehTitleNice,
                 'sku' => $vehicle->ref_no,
@@ -704,8 +704,7 @@
                         @else
                         @auth
                             @if ($buyable && $paypalReady)
-                                <form method="POST" action="{{ route('checkout.start', $vehicle->slug) }}">
-                                    @csrf
+                                <form method="GET" action="{{ route('checkout.paypal.show', $vehicle->slug) }}">
                                     <button type="submit" class="w-full text-center bg-toco-navy hover:bg-toco-navy-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm inline-flex items-center justify-center gap-2">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3zm0 2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H7z"/></svg>
                                         Buy with PayPal — @money($vehicle->effectivePriceFob() ?? $vehicle->price_fob)
