@@ -11,7 +11,15 @@ use App\Modules\Mailer\Console\Import;
 use App\Modules\Mailer\Console\RenderSample;
 use App\Modules\Mailer\Domain\Importer\GmailReader;
 use App\Modules\Mailer\Domain\Importer\MailboxReader;
+use App\Modules\Mailer\Filament\Clusters\Importer;
+use App\Modules\Mailer\Filament\Pages\Importer\BackfillPage;
+use App\Modules\Mailer\Filament\Pages\Importer\ImporterStatus;
+use App\Modules\Mailer\Filament\Pages\Importer\RuleTester;
 use App\Modules\Mailer\Filament\Pages\MailerSettingsPage;
+use App\Modules\Mailer\Filament\Resources\ApprovedSenders\ApprovedSenderResource;
+use App\Modules\Mailer\Filament\Resources\ContactImports\ContactImportResource;
+use App\Modules\Mailer\Filament\Resources\IgnoreRules\IgnoreRuleResource;
+use App\Modules\Mailer\Filament\Resources\ImportRuns\ImportRunResource;
 use App\Modules\Mailer\Filament\Pages\Overview;
 use App\Modules\Mailer\Filament\Widgets\ImportStats;
 use App\Modules\Mailer\Support\MailerSettings;
@@ -73,6 +81,10 @@ class MailerServiceProvider extends ServiceProvider
     {
         return [
             Overview::class,
+            Importer::class,
+            ImporterStatus::class,
+            BackfillPage::class,
+            RuleTester::class,
             MailerSettingsPage::class,
         ];
     }
@@ -80,6 +92,11 @@ class MailerServiceProvider extends ServiceProvider
     /** @return list<class-string> */
     public static function filamentResources(): array
     {
-        return [];
+        return [
+            ApprovedSenderResource::class,
+            IgnoreRuleResource::class,
+            ImportRunResource::class,
+            ContactImportResource::class,
+        ];
     }
 }

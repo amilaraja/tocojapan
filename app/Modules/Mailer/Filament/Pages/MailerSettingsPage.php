@@ -2,10 +2,13 @@
 
 namespace App\Modules\Mailer\Filament\Pages;
 
+use App\Modules\Mailer\Domain\Brevo\BrevoClient;
+use App\Modules\Mailer\Domain\Brevo\BrevoDirectory;
 use App\Modules\Mailer\Support\MailerAccess;
 use App\Modules\Mailer\Support\MailerSettings;
 use BackedEnum;
 use Closure;
+use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TagsInput;
@@ -20,6 +23,7 @@ use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Throwable;
 
 /**
  * S14 Mailer Settings. Mailer Admins only (TOC-GEN-002: Marketers get 403).
@@ -184,6 +188,33 @@ class MailerSettingsPage extends Page implements HasForms
                     ]),
             ])
             ->statePath('data');
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('testBrevo')
+                ->label('Test Brevo connection')
+                ->icon(Heroicon::OutlinedSignal)
+                ->color('gray')
+                ->action(function () {
+                    abort_unless(static::canAccess(), 403);
+                    try {
+                        $account = app(BrevoClient::class)->withBudget(20)->get('account')->throw()->json();
+                        app(BrevoDirectory::class)->forget();
+                        Notification::make()
+                            ->title('Connection OK')
+                            ->body('Connected to the Brevo account of '.($account['companyName'] ?? $account['email'] ?? 'TOCO').'.')
+                            ->success()->send();
+                    } catch (Throwable $e) {
+                        $unauthorised = $e instanceof \Illuminate\Http\Client\RequestException && $e->response->status() === 401;
+                        Notification::make()
+                            ->title('Connection failed')
+                            ->body($unauthorised ? 'Brevo did not accept this key. Paste the key again.' : $e->getMessage())
+                            ->danger()->persistent()->send();
+                    }
+                }),
+        ];
     }
 
     public function save(): void
