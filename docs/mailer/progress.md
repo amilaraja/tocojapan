@@ -56,3 +56,66 @@ Done:
 Results with real stock: 2 vehicles 13.2 KB, 5 vehicles 21.6 KB, 6 vehicles 24.1 KB, 12 vehicles 39.4 KB (limit 90 KB).
 - Checked in headless Chrome at 600 px and at 375 px (in an iframe): 2 columns on desktop, 1 card per row on mobile, 5 vehicles lay out 2/2/1.
 - Test send: the 6-vehicle sample went to amilaraja@gmail.com through the site SMTP (24 Sep). It wasn't sent through Brevo, so "View in browser" and "Unsubscribe" show the literal Brevo tags.
+
+## Phases 2 and 3: inbox importer and Brevo contact sync (24 Sep 2026)
+
+**Covers:** TOC-IMP-001 to 009, TOC-EXT-001 to 009, TOC-BRV-001 to 007, TOC-LOG-001 to 004, TOC-GEN-006.
+
+Built and tested against a fake mailbox and a faked Brevo (no live calls):
+- `GmailReader`: service account with domain-wide delegation, `gmail.readonly` only (test asserts the scope), 20 s timeout.
+  - Uses history ids, with a search fallback when history has expired.
+  - Reads only the From header of messages that turn out not to be from approved senders; those leave no record.
+- Extraction:
+  - Candidates from plain text, HTML (including `mailto:`) and Reply-To (optional); normalised.
+  - Excludes TOCO domains, the sender's own address, no-reply-type addresses and the ignore list.
+  - MX-or-A check, cached 24 h.
+  - Per-sender field rules (name split into first and last) and a per-message limit.
+- `BrevoClient` + `BrevoGuard`:
+  - Refuses send, test-send, status change, transactional/SMS/WhatsApp, any `scheduledAt`, and any blacklist change. It throws before any HTTP call, and this is tested.
+  - 429 and 5xx are retried 5 times with backoff and Retry-After.
+- `ContactSync`:
+  - Skips "unsubscribed" and "bounced" contacts.
+  - SOURCE and TOCO_LAST_ENQUIRY_AT are set every time; TOCO_IMPORTED_AT and names only when empty.
+  - Double opt-in for Confirm-first senders.
+- `ImportRunner`: atomic lock ("skipped: already running"); each message is one transaction; the checkpoint moves only on success; one alert email to Mailer Admins after 3 failures; resumable backfill in batches of 100.
+- `mailer:import` runs every minute but only acts after the configured interval, and stays silent until Gmail is set up. Daily `mailer:cleanup` deletes logs older than 12 months.
+- Admin (Mailer Admins only): Importer cluster with Status + Run now, Approved senders, Ignore list, Run log, Contact search (with Retry), Backfill, Rule tester. Mailer settings has **Test Brevo connection**.
+- Fixtures: `tests/Mailer/Fixtures/eml/tocojapan-inquiry/` (the site's own inquiry notification format) and `example-portal/` (synthetic).
+
+**Still needed for live acceptance:** A1/A2 Workspace delegation and the key file, A4 Brevo key and lists, A5 the approved sender list with 2 real `.eml` samples per sender (each gets fixture tests, TOC-NFR-004), A6 consent mode per sender.
+
+## Phase 6: Campaign Builder and push (24 Sep 2026)
+
+**Covers:** TOC-BAN-001 to 003, TOC-CB-001 to 008, TOC-CMP-001 to 004, 006, 007.
+
+- Banner library: 1200x440 (±2%), JPG/PNG up to 1 MB. Saved as an optimised JPEG ≤ 150 KB. Archive and restore; archived banners stay on old campaigns.
+- Campaign list: search, status filter, newest first, opens and clicks. Duplicate from the list.
+- Builder:
+  - Details with Brevo sender and list pickers (cached, Refresh).
+  - Banner picker.
+  - "Add vehicles" search: ref or keyword, make, body type, price, badge; 20 results.
+  - 2–12 vehicles, reordered by drag or ↑/↓ buttons.
+  - Notices: price changed (the snapshot refreshes) or sold/missing (blocks push).
+- Preview modal at 600/375 px. `CampaignPusher`:
+  - Draft only; the same render() output as the preview (tested byte-identical).
+  - PUT while Brevo still shows a draft; refuses with "Duplicate" once it has been sent.
+  - 25 s limit when Brevo is down.
+- Changed since push is detected from a hash of the rendered HTML. Hourly `mailer:sync-stats` fetches Sent status, recipients, opens, clicks and unsubscribes.
+- The Overview now has a "New campaign" button, and its latest campaigns link to the builder.
+
+**To check with the first real draft:** the "Open in Brevo" link pattern (`MAILER_BREVO_CAMPAIGN_URL`, default `https://app.brevo.com/marketing-campaign/edit/%d`).
+
+## Phase 7: release and deliverability (24 Sep 2026)
+
+- `docs/mailer/deploy.md`: release steps for this server (the working copy is the live docroot), secrets, Google Workspace steps, Brevo set-up commands, and the DNS table.
+- DNS checked: Brevo code, DKIM (brevo1/brevo2) and DMARC `p=none` with reporting are **already in place**. **SPF does not include Brevo.** TOCO needs to change it to `v=spf1 include:_spf.google.com include:spf.brevo.com -all` (A7).
+- `tests/Mailer/Feature/RoutesTest.php`: all 18 Mailer routes are under `/admin/mailer` with admin auth (TOC-NFR-002). Email images are served by the existing `/storage` link (HTTP 200 checked).
+
+## Phase 8: handover documents (24 Sep 2026)
+
+- `README.md`: configuration, credential rotation, adding a sender, adding a banner, and a module map.
+- `staff-guide.md`: one-page plain-English guide for Marketers.
+- `qa/uat.md`: UAT-1 to UAT-7 each mapped to a passing automated test, with empty "live result" columns, plus the TOC-TPL-007 screenshot matrix.
+- Test suite: **157 Mailer tests** (156 pass, 1 skipped on SQLite). The full app suite shows only the 6 failures that were there before the Mailer (auth/Turnstile and sitemap).
+
+**Blocked on TOCO:** backfill run (OPEN-09 start date, and Gmail access), live UAT walkthrough, TPL-007 screenshots from Brevo test sends, SPF change.

@@ -31,6 +31,8 @@ Access: MailerAccess::canUse() (mailer.admin or mailer.marketer) and MailerAcces
 - Store UTC, display Asia/Tokyo (config mailer.display_timezone).
 - Timeouts: Gmail and Brevo 20s. (TOC-NFR-005)
 - Jobs run on the `mailer` queue; the worker is started every minute by the scheduler (routes/console.php).
+- Filament injects closure arguments by name: use $query (not $q) in modifyQueryUsing/filter closures.
+- Tests: fake Gmail with Tests\Mailer\Support\FakeMailbox, DNS and Brevo via Tests\Mailer\Support\MailerTest.
 - Filament builds navigation once per app instance: in tests, use one acting user per test when asserting menus,
   and call Filament::setCurrentPanel('admin') before Livewire::test() on a page.
 - Commit messages reference requirement IDs, e.g. "TOC-EXT-004 exclude system local parts".
@@ -49,3 +51,7 @@ Access: MailerAccess::canUse() (mailer.admin or mailer.marketer) and MailerAcces
 - php artisan mailer:render-sample {n}     # storage/app/private/mailer/sample-{n}.html
 - php artisan mailer:brevo:check           # read-only check of key, senders, lists
 - php artisan mailer:brevo:setup           # creates missing contact attributes in Brevo
+- php artisan mailer:brevo:save-template   # inactive placeholder in the Brevo template library (TOC-TPL-008)
+- php artisan mailer:sync-stats            # hourly; status + stats for campaigns pushed in the last 60 days
+- php artisan mailer:cleanup               # daily; deletes run logs/audit older than 12 months
+- php artisan mailer:backfill --pause | --resume | --status
