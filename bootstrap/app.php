@@ -25,6 +25,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // in the admin panel can emit the LiteSpeed purge header.
         $middleware->append(\App\Http\Middleware\PurgeLiteSpeedCache::class);
 
+        // PayPal posts server-to-server and has no CSRF token. The endpoint
+        // verifies PayPal's webhook signature instead.
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/paypal',
+        ]);
+
         // Global (not web-group) so it also catches requests that match no
         // route at all — those never enter the web group. Follows managed
         // redirects and logs every 404 miss for the admin.
