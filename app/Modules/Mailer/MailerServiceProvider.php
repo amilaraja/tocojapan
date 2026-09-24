@@ -9,6 +9,7 @@ use App\Modules\Mailer\Console\BrevoSetup;
 use App\Modules\Mailer\Console\Cleanup;
 use App\Modules\Mailer\Console\Import;
 use App\Modules\Mailer\Console\RenderSample;
+use App\Modules\Mailer\Console\SyncStats;
 use App\Modules\Mailer\Domain\Importer\GmailReader;
 use App\Modules\Mailer\Domain\Importer\MailboxReader;
 use App\Modules\Mailer\Filament\Clusters\Importer;
@@ -17,6 +18,8 @@ use App\Modules\Mailer\Filament\Pages\Importer\ImporterStatus;
 use App\Modules\Mailer\Filament\Pages\Importer\RuleTester;
 use App\Modules\Mailer\Filament\Pages\MailerSettingsPage;
 use App\Modules\Mailer\Filament\Resources\ApprovedSenders\ApprovedSenderResource;
+use App\Modules\Mailer\Filament\Resources\Banners\BannerResource;
+use App\Modules\Mailer\Filament\Resources\Campaigns\CampaignResource;
 use App\Modules\Mailer\Filament\Resources\ContactImports\ContactImportResource;
 use App\Modules\Mailer\Filament\Resources\IgnoreRules\IgnoreRuleResource;
 use App\Modules\Mailer\Filament\Resources\ImportRuns\ImportRunResource;
@@ -51,6 +54,7 @@ class MailerServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 RenderSample::class,
+                SyncStats::class,
                 Import::class,
                 BackfillCommand::class,
                 Cleanup::class,
@@ -64,6 +68,7 @@ class MailerServiceProvider extends ServiceProvider
             // Checks every minute; runs only when the configured interval has passed.
             $schedule->command('mailer:import')->everyMinute()->withoutOverlapping(20)->runInBackground();
             $schedule->command('mailer:cleanup')->dailyAt('04:10');
+            $schedule->command('mailer:sync-stats')->hourly()->withoutOverlapping(30);
         });
 
         // Widgets rendered inside Mailer pages (not on the dashboard) need an
@@ -93,6 +98,8 @@ class MailerServiceProvider extends ServiceProvider
     public static function filamentResources(): array
     {
         return [
+            CampaignResource::class,
+            BannerResource::class,
             ApprovedSenderResource::class,
             IgnoreRuleResource::class,
             ImportRunResource::class,

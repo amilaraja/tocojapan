@@ -2,10 +2,12 @@
 
 namespace App\Modules\Mailer\Filament\Pages;
 
+use App\Modules\Mailer\Filament\Resources\Campaigns\CampaignResource;
 use App\Modules\Mailer\Filament\Widgets\ImportStats;
 use App\Modules\Mailer\Models\Campaign;
 use App\Modules\Mailer\Support\MailerAccess;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -37,6 +39,13 @@ class Overview extends Page implements HasTable
         return MailerAccess::canUse();
     }
 
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('newCampaign')->label('New campaign')->icon('heroicon-o-plus')->url(CampaignResource::getUrl('create')),
+        ];
+    }
+
     protected function getHeaderWidgets(): array
     {
         return [ImportStats::class];
@@ -58,6 +67,7 @@ class Overview extends Page implements HasTable
                 TextColumn::make('pushed_at')->label('Pushed')->dateTime('j M Y, H:i')->placeholder('Not yet'),
                 TextColumn::make('updated_at')->label('Last edited')->since(),
             ])
+            ->recordUrl(fn (Campaign $record) => CampaignResource::getUrl('edit', ['record' => $record]))
             ->emptyStateHeading('No campaigns yet')
             ->emptyStateDescription('Create your first campaign to pick vehicles and send a draft to Brevo.');
     }

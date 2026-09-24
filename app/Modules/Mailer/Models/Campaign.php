@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Campaign extends Model
 {
@@ -51,6 +52,22 @@ class Campaign extends Model
         'sender_id' => 'integer',
         'brevo_campaign_id' => 'integer',
     ];
+
+    protected static function booted(): void
+    {
+        // utm_campaign slug (TOC-CMP-005): name + date, unique.
+        static::creating(function (Campaign $campaign): void {
+            if (filled($campaign->slug)) {
+                return;
+            }
+            $base = Str::limit(Str::slug((string) $campaign->name) ?: 'campaign', 140, '').'-'.now((string) config('mailer.display_timezone'))->format('Y-m-d');
+            $slug = $base;
+            for ($i = 2; static::query()->where('slug', $slug)->exists(); $i++) {
+                $slug = $base.'-'.$i;
+            }
+            $campaign->slug = $slug;
+        });
+    }
 
     /** @return HasMany<CampaignVehicle, $this> */
     public function vehicles(): HasMany

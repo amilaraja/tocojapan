@@ -22,6 +22,8 @@ return [
         'base_url' => env('MAILER_BREVO_BASE_URL', 'https://api.brevo.com/v3'),
         'timeout' => 20, // TOC-NFR-005
         'max_retries' => 5, // TOC-BRV-005
+        // "Open in Brevo" link; %d = Brevo campaign id.
+        'campaign_url' => env('MAILER_BREVO_CAMPAIGN_URL', 'https://app.brevo.com/marketing-campaign/edit/%d'),
     ],
 
     'import' => [

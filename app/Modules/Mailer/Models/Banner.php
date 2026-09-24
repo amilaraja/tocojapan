@@ -4,6 +4,7 @@ namespace App\Modules\Mailer\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 
 class Banner extends Model
@@ -18,6 +19,12 @@ class Banner extends Model
     public function scopeActive($query): void
     {
         $query->whereNull('archived_at');
+    }
+
+    /** @return HasMany<Campaign, $this> */
+    public function campaigns(): HasMany
+    {
+        return $this->hasMany(Campaign::class);
     }
 
     public function url(): string
