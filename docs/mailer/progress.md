@@ -39,3 +39,20 @@ Checked on live data (MySQL, 24 Sep):
 - Price range 5,000 to 8,000: every result is in range. Hot deal: 22, New: 7.
 - 10 vehicles (5 discounted or hot deal, 5 latest) match their tocojapan.com pages on title, stock ref, FOB, previous price, mileage, year, transmission and make.
 - Their email images are all 540x310 and 38 to 53 KB, and the sample URL returns HTTP 200.
+
+## Phase 5: email template (24 Sep 2026)
+
+**Covers:** TOC-TPL-001 to 006, 009, TOC-CMP-005. TPL-007 (the client screenshot matrix) is scheduled for Phase 8. TPL-008 (Brevo template library) is saved by `mailer:brevo:save-template` once the Brevo key is in place (Phase 3 client).
+
+Done:
+- `resources/views/email/campaign.blade.php` plus the `<x-mailer-email::vehicle-card>` component, ported from the approved Round 1 export. Red is #E30613, as approved.
+- `Domain/Campaigns/CampaignRenderer`: `render(Campaign)` builds from vehicle snapshots, `renderWith(Campaign, vehicles)` does the rendering.
+  - Order of work: Blade, then `UtmTagger` (reads each link's `data-utm` for utm_content), then the CSS inliner.
+  - Brevo tags are shielded while the inliner runs, so `{{ mirror }}` and `{{ unsubscribe }}` stay literal.
+- Footer, fraud text, top bar, nav links, request block and logo all come from Mailer Settings. The default logo is copied to `storage/app/public/email-assets/branding`.
+- `php artisan mailer:render-sample {n}` uses real available vehicles and writes `storage/app/private/mailer/sample-{n}.html`.
+- Tests: 12 renderer and UTM tests. The Mailer suite has 51 tests: 50 pass, 1 is skipped on SQLite.
+
+Results with real stock: 2 vehicles 13.2 KB, 5 vehicles 21.6 KB, 6 vehicles 24.1 KB, 12 vehicles 39.4 KB (limit 90 KB).
+- Checked in headless Chrome at 600 px and at 375 px (in an iframe): 2 columns on desktop, 1 card per row on mobile, 5 vehicles lay out 2/2/1.
+- Test send: the 6-vehicle sample went to amilaraja@gmail.com through the site SMTP (24 Sep). It wasn't sent through Brevo, so "View in browser" and "Unsubscribe" show the literal Brevo tags.

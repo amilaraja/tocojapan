@@ -2,10 +2,12 @@
 
 namespace App\Modules\Mailer;
 
+use App\Modules\Mailer\Console\RenderSample;
 use App\Modules\Mailer\Filament\Pages\MailerSettingsPage;
 use App\Modules\Mailer\Filament\Pages\Overview;
 use App\Modules\Mailer\Filament\Widgets\ImportStats;
 use App\Modules\Mailer\Support\MailerSettings;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
 
@@ -26,6 +28,13 @@ class MailerServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/Database/Migrations');
         $this->loadViewsFrom(__DIR__.'/resources/views', 'mailer');
+        Blade::anonymousComponentPath(__DIR__.'/resources/views/email/components', 'mailer-email');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                RenderSample::class,
+            ]);
+        }
 
         // Widgets rendered inside Mailer pages (not on the dashboard) need an
         // explicit Livewire alias so follow-up requests can resolve them.

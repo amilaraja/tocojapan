@@ -46,6 +46,6 @@ Access: MailerAccess::canUse() (mailer.admin or mailer.marketer) and MailerAcces
 ### Commands
 - php artisan mailer:import --now
 - php artisan mailer:backfill --from=YYYY-MM-DD
-- php artisan mailer:render-sample {n}     # storage/app/mailer/sample-{n}.html
+- php artisan mailer:render-sample {n}     # storage/app/private/mailer/sample-{n}.html
 - php artisan mailer:brevo:check           # read-only check of key, senders, lists
 - php artisan mailer:brevo:setup           # creates missing contact attributes in Brevo
