@@ -1,0 +1,14 @@
+From: Leads <leads@example-portal.com>
+Reply-To: buyer.reply@outlook.com
+To: first@toco-iont.com
+Subject: New lead for TOCO International
+Date: Mon, 21 Sep 2026 14:00:00 +0000
+Message-ID: <portal-01@example-portal.com>
+MIME-Version: 1.0
+Content-Type: text/html; charset=ISO-8859-1
+
+<html><body><p>You have a new lead.</p>
+<p>Name: José Pereira</p>
+<p>Country: Mozambique</p>
+<p><a href="mailto:Jose.Pereira%40example.org?subject=Your%20enquiry">Reply to buyer</a></p>
+<p>Sent by noreply@example-portal.com</p></body></html>

@@ -2,11 +2,20 @@
 
 namespace App\Modules\Mailer;
 
+use App\Modules\Mailer\Console\BackfillCommand;
+use App\Modules\Mailer\Console\BrevoCheck;
+use App\Modules\Mailer\Console\BrevoSaveTemplate;
+use App\Modules\Mailer\Console\BrevoSetup;
+use App\Modules\Mailer\Console\Cleanup;
+use App\Modules\Mailer\Console\Import;
 use App\Modules\Mailer\Console\RenderSample;
+use App\Modules\Mailer\Domain\Importer\GmailReader;
+use App\Modules\Mailer\Domain\Importer\MailboxReader;
 use App\Modules\Mailer\Filament\Pages\MailerSettingsPage;
 use App\Modules\Mailer\Filament\Pages\Overview;
 use App\Modules\Mailer\Filament\Widgets\ImportStats;
 use App\Modules\Mailer\Support\MailerSettings;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
@@ -22,6 +31,7 @@ class MailerServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/config/mailer.php', 'mailer');
 
         $this->app->scoped(MailerSettings::class);
+        $this->app->bind(MailboxReader::class, GmailReader::class);
     }
 
     public function boot(): void
@@ -33,8 +43,20 @@ class MailerServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 RenderSample::class,
+                Import::class,
+                BackfillCommand::class,
+                Cleanup::class,
+                BrevoCheck::class,
+                BrevoSetup::class,
+                BrevoSaveTemplate::class,
             ]);
         }
+
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            // Checks every minute; runs only when the configured interval has passed.
+            $schedule->command('mailer:import')->everyMinute()->withoutOverlapping(20)->runInBackground();
+            $schedule->command('mailer:cleanup')->dailyAt('04:10');
+        });
 
         // Widgets rendered inside Mailer pages (not on the dashboard) need an
         // explicit Livewire alias so follow-up requests can resolve them.
