@@ -126,3 +126,12 @@ Built and tested against a fake mailbox and a faked Brevo (no live calls):
 - The key file was moved out of the repository to `/home/tocojapan.com/secure/toco-gmail-sa.json` (dir 700, file 600, owner `tocoj2379`). Its path is saved in Mailer settings. `.gitignore` now blocks `docs/email_automation/*.json`.
 - Checked: Google issues a token for the key, and the Gmail API is enabled in the project (a call without a mailbox returns FAILED_PRECONDITION, not SERVICE_DISABLED).
 - Waiting for: (1) TOCO's Workspace admin to authorise domain-wide delegation for that client ID with only `https://www.googleapis.com/auth/gmail.readonly`; (2) the confirmed mailbox address (OPEN-01).
+
+## Access: mailbox connected (25 Sep 2026)
+
+- OPEN-01 closed. The mailbox is **first@toco-int.com** on Google Workspace (MX smtp.google.com). The proposal's "toco-iont.com" was a typo.
+- TOCO authorised domain-wide delegation for client ID 115087789854235626774 with `gmail.readonly`.
+- Mailer settings: mailbox saved. Own domains are now `tocojapan.com, toco-int.com`, so these addresses are never imported.
+- Live check (read-only): profile opened (25,724 messages, historyId 2244220); a search returned 25 messages from the last 7 days.
+- **TOC-IMP-001 acceptance passed live:** trying to add a label was refused by Google with HTTP 403.
+- Nothing has been imported: there are no approved senders yet, so scheduled runs process nothing.
