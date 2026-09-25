@@ -31,3 +31,6 @@ Homestead.yaml
 Thumbs.db
 /storage/media-library
 docs/email_automation/*.zip
+
+# Google service account keys must never be committed (they live in /home/tocojapan.com/secure)
+docs/email_automation/*.json

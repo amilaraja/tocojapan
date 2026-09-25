@@ -119,3 +119,10 @@ Built and tested against a fake mailbox and a faked Brevo (no live calls):
 - Test suite: **157 Mailer tests** (156 pass, 1 skipped on SQLite). The full app suite shows only the 6 failures that were there before the Mailer (auth/Turnstile and sitemap).
 
 **Blocked on TOCO:** backfill run (OPEN-09 start date, and Gmail access), live UAT walkthrough, TPL-007 screenshots from Brevo test sends, SPF change.
+
+## Access: Google key installed (25 Sep 2026)
+
+- Service account `toco-mailer@toco-internation-1752745648056.iam.gserviceaccount.com` (client ID 115087789854235626774).
+- The key file was moved out of the repository to `/home/tocojapan.com/secure/toco-gmail-sa.json` (dir 700, file 600, owner `tocoj2379`). Its path is saved in Mailer settings. `.gitignore` now blocks `docs/email_automation/*.json`.
+- Checked: Google issues a token for the key, and the Gmail API is enabled in the project (a call without a mailbox returns FAILED_PRECONDITION, not SERVICE_DISABLED).
+- Waiting for: (1) TOCO's Workspace admin to authorise domain-wide delegation for that client ID with only `https://www.googleapis.com/auth/gmail.readonly`; (2) the confirmed mailbox address (OPEN-01).
