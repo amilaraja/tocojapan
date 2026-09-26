@@ -132,6 +132,7 @@ class ImportRunner
             $state->forceFill(['backfill_cursor' => $cursor])->save();
 
             $this->finish($run, ImportRun::STATUS_SUCCESS, $complete ? null : self::MORE_WAITING);
+            $state->forceFill(['consecutive_failures' => 0, 'failure_alert_sent_at' => null])->save();
         } catch (Throwable $e) {
             $this->fail($run, $state, $e);
         } finally {

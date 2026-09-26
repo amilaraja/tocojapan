@@ -288,6 +288,17 @@ it('backfills 250 messages in 3 batches and resumes after the worker stops (TOC-
         ->and(runner()->backfillBatch())->toBeNull();
 });
 
+it('resets the failure count after a successful backfill batch too', function () {
+    Queue::fake();
+    $this->box->add(inquiry('m1', 'b1@buyers.com', CarbonImmutable::parse('2026-06-01')));
+    runner()->state()->forceFill(['consecutive_failures' => 2])->save();
+    app(Backfill::class)->start(CarbonImmutable::parse('2026-05-01'));
+
+    runner()->backfillBatch();
+
+    expect(runner()->state()->consecutive_failures)->toBe(0);
+});
+
 it('pauses a backfill', function () {
     Queue::fake();
     app(Backfill::class)->start(CarbonImmutable::parse('2026-05-01'));
