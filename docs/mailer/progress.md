@@ -141,3 +141,11 @@ Built and tested against a fake mailbox and a faked Brevo (no live calls):
 - The Brevo key is saved correctly (encrypted, matches the one supplied). Brevo answered `401: unrecognised IP address 172.104.62.81`. The account has **Authorised IPs** switched on, and the server's IP is not on the list.
 - **Action for TOCO / Brevo account owner:** Brevo, Security, Authorised IPs (https://app.brevo.com/security/authorised_ips), add `172.104.62.81`. Then press **Test Brevo connection** again.
 - Code: a Brevo 401 now raises `BrevoRejected` with a plain-English reason (IP address or key). The settings test shows that reason, and an import run fails as a whole and retries the message later, instead of marking each contact "failed". 3 new tests.
+
+## Brevo connected (26 Sep 2026)
+
+- TOCO added `172.104.62.81` to Brevo's Authorised IPs. `mailer:brevo:check` works: account "TOCO INTERNATIONAL", 5,000 credits, sender #1, one list ("Your first list", 0 contacts).
+- `mailer:brevo:setup` created SOURCE, TOCO_IMPORTED_AT, TOCO_LAST_ENQUIRY_AT, COUNTRY and PHONE. FIRSTNAME and LASTNAME already existed.
+- `mailer:brevo:save-template` saved an inactive placeholder as **Brevo template #2** (TOC-TPL-008 done).
+- Domains in Brevo: **tocojapan.com is authenticated and verified** (TOC-DLV-001 met as far as Brevo is concerned; the SPF include is still recommended). **toco-int.com is not authenticated**: no Brevo code, DKIM or DMARC in DNS.
+- ⚠ **TOC-DLV-002 not met yet:** the only Brevo sender (#1) is on `@toco-int.com`. Campaigns need a sender on `@tocojapan.com` (e.g. `sales@` or `info@tocojapan.com`), added in Brevo, Senders. Alternatively, authenticate toco-int.com in Brevo as well.
