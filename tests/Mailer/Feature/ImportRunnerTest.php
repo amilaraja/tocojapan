@@ -150,6 +150,54 @@ it('fails the run (not each contact) on a Brevo 401, keeping the message for the
     expect(runner()->run()->created)->toBe(1);
 });
 
+it('stops at the time budget, keeps the checkpoint, and the next run carries on', function () {
+    config(['mailer.import.run_seconds' => 25]);
+    foreach (range(1, 5) as $i) {
+        $this->box->add(inquiry("m{$i}", "b{$i}@buyers.com", CarbonImmutable::now()->subMinutes(60 - $i)));
+    }
+    $this->box->secondsPerFetch = 10;
+
+    $first = runner()->run();
+    expect($first->status)->toBe('success')
+        ->and($first->scanned)->toBe(3)
+        ->and($first->error)->toBe(ImportRunner::MORE_WAITING)
+        ->and(ImportState::sole()->last_checkpoint_at)->toBeNull()
+        ->and(ProcessedMessage::orderBy('id')->pluck('gmail_message_id')->all())->toBe(['m1', 'm2', 'm3']);
+
+    $second = runner()->run();
+    expect($second->scanned)->toBe(2)
+        ->and($second->error)->toBeNull()
+        ->and(ImportState::sole()->last_checkpoint_at)->not->toBeNull()
+        ->and(ProcessedMessage::count())->toBe(5);
+});
+
+it('repeats a backfill page that ran out of time instead of skipping ahead', function () {
+    Queue::fake();
+    config(['mailer.import.run_seconds' => 25]);
+    foreach (range(1, 5) as $i) {
+        $this->box->add(inquiry("m{$i}", "b{$i}@buyers.com", CarbonImmutable::parse('2026-06-01')->addHours($i)));
+    }
+    $this->box->secondsPerFetch = 10;
+    app(Backfill::class)->start(CarbonImmutable::parse('2026-05-01'));
+
+    runner()->backfillBatch();
+    expect(runner()->state()->backfill_cursor)->toMatchArray(['batches_done' => 0, 'page_token' => null, 'messages_seen' => 3, 'status' => 'running']);
+
+    runner()->backfillBatch();
+    expect(runner()->state()->backfill_cursor)->toMatchArray(['batches_done' => 1, 'messages_seen' => 5, 'status' => 'done'])
+        ->and(ProcessedMessage::count())->toBe(5);
+});
+
+it('closes a run left at "running" by a killed worker', function () {
+    $stale = ImportRun::create(['trigger' => 'backfill', 'started_at' => now()->subMinutes(10), 'status' => 'running']);
+    runner()->state()->forceFill(['lock_until' => now()->subMinute()])->save();
+
+    runner()->run();
+
+    expect($stale->fresh()->status)->toBe('failed')
+        ->and($stale->fresh()->error)->toContain('Stopped before finishing');
+});
+
 it('skips a run while another is active (TOC-IMP-007)', function () {
     $state = runner()->state();
     $state->forceFill(['lock_until' => now()->addMinutes(5)])->save();

@@ -31,6 +31,9 @@ return [
         'min_interval_minutes' => 5,
         'max_interval_minutes' => 1440,
         'backfill_batch_size' => 100, // TOC-IMP-008
+        // A run stops itself after this long and the next run carries on
+        // (queue jobs are killed at 50 s).
+        'run_seconds' => 40,
         'alert_after_failures' => 3, // TOC-IMP-009
         'default_max_per_message' => 3, // TOC-EXT-007
     ],

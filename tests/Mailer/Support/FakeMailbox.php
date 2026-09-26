@@ -25,6 +25,9 @@ class FakeMailbox implements MailboxReader
 
     public int $fetches = 0;
 
+    /** Each fetch moves the test clock forward this many seconds (time-budget tests). */
+    public int $secondsPerFetch = 0;
+
     /** @var list<string> */
     public array $queries = [];
 
@@ -103,6 +106,9 @@ class FakeMailbox implements MailboxReader
     {
         $this->guard();
         $this->fetches++;
+        if ($this->secondsPerFetch > 0) {
+            \Illuminate\Support\Carbon::setTestNow(now()->addSeconds($this->secondsPerFetch));
+        }
         if ($this->failOnFetchNumber > 0 && $this->fetches === $this->failOnFetchNumber) {
             throw new MailboxUnavailable('The mailbox could not be read right now (simulated).');
         }

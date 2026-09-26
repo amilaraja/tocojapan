@@ -156,3 +156,15 @@ Built and tested against a fake mailbox and a faked Brevo (no live calls):
 - The records to add (Brevo code, 2 DKIM CNAMEs, DMARC, SPF include) are in `deploy.md` section 6b.
 - `info@toco-int.com` must then be added as a Brevo sender. The current sender #1 is `first@toco-int.com`.
 - This replaces the earlier plan to send from @tocojapan.com. tocojapan.com stays authenticated but is not the sending domain.
+
+## Fix: backfill batches killed at the job time limit (26 Sep 2026)
+
+- Symptom: the Backfill screen stayed at "0 batches done".
+  - Someone added the first approved sender (Japanese Car Trade, `inquiry@japanesecartrade.com` → Brevo list 3) and started a backfill from 2026-01-01. That sender has 100+ messages.
+  - A batch fetched all 100 messages before processing any, and needed more than the 50 s queue limit. The worker killed it mid-batch.
+  - The run was left at "running", the lock was held for 15 minutes, and the page cursor never moved. Messages already processed (13) were committed and are fine.
+- Fix:
+  - Runs fetch messages one at a time (oldest first) and stop themselves after `mailer.import.run_seconds` (40 s).
+  - A partial normal run keeps its checkpoint. A partial backfill batch repeats the same page, skipping processed messages.
+  - The lock is now 3 minutes. A run left "running" by a killed worker is closed when the next run starts.
+- 3 new tests. Run #122 was closed by hand and its lock released, so the queued batch resumed with the new code.

@@ -34,9 +34,12 @@ use Throwable;
  */
 class ImportRunner
 {
-    protected const LOCK_MINUTES = 15;
+    /** Longer than any run can take (runs stop themselves after run_seconds). */
+    protected const LOCK_MINUTES = 3;
 
     protected const MAX_MESSAGES_PER_RUN = 500;
+
+    public const MORE_WAITING = 'More messages are waiting; the next run carries on.';
 
     public function __construct(
         protected MailboxReader $reader,
@@ -61,17 +64,24 @@ class ImportRunner
         try {
             $senders = ApprovedSender::query()->where('active', true)->get();
 
+            $note = null;
+
             if ($senders->isNotEmpty()) {
                 $historyId = $this->reader->currentHistoryId();
-                $latest = $this->processIds($this->newMessageIds($state, $senders), $senders, $run);
+                [$latest, $complete] = $this->processIds($this->newMessageIds($state, $senders), $senders, $run);
 
-                $state->forceFill([
-                    'last_history_id' => $historyId ?? $state->last_history_id,
-                    'last_checkpoint_at' => max($latest ?? $run->started_at, $state->last_checkpoint_at ?? $run->started_at),
-                ])->save();
+                if ($complete) {
+                    $state->forceFill([
+                        'last_history_id' => $historyId ?? $state->last_history_id,
+                        'last_checkpoint_at' => max($latest ?? $run->started_at, $state->last_checkpoint_at ?? $run->started_at),
+                    ])->save();
+                } else {
+                    // Time budget used up: keep the checkpoint so the next run carries on.
+                    $note = self::MORE_WAITING;
+                }
             }
 
-            $this->finish($run, ImportRun::STATUS_SUCCESS);
+            $this->finish($run, ImportRun::STATUS_SUCCESS, $note);
             $state->forceFill(['consecutive_failures' => 0, 'failure_alert_sent_at' => null])->save();
         } catch (Throwable $e) {
             $this->fail($run, $state, $e);
@@ -106,18 +116,22 @@ class ImportRunner
             $query = $this->matcher->query($senders, CarbonImmutable::parse($cursor['from']));
             $page = $this->reader->search($query, $cursor['page_token'] ?? null, (int) config('mailer.import.backfill_batch_size', 100));
 
-            $this->processIds($page['ids'], $senders, $run);
+            [, $complete] = $this->processIds($page['ids'], $senders, $run);
 
-            $cursor['page_token'] = $page['nextPageToken'];
-            $cursor['batches_done'] = ($cursor['batches_done'] ?? 0) + 1;
-            $cursor['messages_seen'] = ($cursor['messages_seen'] ?? 0) + count($page['ids']);
-            if ($page['nextPageToken'] === null) {
-                $cursor['status'] = 'done';
-                $cursor['finished_at'] = now()->toIso8601String();
+            $cursor['messages_seen'] = ($cursor['messages_seen'] ?? 0) + $run->scanned;
+            // Only move to the next page once this one is fully done; a partial
+            // batch is simply run again (processed messages are skipped).
+            if ($complete) {
+                $cursor['page_token'] = $page['nextPageToken'];
+                $cursor['batches_done'] = ($cursor['batches_done'] ?? 0) + 1;
+                if ($page['nextPageToken'] === null) {
+                    $cursor['status'] = 'done';
+                    $cursor['finished_at'] = now()->toIso8601String();
+                }
             }
             $state->forceFill(['backfill_cursor' => $cursor])->save();
 
-            $this->finish($run, ImportRun::STATUS_SUCCESS);
+            $this->finish($run, ImportRun::STATUS_SUCCESS, $complete ? null : self::MORE_WAITING);
         } catch (Throwable $e) {
             $this->fail($run, $state, $e);
         } finally {
@@ -159,25 +173,33 @@ class ImportRunner
             $token = $page['nextPageToken'];
         } while ($token && count($ids) < self::MAX_MESSAGES_PER_RUN);
 
-        return $ids;
+        return array_reverse($ids); // Gmail lists newest first; process oldest first
+
     }
 
     /**
+     * Fetch and process messages one at a time, oldest first as given,
+     * until the time budget is used (TOC-NFR-005: stay inside the job limit).
+     *
      * @param  list<string>  $ids
-     * @return CarbonImmutable|null latest received time processed
+     * @return array{0: CarbonImmutable|null, 1: bool} latest received time processed, and whether all ids were done
      */
-    protected function processIds(array $ids, Collection $senders, ImportRun $run): ?CarbonImmutable
+    protected function processIds(array $ids, Collection $senders, ImportRun $run): array
     {
         $done = $this->alreadyProcessed($ids);
-        $messages = collect(array_diff(array_unique($ids), $done))
-            ->map(fn (string $id) => $this->reader->fetch($id))
-            ->sortBy(fn (ParsedMessage $m) => $m->receivedAt?->getTimestamp() ?? 0)
-            ->values();
+        $todo = array_values(array_diff(array_unique($ids), $done));
+        $budget = (int) config('mailer.import.run_seconds', 40);
+        $started = now();
 
         $latest = null;
         $counts = ['scanned' => 0, 'created' => 0, 'updated' => 0, 'failed' => 0, 'skipped' => []];
 
-        foreach ($messages as $message) {
+        foreach ($todo as $id) {
+            if ($started->diffInSeconds(now(), true) >= $budget) {
+                return [$latest, false];
+            }
+
+            $message = $this->reader->fetch($id);
             $sender = $this->matcher->match($message->from, $senders);
             if (! $sender) {
                 continue;
@@ -193,7 +215,7 @@ class ImportRunner
             ])->save();
         }
 
-        return $latest;
+        return [$latest, true];
     }
 
     /** @param  array<string, mixed>  $counts */
@@ -271,6 +293,12 @@ class ImportRunner
 
         if ($claimed) {
             $state->refresh();
+
+            // A worker killed mid-run leaves its run at "running": close it.
+            ImportRun::query()
+                ->where('status', ImportRun::STATUS_RUNNING)
+                ->where('started_at', '<', now()->subMinutes(self::LOCK_MINUTES))
+                ->update(['status' => ImportRun::STATUS_FAILED, 'finished_at' => now(), 'error' => 'Stopped before finishing (time limit). Its messages are picked up by the next run.']);
         }
 
         return $claimed;
