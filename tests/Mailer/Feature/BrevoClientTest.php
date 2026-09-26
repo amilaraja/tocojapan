@@ -67,3 +67,18 @@ it('explains when Brevo is not connected', function () {
     expect(fn () => app(BrevoClient::class)->get('account'))->toThrow(BrevoNotConfigured::class);
     Http::assertNothingSent();
 });
+
+it('explains an IP block from Brevo in plain words, without retrying', function () {
+    Http::fake(['*' => Http::response(['code' => 'unauthorized', 'message' => 'We have detected you are using an unrecognised IP address 172.104.62.81. If you performed this action make sure to add the new IP address in this link: https://app.brevo.com/security/authorised_ips'], 401)]);
+
+    expect(fn () => app(BrevoClient::class)->get('account'))
+        ->toThrow(\App\Modules\Mailer\Domain\Brevo\BrevoRejected::class, "Brevo blocked this server's address (172.104.62.81). In Brevo, open Security, Authorised IPs and add 172.104.62.81");
+    Http::assertSentCount(1);
+});
+
+it('says the key was not accepted for other 401s', function () {
+    Http::fake(['*' => Http::response(['code' => 'unauthorized', 'message' => 'Key not found'], 401)]);
+
+    expect(fn () => app(BrevoClient::class)->get('account'))
+        ->toThrow(\App\Modules\Mailer\Domain\Brevo\BrevoRejected::class, 'Brevo did not accept the key.');
+});

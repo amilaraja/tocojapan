@@ -207,10 +207,9 @@ class MailerSettingsPage extends Page implements HasForms
                             ->body('Connected to the Brevo account of '.($account['companyName'] ?? $account['email'] ?? 'TOCO').'.')
                             ->success()->send();
                     } catch (Throwable $e) {
-                        $unauthorised = $e instanceof \Illuminate\Http\Client\RequestException && $e->response->status() === 401;
                         Notification::make()
                             ->title('Connection failed')
-                            ->body($unauthorised ? 'Brevo did not accept this key. Paste the key again.' : $e->getMessage())
+                            ->body($e->getMessage())
                             ->danger()->persistent()->send();
                     }
                 }),

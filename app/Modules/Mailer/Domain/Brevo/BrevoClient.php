@@ -89,6 +89,10 @@ class BrevoClient
                 $error = $e;
             }
 
+            if ($response?->status() === 401) {
+                throw BrevoRejected::fromMessage($response->json('message'));
+            }
+
             $retryable = $response === null || $response->status() === 429 || $response->serverError();
             if (! $retryable) {
                 return $response;

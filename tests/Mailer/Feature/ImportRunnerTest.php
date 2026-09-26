@@ -31,9 +31,13 @@ beforeEach(function () {
 
     // Brevo: every contact is new and created, unless the test takes Brevo down.
     $this->brevoDown = false;
+    $this->brevo401 = false;
     Http::fake(function ($request) {
         if ($this->brevoDown) {
             return Http::response([], 503);
+        }
+        if ($this->brevo401) {
+            return Http::response(['message' => 'We have detected you are using an unrecognised IP address 1.2.3.4.'], 401);
         }
 
         return $request->method() === 'GET' ? Http::response([], 404) : Http::response(['id' => 1], 201);
@@ -129,6 +133,21 @@ it('rolls back a message when Brevo is unreachable and retries it next run', fun
     $this->brevoDown = false;
     expect(runner()->run()->created)->toBe(1)
         ->and(ProcessedMessage::count())->toBe(1);
+});
+
+it('fails the run (not each contact) on a Brevo 401, keeping the message for the next run', function () {
+    $this->box->add(inquiry('a', 'one@buyers.com'));
+    $this->brevo401 = true;
+
+    $run = runner()->run();
+
+    expect($run->status)->toBe('failed')
+        ->and($run->error)->toContain('Authorised IPs')
+        ->and(ContactImport::count())->toBe(0)
+        ->and(ProcessedMessage::count())->toBe(0);
+
+    $this->brevo401 = false;
+    expect(runner()->run()->created)->toBe(1);
 });
 
 it('skips a run while another is active (TOC-IMP-007)', function () {

@@ -164,6 +164,9 @@ it('shows a failed Brevo connection', function () {
     MailerTest::brevoKey();
     $this->actingAs($this->admin);
 
-    Http::fake(['*' => Http::response(['message' => 'Key not found'], 401)]);
-    Livewire::test(MailerSettingsPage::class)->callAction('testBrevo')->assertNotified('Connection failed');
+    Http::fake(['*' => Http::response(['message' => 'We have detected you are using an unrecognised IP address 172.104.62.81.'], 401)]);
+    Livewire::test(MailerSettingsPage::class)->callAction('testBrevo')->assertNotified(
+        \Filament\Notifications\Notification::make()->title('Connection failed')->danger()->persistent()
+            ->body("Brevo blocked this server's address (172.104.62.81). In Brevo, open Security, Authorised IPs and add 172.104.62.81, then try again."),
+    );
 });

@@ -135,3 +135,9 @@ Built and tested against a fake mailbox and a faked Brevo (no live calls):
 - Live check (read-only): profile opened (25,724 messages, historyId 2244220); a search returned 25 messages from the last 7 days.
 - **TOC-IMP-001 acceptance passed live:** trying to add a label was refused by Google with HTTP 403.
 - Nothing has been imported: there are no approved senders yet, so scheduled runs process nothing.
+
+## Brevo connection: IP allow-list (26 Sep 2026)
+
+- The Brevo key is saved correctly (encrypted, matches the one supplied). Brevo answered `401: unrecognised IP address 172.104.62.81`. The account has **Authorised IPs** switched on, and the server's IP is not on the list.
+- **Action for TOCO / Brevo account owner:** Brevo, Security, Authorised IPs (https://app.brevo.com/security/authorised_ips), add `172.104.62.81`. Then press **Test Brevo connection** again.
+- Code: a Brevo 401 now raises `BrevoRejected` with a plain-English reason (IP address or key). The settings test shows that reason, and an import run fails as a whole and retries the message later, instead of marking each contact "failed". 3 new tests.
