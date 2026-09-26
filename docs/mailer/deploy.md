@@ -122,6 +122,23 @@ Notes:
 - The default Brevo sender must be an address **@tocojapan.com** (TOC-DLV-002). Check this under Brevo, Senders.
 - After the change, check that Brevo shows the domain as authenticated (Brevo, Senders & IP, Domains). Then send a Brevo test to a Gmail address and check "Show original": DKIM should be PASS with `tocojapan.com`, and DMARC PASS.
 
+### 6b. Sending domain toco-int.com (decided 26 Sep 2026)
+
+TOCO sends campaigns from **info@toco-int.com**. The domain is registered in Brevo but **not authenticated**. Its DNS is hosted at **Value-Domain** (ns1/ns2.value-domain.com). Add these records there:
+
+| Type | Host | Value |
+|---|---|---|
+| TXT | `@` (toco-int.com) | `brevo-code:a51cd32e027c5da5a1688ca470c672ed` |
+| CNAME | `brevo1._domainkey` | `b1.toco-int-com.dkim.brevo.com` |
+| CNAME | `brevo2._domainkey` | `b2.toco-int-com.dkim.brevo.com` |
+| TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com` |
+| TXT (edit the existing SPF, do not add a second one) | `@` | `v=spf1 a:www2070.sakura.ne.jp include:_spf.google.com include:spf.brevo.com mx ~all` |
+
+Then:
+1. In Brevo (Senders, Domains), press **Authenticate** for toco-int.com, or ask Mobiz to trigger it.
+2. Add **info@toco-int.com** as a sender under Brevo, Senders.
+3. Push a draft with that sender, send a Brevo test to a Gmail address, and check "Show original": DKIM PASS (`toco-int.com`), DMARC PASS.
+
 ## 7. Checks after release
 
 ```bash

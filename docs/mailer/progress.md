@@ -149,3 +149,10 @@ Built and tested against a fake mailbox and a faked Brevo (no live calls):
 - `mailer:brevo:save-template` saved an inactive placeholder as **Brevo template #2** (TOC-TPL-008 done).
 - Domains in Brevo: **tocojapan.com is authenticated and verified** (TOC-DLV-001 met as far as Brevo is concerned; the SPF include is still recommended). **toco-int.com is not authenticated**: no Brevo code, DKIM or DMARC in DNS.
 - ⚠ **TOC-DLV-002 not met yet:** the only Brevo sender (#1) is on `@toco-int.com`. Campaigns need a sender on `@tocojapan.com` (e.g. `sales@` or `info@tocojapan.com`), added in Brevo, Senders. Alternatively, authenticate toco-int.com in Brevo as well.
+
+## Sending domain decision (26 Sep 2026)
+
+- TOCO will send campaigns from **info@toco-int.com**. toco-int.com is registered in Brevo but not authenticated. DNS is at Value-Domain.
+- The records to add (Brevo code, 2 DKIM CNAMEs, DMARC, SPF include) are in `deploy.md` section 6b.
+- `info@toco-int.com` must then be added as a Brevo sender. The current sender #1 is `first@toco-int.com`.
+- This replaces the earlier plan to send from @tocojapan.com. tocojapan.com stays authenticated but is not the sending domain.
