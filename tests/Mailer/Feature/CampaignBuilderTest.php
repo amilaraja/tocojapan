@@ -282,3 +282,20 @@ it('shows the preview modal with the real email', function () {
         ->assertMountedActionModalSee('Desktop (600px)')
         ->assertMountedActionModalSee('Mobile (375px)');
 });
+
+it('adds vehicles to a campaign that already has some, as the browser sends it (TOC-CB-002)', function () {
+    [$a, $b, $c] = stock(3);
+    $campaign = builderCampaign([$a, $b]);
+
+    // The browser sends the picked vehicles and the submit in one request.
+    $page = Livewire::test(EditCampaign::class, ['record' => $campaign->id])
+        ->call('mountAction', 'addVehicles')
+        ->update(
+            calls: [['method' => 'callMountedAction', 'params' => [], 'metadata' => []]],
+            updates: ['mountedActions.0.data.vehicle_ids' => [(string) $c->id]],
+        )
+        ->assertHasNoErrors();
+
+    expect($campaign->vehicles()->pluck('vehicle_id')->all())->toBe([$a->id, $b->id, $c->id])
+        ->and(array_column(array_values($page->get('data.vehicles')), 'id'))->toBe([$a->id, $b->id, $c->id]);
+});

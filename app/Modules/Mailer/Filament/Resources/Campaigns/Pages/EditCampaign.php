@@ -190,9 +190,17 @@ class EditCampaign extends EditRecord
                         ->mapWithKeys(fn (VehicleDTO $v) => [$v->id => $this->optionLabel($v)])->all()),
             ])
             ->action(function (array $data) use ($max) {
+                // Save pending edits first, then add the new vehicles straight
+                // to the campaign. Appending to $this->data['vehicles'] is not
+                // enough: the Repeater has already cached its items when the
+                // modal data arrives in the same request, so save() drops them.
+                $this->save(shouldRedirect: false, shouldSendSavedNotification: false);
+
+                $campaign = $this->getRecord();
                 $source = app(VehicleSource::class);
                 $added = 0;
-                $current = array_map(fn ($v) => (int) $v['id'], $this->data['vehicles'] ?? []);
+                $current = $campaign->vehicles()->pluck('vehicle_id')->map(fn ($id) => (int) $id)->all();
+                $position = (int) $campaign->vehicles()->max('position');
 
                 foreach ($data['vehicle_ids'] as $id) {
                     $id = (int) $id;
@@ -208,13 +216,22 @@ class EditCampaign extends EditRecord
                         continue;
                     }
 
-                    $this->vehicleSnapshots[$id] = $dto->toArray();
-                    $this->data['vehicles'][(string) Str::uuid()] = ['id' => $id];
+                    $campaign->vehicles()->create([
+                        'vehicle_id' => $id,
+                        'stock_ref' => $dto->stockRef,
+                        'position' => $current === [] ? 0 : ++$position,
+                        'snapshot' => $dto->toArray(),
+                        'added_at' => now(),
+                    ]);
                     $current[] = $id;
                     $added++;
                 }
 
-                $this->save(shouldRedirect: false, shouldSendSavedNotification: false);
+                if ($added > 0) {
+                    // TOC-CB-006: adding after a push → "Changed since push".
+                    app(CampaignPusher::class)->markChangedIfEdited($campaign);
+                }
+
                 $this->fillForm();
 
                 if ($added > 0) {
