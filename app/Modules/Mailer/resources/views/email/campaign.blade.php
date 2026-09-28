@@ -64,6 +64,11 @@ a{color:#111114;}
 <tr><td bgcolor="#0D0D0F" style="background:#0D0D0F;"><a href="{{ $banner['link'] }}" data-utm="banner" target="_blank" style="text-decoration:none;"><img class="banner" src="{{ $banner['url'] }}" width="600" height="220" alt="{{ $banner['alt'] }}" style="display:block;width:600px;height:220px;border:0;font-family:Arial, Helvetica, sans-serif;font-size:18px;line-height:24px;font-weight:bold;color:#FFFFFF;"></a></td></tr>
 @endif
 
+<!-- SECTION:stock -->
+<tr><td class="stock" align="center" bgcolor="#FFFFFF" style="background:#FFFFFF;padding:24px 24px 0 24px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;"><tr><td bgcolor="#E30613" style="background:#E30613;"><a href="{{ $stockUrl }}" data-utm="view-all-stock" target="_blank" style="display:block;padding:14px 32px;font-family:Arial, Helvetica, sans-serif;font-size:14px;line-height:16px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#FFFFFF;text-decoration:none;">VIEW ALL STOCK</a></td></tr></table>
+</td></tr>
+
 <!-- SECTION:intro -->
 <tr><td class="intro" style="padding:32px 24px 16px 24px;font-family:Arial, Helvetica, sans-serif;">
 @if (filled($kicker))<div style="font-size:11px;line-height:16px;font-weight:bold;letter-spacing:2px;color:#E30613;">{{ $kicker }}</div>@endif

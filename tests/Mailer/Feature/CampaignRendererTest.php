@@ -57,7 +57,7 @@ it('renders all sections in the fixed order with both Brevo tags literal (TOC-TP
 
     preg_match_all('/<!-- SECTION:([a-z]+) -->/', $html, $m);
 
-    expect($m[1])->toBe(['preheader', 'topbar', 'header', 'banner', 'intro', 'vehicles', 'cta', 'fraud', 'info', 'footer'])
+    expect($m[1])->toBe(['preheader', 'topbar', 'header', 'banner', 'stock', 'intro', 'vehicles', 'cta', 'fraud', 'info', 'footer'])
         ->and($html)->toContain('href="{{ mirror }}"')
         ->and($html)->toContain('href="{{ unsubscribe }}"');
 });
@@ -174,4 +174,12 @@ it('shows How to Buy and Testimonials boxes above the footer, linked with UTM ta
         ->toContain('https://tocojapan.com/how-to-buy-cars-and-other-vehicles?utm_source=brevo&amp;utm_medium=email&amp;utm_campaign=this-weeks-picks-2026-09-24&amp;utm_content=how-to-buy')
         ->toContain('https://tocojapan.com/customer-reviews?utm_source=brevo&amp;utm_medium=email&amp;utm_campaign=this-weeks-picks-2026-09-24&amp;utm_content=reviews')
         ->and(strpos($html, 'SECTION:info'))->toBeLessThan(strpos($html, 'SECTION:footer'));
+});
+
+it('shows a red View All Stock button after the banner, linked to /vehicles with UTM tags', function () {
+    $html = renderEmail(2);
+
+    expect($html)->toContain('>VIEW ALL STOCK</a>')
+        ->toContain('https://tocojapan.com/vehicles?utm_source=brevo&amp;utm_medium=email&amp;utm_campaign=this-weeks-picks-2026-09-24&amp;utm_content=view-all-stock')
+        ->and(strpos($html, 'SECTION:stock'))->toBeLessThan(strpos($html, 'SECTION:intro'));
 });

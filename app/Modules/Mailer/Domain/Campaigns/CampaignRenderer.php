@@ -67,6 +67,7 @@ class CampaignRenderer
             'navLinks' => array_values(array_filter($settings['nav_links'] ?? [], fn ($l) => filled($l['label'] ?? null) && filled($l['url'] ?? null))),
             'banner' => $this->banner($campaign, $settings),
             'rows' => $vehicles->values()->map(fn (VehicleDTO $v) => $this->card($v))->chunk(2)->map->values()->all(),
+            'stockUrl' => 'https://tocojapan.com/vehicles',
             'infoBoxes' => self::INFO_BOXES,
             'ctaUrl' => $campaign->cta_url ?: $settings['cta_url'],
             'phoneHref' => preg_replace('/[^\d+]/', '', (string) $settings['footer_phone']),
