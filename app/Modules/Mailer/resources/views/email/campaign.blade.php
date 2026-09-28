@@ -31,6 +31,9 @@ a{color:#111114;}
 .cta{padding:28px 16px !important;}
 .fraud,.foot{padding-left:16px !important;padding-right:16px !important;}
 .small{font-size:12px !important;}
+.info{padding:24px 16px 8px 16px !important;}
+.info-col{display:block !important;width:100% !important;padding-bottom:16px !important;}
+.info-gut{display:none !important;}
 }
 </style>
 </head>
@@ -89,6 +92,19 @@ a{color:#111114;}
 
 <!-- SECTION:fraud -->
 <tr><td class="fraud" bgcolor="#FDECEC" align="center" style="background:#FDECEC;padding:14px 24px;font-family:Arial, Helvetica, sans-serif;font-size:12px;line-height:18px;color:#A3000A;">@if ($fraudLead)<strong>{{ $fraudLead }}</strong> @endif{{ $fraudRest }}</td></tr>
+
+<!-- SECTION:info -->
+<tr><td class="info" bgcolor="#FFFFFF" style="background:#FFFFFF;padding:28px 24px 28px 24px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+@foreach ($infoBoxes as $box)
+@if (! $loop->first)<td class="info-gut" width="16" style="width:16px;font-size:0;line-height:0;">&nbsp;</td>@endif
+<td class="info-col" width="268" valign="top" style="width:268px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:2px solid {{ $box['color'] }};"><tr><td align="center" style="padding:22px 16px;font-family:Arial, Helvetica, sans-serif;">
+<div style="font-size:24px;line-height:28px;font-weight:bold;font-style:italic;letter-spacing:1px;color:{{ $box['color'] }};">{{ $box['title'] }}</div>
+<div class="small" style="padding-top:10px;font-size:12px;line-height:17px;font-weight:bold;color:#111114;">{{ $box['text'] }}</div>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:16px auto 0 auto;"><tr><td style="border:2px solid {{ $box['color'] }};"><a href="{{ $box['url'] }}" data-utm="{{ $box['utm'] }}" target="_blank" style="display:block;padding:10px 20px;font-family:Arial, Helvetica, sans-serif;font-size:13px;line-height:16px;font-weight:bold;letter-spacing:1px;color:{{ $box['color'] }};text-decoration:none;">{{ $box['button'] }} &raquo;</a></td></tr></table>
+</td></tr></table></td>
+@endforeach
+</tr></table></td></tr>
 
 <!-- SECTION:footer -->
 <tr><td class="foot" bgcolor="#0D0D0F" align="center" style="background:#0D0D0F;padding:28px 24px 32px 24px;font-family:Arial, Helvetica, sans-serif;">

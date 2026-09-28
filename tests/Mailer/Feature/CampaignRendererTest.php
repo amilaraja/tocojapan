@@ -57,7 +57,7 @@ it('renders all sections in the fixed order with both Brevo tags literal (TOC-TP
 
     preg_match_all('/<!-- SECTION:([a-z]+) -->/', $html, $m);
 
-    expect($m[1])->toBe(['preheader', 'topbar', 'header', 'banner', 'intro', 'vehicles', 'cta', 'fraud', 'footer'])
+    expect($m[1])->toBe(['preheader', 'topbar', 'header', 'banner', 'intro', 'vehicles', 'cta', 'fraud', 'info', 'footer'])
         ->and($html)->toContain('href="{{ mirror }}"')
         ->and($html)->toContain('href="{{ unsubscribe }}"');
 });
@@ -137,7 +137,7 @@ it('uses footer, fraud text and nav links from settings (TOC-TPL-009)', function
         ->toContain('tel:+81312345678')
         ->toContain('<strong>Watch out.</strong> Only pay our bank.')
         ->toContain('>STOCK</a>')
-        ->not->toContain('HOW TO BUY');
+        ->not->toContain('>HOW TO BUY</a>');
 });
 
 it('shows the TOCO placeholder for a vehicle without a photo (TOC-VEH-007)', function () {
@@ -165,4 +165,13 @@ it('adds UTM to site links but leaves other hosts, fragments and existing querie
         ->toContain('href="https://wa.me/81900"')
         ->toContain('href="mailto:a@b.c"')
         ->toContain('https://www.tocojapan.com/?utm_source=brevo&amp;utm_medium=email&amp;utm_campaign=slug-1&amp;utm_content=link');
+});
+
+it('shows How to Buy and Testimonials boxes above the footer, linked with UTM tags', function () {
+    $html = renderEmail(2);
+
+    expect($html)->toContain('HOW TO BUY')->toContain('TESTIMONIALS')
+        ->toContain('https://tocojapan.com/how-to-buy-cars-and-other-vehicles?utm_source=brevo&amp;utm_medium=email&amp;utm_campaign=this-weeks-picks-2026-09-24&amp;utm_content=how-to-buy')
+        ->toContain('https://tocojapan.com/customer-reviews?utm_source=brevo&amp;utm_medium=email&amp;utm_campaign=this-weeks-picks-2026-09-24&amp;utm_content=reviews')
+        ->and(strpos($html, 'SECTION:info'))->toBeLessThan(strpos($html, 'SECTION:footer'));
 });

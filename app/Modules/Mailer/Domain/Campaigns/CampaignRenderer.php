@@ -27,6 +27,14 @@ class CampaignRenderer
 
     public const LOGO_PATH = 'email-assets/branding/toco-logo-300.png';
 
+    /** Two boxes above the footer: How to Buy and Testimonials. */
+    public const INFO_BOXES = [
+        ['title' => 'HOW TO BUY', 'text' => 'ORDER - PAYMENT - SHIPMENT - DELIVERY', 'button' => 'FIND OUT MORE', 'color' => '#E30613',
+            'url' => 'https://tocojapan.com/how-to-buy-cars-and-other-vehicles', 'utm' => 'how-to-buy'],
+        ['title' => 'TESTIMONIALS', 'text' => 'HEAR WHAT OUR CUSTOMERS ARE SAYING ABOUT US', 'button' => 'SEE REVIEWS', 'color' => '#111114',
+            'url' => 'https://tocojapan.com/customer-reviews', 'utm' => 'reviews'],
+    ];
+
     public function __construct(
         protected MailerSettings $settings,
         protected EmailImageService $images,
@@ -59,6 +67,7 @@ class CampaignRenderer
             'navLinks' => array_values(array_filter($settings['nav_links'] ?? [], fn ($l) => filled($l['label'] ?? null) && filled($l['url'] ?? null))),
             'banner' => $this->banner($campaign, $settings),
             'rows' => $vehicles->values()->map(fn (VehicleDTO $v) => $this->card($v))->chunk(2)->map->values()->all(),
+            'infoBoxes' => self::INFO_BOXES,
             'ctaUrl' => $campaign->cta_url ?: $settings['cta_url'],
             'phoneHref' => preg_replace('/[^\d+]/', '', (string) $settings['footer_phone']),
             'whatsappHref' => preg_replace('/\D/', '', (string) $settings['footer_whatsapp']),
