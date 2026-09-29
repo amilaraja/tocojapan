@@ -115,6 +115,10 @@ Write safety: `Vehicle::booted()` has a `saving` hook. `VehicleSource` never cal
 - Round 1 email exports are extracted from `docs/email_automation/Toco_mailer_design.zip` into `docs/mailer/design/email/`: 2, 5, 6, 12 vehicles, images off, dark sim, a compact variant, and sample images. The 6-vehicle file has the `VEHICLE_CARD_START/END` and `FIELD:*` markers. The 12-vehicle design export is 45.6 KB, well under the 90 KB limit.
 - **No Round 3 admin designs in the zip.** Because the admin is Filament, the screens are built from Filament components (tables, forms, modals, repeaters) plus a few small custom pieces (status pills, vehicle rows, notices). Design approval can happen on the built screens.
 - Brand red: the design uses `#E10613`, but the site and admin use `#E30613` (`--color-toco-red`). OPEN-10 decision (approved): the email uses the site's `#E30613`.
+- Client changes to the email template (29 September 2026), requested by TOCO:
+  - **Vehicle grid is 3 columns of compact 176px cards** (was 2 columns of 268px, TOC-TPL-004). Smaller fonts on desktop; under 480px the cards still stack one per row, with larger text. The last row leaves the unused cells empty. The 600px width is kept.
+  - **Red VIEW ALL STOCK button** after the banner, linking to `/vehicles`.
+  - **How to Buy and Testimonials boxes** above the footer, linking to `/how-to-buy-cars-and-other-vehicles` and `/customer-reviews`.
 
 ## 9. Shared-code changes (hard rule 9 register)
 

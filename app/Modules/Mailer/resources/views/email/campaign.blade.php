@@ -26,7 +26,11 @@ a{color:#111114;}
 .rowgap{display:none !important;}
 .card{width:100% !important;}
 .card-img{width:100% !important;height:auto !important;}
-.card-meta{font-size:12px !important;}
+.card-title{font-size:15px !important;line-height:20px !important;}
+.card-meta{font-size:12px !important;line-height:16px !important;}
+.card-ref{font-size:12px !important;}
+.card-price{font-size:20px !important;line-height:24px !important;}
+.card-pad{padding-left:14px !important;padding-right:14px !important;}
 .btn a{padding:14px 0 !important;font-size:13px !important;}
 .cta{padding:28px 16px !important;}
 .fraud,.foot{padding-left:16px !important;padding-right:16px !important;}
@@ -81,9 +85,9 @@ a{color:#111114;}
 <table role="presentation" class="grid-t" width="552" cellpadding="0" cellspacing="0" border="0" style="width:552px;">
 @foreach ($rows as $row)
 @if (! $loop->first)
-<tr><td class="rowgap" colspan="3" height="16" style="height:16px;font-size:0;line-height:0;">&nbsp;</td></tr>
+<tr><td class="rowgap" colspan="5" height="12" style="height:12px;font-size:0;line-height:0;">&nbsp;</td></tr>
 @endif
-<tr><td class="col col-l" width="268" valign="top" style="width:268px;"><x-mailer-email::vehicle-card :card="$row[0]" /></td><td class="gut" width="16" style="width:16px;font-size:0;line-height:0;">&nbsp;</td>@if (isset($row[1]))<td class="col" width="268" valign="top" style="width:268px;"><x-mailer-email::vehicle-card :card="$row[1]" /></td>@else<td class="col empty" width="268" style="width:268px;">&nbsp;</td>@endif</tr>
+<tr>@for ($i = 0; $i < 3; $i++)@if ($i > 0)<td class="gut" width="12" style="width:12px;font-size:0;line-height:0;">&nbsp;</td>@endif @if (isset($row[$i]))<td class="col{{ $i === 0 ? ' col-l' : '' }}" width="176" valign="top" style="width:176px;"><x-mailer-email::vehicle-card :card="$row[$i]" /></td>@else<td class="col empty" width="176" style="width:176px;">&nbsp;</td>@endif @endfor</tr>
 @endforeach
 </table>
 </td></tr>

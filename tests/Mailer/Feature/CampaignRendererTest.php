@@ -66,7 +66,7 @@ it('shows photo, badge, ref, meta, title, price and a View vehicle button per ca
     $html = renderEmail(2, [], ['badge' => 'hot_deal', 'priceFob' => 2650, 'previousPrice' => 2750]);
 
     expect($html)->toContain('HOT DEAL')
-        ->toContain('background:#E30613;padding:3px 7px')
+        ->toContain('background:#E30613;padding:2px 5px')
         ->toContain('#E02001')
         ->toContain('2019 · 50,002 km · Automatic')
         ->toContain('2019 TOYOTA VITZ F 1')
@@ -75,19 +75,21 @@ it('shows photo, badge, ref, meta, title, price and a View vehicle button per ca
         ->toContain('VIEW VEHICLE');
 });
 
-it('lays out 5 vehicles as 2, 2, 1 with the right cell empty (TOC-TPL-004)', function () {
-    $html = renderEmail(5);
+it('lays out vehicles three per row with empty cells after the last card (TOC-TPL-004)', function (int $count, array $perRow, int $empty) {
+    $html = renderEmail($count);
 
     preg_match('/<!-- SECTION:vehicles -->(.*)<!-- SECTION:cta -->/s', $html, $grid);
     // Each row starts with its left cell; drop the text before the first one.
     $rows = array_slice(preg_split('/class="col col-l"/', $grid[1]), 1);
 
-    expect($rows)->toHaveCount(3)
-        ->and(substr_count($grid[1], 'class="card"'))->toBe(5)
-        ->and(substr_count($rows[2], 'class="card"'))->toBe(1)
-        ->and(substr_count($grid[1], 'class="col empty"'))->toBe(1)
+    expect(array_map(fn ($r) => substr_count($r, 'class="card"'), $rows))->toBe($perRow)
+        ->and(substr_count($grid[1], 'class="col empty"'))->toBe($empty)
         ->and($html)->toContain('@media only screen and (max-width:480px)');
-});
+})->with([
+    '5 vehicles' => [5, [3, 2], 1],
+    '7 vehicles' => [7, [3, 3, 1], 2],
+    '12 vehicles' => [12, [3, 3, 3, 3], 0],
+]);
 
 it('gives every image alt text and a width (TOC-TPL-005)', function () {
     preg_match_all('/<img\b[^>]*>/', renderEmail(3), $imgs);

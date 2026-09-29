@@ -40,7 +40,7 @@ Access: MailerAccess::canUse() (mailer.admin or mailer.marketer) and MailerAcces
 
 ### Email HTML rules (TOC-TPL-*)
 - 600px table layout, inline CSS, Arial/Helvetica, no JS, no web fonts, no external CSS.
-- Two-column vehicle grid, stacks under 480px; odd last card left, right cell empty.
+- Three-column grid of compact 176px cards (client change 2026-09-29, was two columns), stacks under 480px; unused cells in the last row stay empty.
 - Brevo tags {{ mirror }} and {{ unsubscribe }} stay literal in output (escape in Blade: @{{ mirror }}).
 - Total HTML for 12 vehicles < 90 KB. Brand red #E30613 (site colour, OPEN-10).
 - All tocojapan.com links get utm_source=brevo, utm_medium=email, utm_campaign={slug}, utm_content={stock_ref|banner|cta}.
