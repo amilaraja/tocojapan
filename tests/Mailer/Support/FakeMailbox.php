@@ -5,6 +5,7 @@ namespace Tests\Mailer\Support;
 use App\Modules\Mailer\Domain\Importer\HistoryExpired;
 use App\Modules\Mailer\Domain\Importer\MailboxReader;
 use App\Modules\Mailer\Domain\Importer\MailboxUnavailable;
+use App\Modules\Mailer\Domain\Importer\MessageGone;
 use App\Modules\Mailer\Domain\Importer\MessageParser;
 use App\Modules\Mailer\Domain\Importer\ParsedMessage;
 
@@ -22,6 +23,9 @@ class FakeMailbox implements MailboxReader
     public int $failOnFetchNumber = 0;
 
     public bool $down = false;
+
+    /** @var list<string> ids removed right after a search lists them (deleted before the download) */
+    public array $deletedAfterListing = [];
 
     public int $fetches = 0;
 
@@ -91,6 +95,9 @@ class FakeMailbox implements MailboxReader
         $offset = (int) ($pageToken ?? 0);
         $page = array_slice($ids, $offset, $max);
         $next = $offset + $max < count($ids) ? (string) ($offset + $max) : null;
+        foreach ($this->deletedAfterListing as $id) {
+            unset($this->messages[$id]);
+        }
 
         return ['ids' => $page, 'nextPageToken' => $next];
     }
@@ -113,7 +120,7 @@ class FakeMailbox implements MailboxReader
             throw new MailboxUnavailable('The mailbox could not be read right now (simulated).');
         }
 
-        return $this->messages[$id];
+        return $this->messages[$id] ?? throw new MessageGone("Message {$id} no longer exists.");
     }
 
     protected function guard(): void

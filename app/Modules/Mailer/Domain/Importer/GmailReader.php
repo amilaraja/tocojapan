@@ -109,7 +109,11 @@ class GmailReader implements MailboxReader
     public function fromAddress(string $id): ?string
     {
         return $this->call(function (Gmail $g) use ($id) {
-            $msg = $g->users_messages->get('me', $id, ['format' => 'metadata', 'metadataHeaders' => ['From']]);
+            try {
+                $msg = $this->message($g, $id, ['format' => 'metadata', 'metadataHeaders' => ['From']]);
+            } catch (MessageGone) {
+                return null;
+            }
             foreach ($msg->getPayload()?->getHeaders() ?? [] as $h) {
                 if (strtolower((string) $h->getName()) === 'from') {
                     return MessageParser::address((string) $h->getValue());
@@ -122,7 +126,20 @@ class GmailReader implements MailboxReader
 
     public function fetch(string $id): ParsedMessage
     {
-        return $this->call(fn (Gmail $g) => MessageParser::fromGmail($g->users_messages->get('me', $id, ['format' => 'full'])));
+        return $this->call(fn (Gmail $g) => MessageParser::fromGmail($this->message($g, $id, ['format' => 'full'])));
+    }
+
+    /** History also lists messages deleted since (sent drafts, deleted mail); Gmail answers 404 for those. */
+    protected function message(Gmail $g, string $id, array $params): Gmail\Message
+    {
+        try {
+            return $g->users_messages->get('me', $id, $params);
+        } catch (GoogleException $e) {
+            if ($e->getCode() === 404) {
+                throw new MessageGone("Message {$id} no longer exists.", 404, $e);
+            }
+            throw $e;
+        }
     }
 
     protected function service(): Gmail
@@ -140,7 +157,7 @@ class GmailReader implements MailboxReader
     {
         try {
             return $fn($this->service());
-        } catch (MailboxUnavailable $e) {
+        } catch (MailboxUnavailable|MessageGone $e) {
             throw $e;
         } catch (Throwable $e) {
             throw $this->unavailable($e);

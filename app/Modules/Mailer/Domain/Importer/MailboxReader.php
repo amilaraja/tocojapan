@@ -21,8 +21,9 @@ interface MailboxReader
     /** @return array{ids: list<string>, nextPageToken: ?string} */
     public function search(string $query, ?string $pageToken = null, int $max = 100): array;
 
-    /** Sender address from headers only (no body is downloaded). */
+    /** Sender address from headers only (no body is downloaded); null when the message no longer exists. */
     public function fromAddress(string $id): ?string;
 
+    /** @throws MessageGone when the message was deleted after it was listed */
     public function fetch(string $id): ParsedMessage;
 }

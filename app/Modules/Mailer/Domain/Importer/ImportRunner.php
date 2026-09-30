@@ -200,7 +200,11 @@ class ImportRunner
                 return [$latest, false];
             }
 
-            $message = $this->reader->fetch($id);
+            try {
+                $message = $this->reader->fetch($id);
+            } catch (MessageGone) {
+                continue;
+            }
             $sender = $this->matcher->match($message->from, $senders);
             if (! $sender) {
                 continue;

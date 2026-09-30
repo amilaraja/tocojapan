@@ -179,3 +179,9 @@ Built and tested against a fake mailbox and a faked Brevo (no live calls):
   - Follow us icons (Facebook, TikTok, Instagram) as PNGs in the footer.
 - Decision (30 Sep): Campaign 1 stays in Brevo as pushed. The new template applies from the next campaign pushed; it is not re-pushed.
 - 12-vehicle sample: 46.8 KB. Mailer tests: 170 (169 passed, 1 skipped).
+
+## Fix: importer stuck on deleted messages (30 Sep 2026)
+
+- Symptom: every scheduled run from 09:24 UTC failed with "The mailbox could not be read right now (Exception)".
+- Cause: Gmail history listed 3 messages that were deleted afterwards (sent drafts or deleted mail). Looking them up returned 404, the run failed, and the checkpoint never moved, so every later run failed on the same messages.
+- Fix: a message Gmail no longer has counts as no sender at the header check. A download that returns 404 is skipped (`MessageGone`). Other errors still fail the run as before. 3 new tests.

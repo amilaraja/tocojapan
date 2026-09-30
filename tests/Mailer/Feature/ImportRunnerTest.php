@@ -230,6 +230,28 @@ it('uses Gmail history when it has a history id, filtering by sender from header
         ->and(ImportState::sole()->last_history_id)->toBe('1000');
 });
 
+it('skips messages Gmail history lists but that were deleted since, instead of failing every run (TOC-IMP-007)', function () {
+    runner()->state()->forceFill(['last_history_id' => '900'])->save();
+    $this->box->add(inquiry('a', 'one@buyers.com'));
+    $this->box->historyIds = ['gone-1', 'a', 'gone-2'];
+
+    $run = runner()->run();
+
+    expect($run->status)->toBe('success')
+        ->and($run->scanned)->toBe(1)
+        ->and(ImportState::sole()->last_history_id)->toBe('1000');
+});
+
+it('skips a message deleted between the sender check and the download', function () {
+    $this->box->add(inquiry('a', 'one@buyers.com'));
+    $this->box->add(inquiry('b', 'two@buyers.com'));
+    $this->box->deletedAfterListing = ['b'];
+
+    $run = runner()->run();
+
+    expect($run->status)->toBe('success')->and($run->scanned)->toBe(1);
+});
+
 it('falls back to a search when the history id has expired', function () {
     runner()->state()->forceFill(['last_history_id' => '1'])->save();
     $this->box->historyIds = null;
@@ -356,4 +378,28 @@ it('asks Google for gmail.readonly and nothing else (TOC-IMP-001)', function () 
 
     expect($client->getScopes())->toBe(['https://www.googleapis.com/auth/gmail.readonly'])
         ->and($client->getConfig('subject'))->toBe('first@toco-iont.com');
+});
+
+it('treats a message Gmail no longer has as gone, not as the mailbox being down', function () {
+    $gmail = new Google\Service\Gmail(new Google\Client);
+    $gmail->users_messages = new class extends Google\Service\Gmail\Resource\UsersMessages
+    {
+        public function __construct() {}
+
+        public function get($userId, $id, $optParams = [])
+        {
+            throw new Google\Service\Exception('Requested entity was not found.', 404);
+        }
+    };
+    $reader = new class(app(MailerSettings::class), $gmail) extends GmailReader
+    {
+        public function __construct(MailerSettings $settings, Google\Service\Gmail $gmail)
+        {
+            parent::__construct($settings);
+            $this->service = $gmail;
+        }
+    };
+
+    expect($reader->fromAddress('gone'))->toBeNull()
+        ->and(fn () => $reader->fetch('gone'))->toThrow(App\Modules\Mailer\Domain\Importer\MessageGone::class);
 });
