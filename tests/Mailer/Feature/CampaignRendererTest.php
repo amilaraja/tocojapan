@@ -185,3 +185,19 @@ it('shows a red View All Stock button after the banner, linked to /vehicles with
         ->toContain('https://tocojapan.com/vehicles?utm_source=brevo&amp;utm_medium=email&amp;utm_campaign=this-weeks-picks-2026-09-24&amp;utm_content=view-all-stock')
         ->and(strpos($html, 'SECTION:stock'))->toBeLessThan(strpos($html, 'SECTION:intro'));
 });
+
+it('shows Follow us icons in the footer as PNG images linked to the social pages', function () {
+    $html = renderEmail(2);
+    $footer = substr($html, strpos($html, 'SECTION:footer'));
+
+    expect($footer)->toContain('FOLLOW US')
+        ->toContain('href="https://www.facebook.com/profile.php?id=61572469513676"')
+        ->toContain('href="https://www.tiktok.com/@toco.international"')
+        ->toContain('href="https://www.instagram.com/toco_international/"')
+        ->toContain('/email-assets/social/facebook.png')->toContain('alt="Instagram"')
+        ->not->toContain('<svg');
+
+    foreach (['facebook', 'tiktok', 'instagram'] as $icon) {
+        expect(Storage::disk('public')->exists("email-assets/social/{$icon}.png"))->toBeTrue();
+    }
+});

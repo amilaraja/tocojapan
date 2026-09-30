@@ -35,6 +35,13 @@ class CampaignRenderer
             'url' => 'https://tocojapan.com/customer-reviews', 'utm' => 'reviews'],
     ];
 
+    /** Static "Follow us" icons in the footer; PNGs because Gmail and Outlook drop SVG. */
+    public const SOCIAL_LINKS = [
+        ['label' => 'Facebook', 'icon' => 'facebook', 'url' => 'https://www.facebook.com/profile.php?id=61572469513676'],
+        ['label' => 'TikTok', 'icon' => 'tiktok', 'url' => 'https://www.tiktok.com/@toco.international'],
+        ['label' => 'Instagram', 'icon' => 'instagram', 'url' => 'https://www.instagram.com/toco_international/'],
+    ];
+
     public function __construct(
         protected MailerSettings $settings,
         protected EmailImageService $images,
@@ -69,6 +76,7 @@ class CampaignRenderer
             'rows' => $vehicles->values()->map(fn (VehicleDTO $v) => $this->card($v))->chunk(3)->map->values()->all(),
             'stockUrl' => 'https://tocojapan.com/vehicles',
             'infoBoxes' => self::INFO_BOXES,
+            'socialLinks' => $this->socialLinks(),
             'ctaUrl' => $campaign->cta_url ?: $settings['cta_url'],
             'phoneHref' => preg_replace('/[^\d+]/', '', (string) $settings['footer_phone']),
             'whatsappHref' => preg_replace('/\D/', '', (string) $settings['footer_whatsapp']),
@@ -122,11 +130,29 @@ class CampaignRenderer
             return $disk->url($path);
         }
 
-        if (! $disk->exists(self::LOGO_PATH)) {
-            $disk->put(self::LOGO_PATH, (string) file_get_contents(dirname(__DIR__, 2).'/resources/assets/toco-logo-300.png'));
+        return $this->publicAsset(self::LOGO_PATH, 'toco-logo-300.png');
+    }
+
+    /** @return list<array{label: string, url: string, img: string}> */
+    protected function socialLinks(): array
+    {
+        return array_map(fn (array $link) => [
+            'label' => $link['label'],
+            'url' => $link['url'],
+            'img' => $this->publicAsset("email-assets/social/{$link['icon']}.png", "social/{$link['icon']}.png"),
+        ], self::SOCIAL_LINKS);
+    }
+
+    /** Copies a bundled asset to the public email-assets folder on first use and returns its URL. */
+    protected function publicAsset(string $path, string $source): string
+    {
+        $disk = Storage::disk('public');
+
+        if (! $disk->exists($path)) {
+            $disk->put($path, (string) file_get_contents(dirname(__DIR__, 2).'/resources/assets/'.$source));
         }
 
-        return $disk->url(self::LOGO_PATH);
+        return $disk->url($path);
     }
 
     /** "Beware of fraudsters. Always verify…" → bold first sentence, as in the design. */

@@ -119,6 +119,7 @@ Write safety: `Vehicle::booted()` has a `saving` hook. `VehicleSource` never cal
   - **Vehicle grid is 3 columns of compact 176px cards** (was 2 columns of 268px, TOC-TPL-004). Smaller fonts on desktop; under 480px the cards still stack one per row, with larger text. The last row leaves the unused cells empty. The 600px width is kept.
   - **Red VIEW ALL STOCK button** after the banner, linking to `/vehicles`.
   - **How to Buy and Testimonials boxes** above the footer, linking to `/how-to-buy-cars-and-other-vehicles` and `/customer-reviews`.
+  - **Follow us icons** in the footer (30 September 2026): Facebook, TikTok and Instagram, fixed in `CampaignRenderer::SOCIAL_LINKS`. They are 64px PNGs shown at 32px, because Gmail and Outlook drop SVG. The PNGs are bundled in `resources/assets/social` and copied to `email-assets/social` on first render. The TikTok icon has a thin light ring so it stands out on the dark footer.
 
 ## 9. Shared-code changes (hard rule 9 register)
 
