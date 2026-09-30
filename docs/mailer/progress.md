@@ -168,3 +168,14 @@ Built and tested against a fake mailbox and a faked Brevo (no live calls):
   - A partial normal run keeps its checkpoint. A partial backfill batch repeats the same page, skipping processed messages.
   - The lock is now 3 minutes. A run left "running" by a killed worker is closed when the next run starts.
 - 3 new tests. Run #122 was closed by hand and its lock released, so the queued batch resumed with the new code.
+
+## Builder fix and client template changes (29–30 Sep 2026)
+
+- Fix (TOC-CB-002): Add vehicles on a campaign that already had vehicles didn't show the new ones and lost them on save. The action now saves pending edits, adds the vehicles to the campaign directly, then reloads the form. Covered by a browser-shaped Livewire test.
+- Template changes requested by TOCO, recorded in integration-notes.md section 8:
+  - 3-column grid of compact 176px cards at 600px.
+  - Red VIEW ALL STOCK button after the banner.
+  - How to Buy and Testimonials boxes above the footer.
+  - Follow us icons (Facebook, TikTok, Instagram) as PNGs in the footer.
+- Decision (30 Sep): Campaign 1 stays in Brevo as pushed. The new template applies from the next campaign pushed; it is not re-pushed.
+- 12-vehicle sample: 46.8 KB. Mailer tests: 170 (169 passed, 1 skipped).
