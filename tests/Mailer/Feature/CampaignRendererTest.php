@@ -169,10 +169,14 @@ it('adds UTM to site links but leaves other hosts, fragments and existing querie
         ->toContain('https://www.tocojapan.com/?utm_source=brevo&amp;utm_medium=email&amp;utm_campaign=slug-1&amp;utm_content=link');
 });
 
-it('shows How to Buy and Testimonials boxes above the footer, linked with UTM tags', function () {
+it('shows How to Buy and Testimonials image boxes above the footer, linked with UTM tags', function () {
     $html = renderEmail(2);
 
-    expect($html)->toContain('HOW TO BUY')->toContain('TESTIMONIALS')
+    expect($html)->toContain('/email-assets/info/how-to-buy.jpg')->toContain('/email-assets/info/testimonials.jpg')
+        ->toContain('alt="How to buy: order, payment, shipment, delivery. Find out more"')
+        ->toContain('alt="Testimonials: hear what our customers are saying about us. See reviews"')
+        ->and(Storage::disk('public')->exists('email-assets/info/how-to-buy.jpg'))->toBeTrue()
+        ->and($html)
         ->toContain('https://tocojapan.com/how-to-buy-cars-and-other-vehicles?utm_source=brevo&amp;utm_medium=email&amp;utm_campaign=this-weeks-picks-2026-09-24&amp;utm_content=how-to-buy')
         ->toContain('https://tocojapan.com/customer-reviews?utm_source=brevo&amp;utm_medium=email&amp;utm_campaign=this-weeks-picks-2026-09-24&amp;utm_content=reviews')
         ->and(strpos($html, 'SECTION:info'))->toBeLessThan(strpos($html, 'SECTION:footer'));

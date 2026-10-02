@@ -27,11 +27,11 @@ class CampaignRenderer
 
     public const LOGO_PATH = 'email-assets/branding/toco-logo-300.png';
 
-    /** Two boxes above the footer: How to Buy and Testimonials. */
+    /** Two image boxes above the footer: How to Buy and Testimonials (TOCO artwork; alt carries the text). */
     public const INFO_BOXES = [
-        ['title' => 'HOW TO BUY', 'text' => 'ORDER - PAYMENT - SHIPMENT - DELIVERY', 'button' => 'FIND OUT MORE', 'color' => '#E30613',
+        ['image' => 'how-to-buy', 'alt' => 'How to buy: order, payment, shipment, delivery. Find out more',
             'url' => 'https://tocojapan.com/how-to-buy-cars-and-other-vehicles', 'utm' => 'how-to-buy'],
-        ['title' => 'TESTIMONIALS', 'text' => 'HEAR WHAT OUR CUSTOMERS ARE SAYING ABOUT US', 'button' => 'SEE REVIEWS', 'color' => '#111114',
+        ['image' => 'testimonials', 'alt' => 'Testimonials: hear what our customers are saying about us. See reviews',
             'url' => 'https://tocojapan.com/customer-reviews', 'utm' => 'reviews'],
     ];
 
@@ -75,7 +75,7 @@ class CampaignRenderer
             'banner' => $this->banner($campaign, $settings),
             'rows' => $vehicles->values()->map(fn (VehicleDTO $v) => $this->card($v))->chunk(3)->map->values()->all(),
             'stockUrl' => 'https://tocojapan.com/vehicles',
-            'infoBoxes' => self::INFO_BOXES,
+            'infoBoxes' => $this->infoBoxes(),
             'socialLinks' => $this->socialLinks(),
             'ctaUrl' => $campaign->cta_url ?: $settings['cta_url'],
             'phoneHref' => preg_replace('/[^\d+]/', '', (string) $settings['footer_phone']),
@@ -131,6 +131,17 @@ class CampaignRenderer
         }
 
         return $this->publicAsset(self::LOGO_PATH, 'toco-logo-300.png');
+    }
+
+    /** @return list<array{alt: string, url: string, utm: string, img: string}> */
+    protected function infoBoxes(): array
+    {
+        return array_map(fn (array $box) => [
+            'alt' => $box['alt'],
+            'url' => $box['url'],
+            'utm' => $box['utm'],
+            'img' => $this->publicAsset("email-assets/info/{$box['image']}.jpg", "info/{$box['image']}.jpg"),
+        ], self::INFO_BOXES);
     }
 
     /** @return list<array{label: string, url: string, img: string}> */
