@@ -185,3 +185,13 @@ Built and tested against a fake mailbox and a faked Brevo (no live calls):
 - Symptom: every scheduled run from 09:24 UTC failed with "The mailbox could not be read right now (Exception)".
 - Cause: Gmail history listed 3 messages that were deleted afterwards (sent drafts or deleted mail). Looking them up returned 404, the run failed, and the checkpoint never moved, so every later run failed on the same messages.
 - Fix: a message Gmail no longer has counts as no sender at the header check. A download that returns 404 is skipped (`MessageGone`). Other errors still fail the run as before. 3 new tests.
+
+## Template changes and banner fix (2–3 Oct 2026)
+
+- How to Buy and Testimonials boxes now use TOCO's artwork, as linked JPG images (86bddfb).
+- The "Beware of fraudsters" warning strip is removed from the email, along with its field in Mailer settings (1e34f74).
+- The banner shows at 100% width with auto height, up to 600px, and is no longer forced to 600×220 (525afb7).
+- Banner uploads are scaled to 1200px wide, keeping their own proportions. They are no longer cropped to exactly 1200×440 (be39247).
+- ⚠ Existing banners 1–3 were saved cropped, and the original uploads are not kept. TOCO needs to re-upload them from the original files. Campaigns already in Brevo keep their old HTML.
+- ⚠ 1e34f74, 525afb7, be39247 and this note are committed locally but not pushed: this server has no GitHub key.
+- Environment on this server: run tests with `php -d memory_limit=1G vendor/bin/pest tests/Mailer`, because the CLI limit is 128M and the full run stops silently. Git needs `-c safe.directory=…` (dubious ownership). Chrome is not installed, so screenshots aren't possible.
