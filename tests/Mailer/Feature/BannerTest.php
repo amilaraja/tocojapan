@@ -71,6 +71,18 @@ it('saves a 1200 × 440 banner as an optimised JPEG under 150 KB (TOC-BAN-002)',
         ->and(Storage::disk('public')->files('email-assets/banners/uploads'))->toBe([]);
 });
 
+it('keeps the whole image when the upload is slightly off 1200 × 440: scaled, never cropped or stretched', function () {
+    Livewire::test(CreateBanner::class)
+        ->fillForm(['path' => bannerUpload(1218, 440), 'name' => 'Wide', 'alt_text' => 'Wide'])
+        ->call('create')
+        ->assertHasNoFormErrors();
+
+    $banner = Banner::sole();
+    [$w, $h] = getimagesize(Storage::disk('public')->path($banner->path));
+
+    expect([$w, $h])->toBe([1200, 433])->and([$banner->width, $banner->height])->toBe([1200, 433]);
+});
+
 it('accepts a slightly different size within 2 percent', function () {
     expect(BannerImages::problem(bannerFile(1210, 440)))->toBeNull()
         ->and(BannerImages::problem(bannerFile(1200, 470)))->not->toBeNull();

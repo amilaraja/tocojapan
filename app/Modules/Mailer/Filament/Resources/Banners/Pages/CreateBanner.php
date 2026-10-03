@@ -12,7 +12,7 @@ class CreateBanner extends CreateRecord
 
     protected static ?string $title = 'Upload banner';
 
-    /** Replace the upload with the optimised 1200 × 440 JPEG (TOC-BAN-002). */
+    /** Replace the upload with the optimised JPEG, 1200 px wide and never cropped (TOC-BAN-002). */
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         return [...$data, ...app(BannerImages::class)->optimise($data['path'])];

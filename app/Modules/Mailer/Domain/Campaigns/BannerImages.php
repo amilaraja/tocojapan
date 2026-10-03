@@ -39,7 +39,8 @@ class BannerImages
     }
 
     /**
-     * Resize to exactly 1200 × 440 and compress to a JPEG ≤ 150 KB.
+     * Scale down to 1200 px wide, keeping the image's own proportions (never cropped
+     * or stretched), and compress to a JPEG ≤ 150 KB.
      *
      * @return array{path: string, width: int, height: int, bytes: int}
      */
@@ -55,7 +56,7 @@ class BannerImages
         }
 
         foreach ([85, 78, 70, 62, 55, 48, 40] as $quality) {
-            Image::load($source)->fit(Fit::Crop, self::WIDTH, self::HEIGHT)->format('jpg')->quality($quality)->save($dest);
+            Image::load($source)->fit(Fit::Max, self::WIDTH, self::WIDTH * 2)->format('jpg')->quality($quality)->save($dest);
             clearstatcache(true, $dest);
             if (filesize($dest) <= self::MAX_BYTES) {
                 break;
@@ -66,6 +67,8 @@ class BannerImages
             $disk->delete($uploadedPath);
         }
 
-        return ['path' => $path, 'width' => self::WIDTH, 'height' => self::HEIGHT, 'bytes' => (int) filesize($dest)];
+        [$width, $height] = getimagesize($dest) ?: [self::WIDTH, self::HEIGHT];
+
+        return ['path' => $path, 'width' => $width, 'height' => $height, 'bytes' => (int) filesize($dest)];
     }
 }
