@@ -46,7 +46,6 @@ class MailerSettings
             'cta_text' => 'Tell us the make, model and budget. We search the Japanese auctions for you.',
             'cta_button' => 'SEND A REQUEST',
             'cta_url' => 'https://tocojapan.com/contact',
-            'fraud_text' => 'Beware of fraudsters. Always verify our company bank details before sending any payment.',
             'footer_company' => 'TOCO INTERNATIONAL',
             'footer_address' => '3400-1 Horigome-Cho, Sano City, Tochigi 327-0843, Japan',
             'footer_phone' => $general?->contact_phone,

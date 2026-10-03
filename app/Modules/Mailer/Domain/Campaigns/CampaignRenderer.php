@@ -80,7 +80,6 @@ class CampaignRenderer
             'ctaUrl' => $campaign->cta_url ?: $settings['cta_url'],
             'phoneHref' => preg_replace('/[^\d+]/', '', (string) $settings['footer_phone']),
             'whatsappHref' => preg_replace('/\D/', '', (string) $settings['footer_whatsapp']),
-            ...$this->splitFraud((string) $settings['fraud_text']),
         ])->render();
 
         $html = $this->utm->tag($html, $slug);
@@ -164,16 +163,6 @@ class CampaignRenderer
         }
 
         return $disk->url($path);
-    }
-
-    /** "Beware of fraudsters. Always verify…" → bold first sentence, as in the design. */
-    protected function splitFraud(string $text): array
-    {
-        if (preg_match('/^(.{3,60}?[.!])\s+(.+)$/s', trim($text), $m)) {
-            return ['fraudLead' => $m[1], 'fraudRest' => $m[2]];
-        }
-
-        return ['fraudLead' => null, 'fraudRest' => $text];
     }
 
     protected function inline(string $html): string

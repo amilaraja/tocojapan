@@ -120,6 +120,7 @@ Write safety: `Vehicle::booted()` has a `saving` hook. `VehicleSource` never cal
   - **Red VIEW ALL STOCK button** after the banner, linking to `/vehicles`.
   - **How to Buy and Testimonials boxes** above the footer, linking to `/how-to-buy-cars-and-other-vehicles` and `/customer-reviews`.
     - 2 October 2026: the HTML boxes were replaced with TOCO's artwork (`designs/howtobuy.webp`, `designs/testimonials.webp`). The artwork is converted to 536×358 JPG, because Outlook can't show WebP, and shown at 268px; on phones it fills the width. The images are in `resources/assets/info` and are copied to `email-assets/info`. The alt text carries the wording for clients that block images.
+  - **Fraud warning removed** (3 October 2026): the red "Beware of fraudsters" strip above the info boxes is gone, along with its "Fraud warning" field in Mailer settings.
   - **Follow us icons** in the footer (30 September 2026): Facebook, TikTok and Instagram, fixed in `CampaignRenderer::SOCIAL_LINKS`. They are 64px PNGs shown at 32px, because Gmail and Outlook drop SVG. The PNGs are bundled in `resources/assets/social` and copied to `email-assets/social` on first render. The TikTok icon has a thin light ring so it stands out on the dark footer.
 
 ## 9. Shared-code changes (hard rule 9 register)

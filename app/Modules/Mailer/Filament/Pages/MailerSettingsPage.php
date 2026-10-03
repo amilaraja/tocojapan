@@ -52,7 +52,7 @@ class MailerSettingsPage extends Page implements HasForms
     protected const FIELDS = [
         'mailbox', 'google_key_path', 'import_interval_minutes', 'own_domains',
         'logo_path', 'top_bar_text', 'nav_links',
-        'cta_heading', 'cta_text', 'cta_button', 'cta_url', 'fraud_text',
+        'cta_heading', 'cta_text', 'cta_button', 'cta_url',
         'footer_company', 'footer_address', 'footer_phone', 'footer_whatsapp', 'footer_email', 'footer_reason',
     ];
 
@@ -165,10 +165,6 @@ class MailerSettingsPage extends Page implements HasForms
                                     TextInput::make('cta_button')->label('Button text')->maxLength(30)->required(),
                                     Textarea::make('cta_text')->label('Text')->rows(2)->maxLength(200)->columnSpanFull(),
                                     TextInput::make('cta_url')->label('Default button link')->url()->required()->columnSpanFull(),
-                                ]),
-                            Section::make('Fraud warning')
-                                ->schema([
-                                    Textarea::make('fraud_text')->label('Warning text')->rows(2)->maxLength(250)->required(),
                                 ]),
                             Section::make('Company details')
                                 ->columns(2)

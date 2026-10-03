@@ -33,7 +33,7 @@ a{color:#111114;}
 .card-pad{padding-left:14px !important;padding-right:14px !important;}
 .btn a{padding:14px 0 !important;font-size:13px !important;}
 .cta{padding:28px 16px !important;}
-.fraud,.foot{padding-left:16px !important;padding-right:16px !important;}
+.foot{padding-left:16px !important;padding-right:16px !important;}
 .small{font-size:12px !important;}
 .info{padding:24px 16px 8px 16px !important;}
 .info-col{display:block !important;width:100% !important;padding-bottom:16px !important;}
@@ -99,9 +99,6 @@ a{color:#111114;}
 @if (filled($settings['cta_text']))<div class="small" style="padding-top:8px;font-size:13px;line-height:20px;color:#C9C9CF;">{{ $settings['cta_text'] }}</div>@endif
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:20px auto 0 auto;"><tr><td bgcolor="#E30613" style="background:#E30613;"><a href="{{ $ctaUrl }}" data-utm="cta" target="_blank" style="display:block;padding:14px 28px;font-family:Arial, Helvetica, sans-serif;font-size:13px;line-height:16px;font-weight:bold;letter-spacing:1px;color:#FFFFFF;text-decoration:none;">{{ $settings['cta_button'] }} &rsaquo;</a></td></tr></table>
 </td></tr>
-
-<!-- SECTION:fraud -->
-<tr><td class="fraud" bgcolor="#FDECEC" align="center" style="background:#FDECEC;padding:14px 24px;font-family:Arial, Helvetica, sans-serif;font-size:12px;line-height:18px;color:#A3000A;">@if ($fraudLead)<strong>{{ $fraudLead }}</strong> @endif{{ $fraudRest }}</td></tr>
 
 <!-- SECTION:info -->
 <tr><td class="info" bgcolor="#FFFFFF" style="background:#FFFFFF;padding:28px 24px 28px 24px;">

@@ -44,13 +44,13 @@ it('keeps the saved Brevo key when the field is left blank', function () {
     app(MailerSettings::class)->set('brevo_api_key', 'key-ending-1234');
 
     Livewire::test(MailerSettingsPage::class)
-        ->set('data.fraud_text', 'Changed warning.')
+        ->set('data.cta_heading', 'Changed heading.')
         ->call('save')
         ->assertHasNoErrors();
 
     $fresh = new MailerSettings;
     expect($fresh->brevoApiKey())->toBe('key-ending-1234')
-        ->and($fresh->get('fraud_text'))->toBe('Changed warning.');
+        ->and($fresh->get('cta_heading'))->toBe('Changed heading.');
 });
 
 it('rejects an import interval outside 5 to 1440 minutes (TOC-IMP-002)', function (int $minutes) {

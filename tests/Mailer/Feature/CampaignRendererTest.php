@@ -57,7 +57,7 @@ it('renders all sections in the fixed order with both Brevo tags literal (TOC-TP
 
     preg_match_all('/<!-- SECTION:([a-z]+) -->/', $html, $m);
 
-    expect($m[1])->toBe(['preheader', 'topbar', 'header', 'banner', 'stock', 'intro', 'vehicles', 'cta', 'fraud', 'info', 'footer'])
+    expect($m[1])->toBe(['preheader', 'topbar', 'header', 'banner', 'stock', 'intro', 'vehicles', 'cta', 'info', 'footer'])
         ->and($html)->toContain('href="{{ mirror }}"')
         ->and($html)->toContain('href="{{ unsubscribe }}"');
 });
@@ -126,10 +126,9 @@ it('tags every tocojapan.com link with the four UTM parameters (TOC-CMP-005)', f
         ->not->toContain('data-utm');
 });
 
-it('uses footer, fraud text and nav links from settings (TOC-TPL-009)', function () {
+it('uses footer and nav links from settings, with no fraud warning (TOC-TPL-009, client change 2026-10-03)', function () {
     app(MailerSettings::class)->setMany([
         'footer_phone' => '+81 3 1234 5678',
-        'fraud_text' => 'Watch out. Only pay our bank.',
         'nav_links' => [['label' => 'STOCK', 'url' => 'https://tocojapan.com/vehicles']],
     ]);
 
@@ -137,7 +136,7 @@ it('uses footer, fraud text and nav links from settings (TOC-TPL-009)', function
 
     expect($html)->toContain('+81 3 1234 5678')
         ->toContain('tel:+81312345678')
-        ->toContain('<strong>Watch out.</strong> Only pay our bank.')
+        ->not->toContain('Beware of fraudsters')->not->toContain('SECTION:fraud')
         ->toContain('>STOCK</a>')
         ->not->toContain('>HOW TO BUY</a>');
 });
