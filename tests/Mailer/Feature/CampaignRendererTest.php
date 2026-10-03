@@ -62,6 +62,17 @@ it('renders all sections in the fixed order with both Brevo tags literal (TOC-TP
         ->and($html)->toContain('href="{{ unsubscribe }}"');
 });
 
+it('shows the banner at full width with its own height, so it is never stretched or cut', function () {
+    $campaign = sampleCampaign();
+    $campaign->setRelation('banner', new Banner(['path' => 'email-assets/banners/b.jpg', 'alt_text' => 'Hot deals']));
+    $html = app(CampaignRenderer::class)->renderWith($campaign, collect([sampleVehicle(1)]));
+
+    preg_match('/<img class="banner"[^>]*>/', $html, $img);
+
+    expect($img[0])->toContain('width="600"')->toContain('width:100%')->toContain('max-width:600px')->toContain('height:auto')
+        ->not->toContain('height="')->not->toContain('height:220px');
+});
+
 it('shows photo, badge, ref, meta, title, price and a View vehicle button per card (TOC-TPL-003)', function () {
     $html = renderEmail(2, [], ['badge' => 'hot_deal', 'priceFob' => 2650, 'previousPrice' => 2750]);
 

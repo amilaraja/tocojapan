@@ -66,7 +66,7 @@ a{color:#111114;}
 @if ($banner)
 
 <!-- SECTION:banner -->
-<tr><td bgcolor="#0D0D0F" style="background:#0D0D0F;"><a href="{{ $banner['link'] }}" data-utm="banner" target="_blank" style="text-decoration:none;"><img class="banner" src="{{ $banner['url'] }}" width="600" height="220" alt="{{ $banner['alt'] }}" style="display:block;width:600px;height:220px;border:0;font-family:Arial, Helvetica, sans-serif;font-size:18px;line-height:24px;font-weight:bold;color:#FFFFFF;"></a></td></tr>
+<tr><td bgcolor="#0D0D0F" style="background:#0D0D0F;"><a href="{{ $banner['link'] }}" data-utm="banner" target="_blank" style="text-decoration:none;"><img class="banner" src="{{ $banner['url'] }}" width="600" alt="{{ $banner['alt'] }}" style="display:block;width:100%;max-width:600px;height:auto;border:0;font-family:Arial, Helvetica, sans-serif;font-size:18px;line-height:24px;font-weight:bold;color:#FFFFFF;"></a></td></tr>
 @endif
 
 <!-- SECTION:stock -->
