@@ -35,15 +35,17 @@ class VehicleController extends Controller
             ->visibleIn('show_on_homepage')
             ->with(['make', 'vehicleModel', 'bodyType', 'media'])
             ->orderByDesc('published_at')
-            ->limit(16)
+            ->limit(8)
             ->get();
 
-        // Dealer Stock carousel: partner/supplier vehicles only, priced and with photos.
+        // Dealer Stock carousel: partner/supplier vehicles only, priced and
+        // with photos — supplier-hosted or uploaded in the admin.
         $dealerStock = Vehicle::query()
             ->published()
             ->partnerStock()
             ->where('price_on_request', false)
-            ->whereNotNull('external_photos')
+            ->where(fn ($q) => $q->whereNotNull('external_photos')
+                ->orWhereHas('media', fn ($m) => $m->where('collection_name', 'photos')))
             ->with(['make', 'vehicleModel', 'bodyType', 'media'])
             ->orderByDesc('published_at')
             ->orderByDesc('id')

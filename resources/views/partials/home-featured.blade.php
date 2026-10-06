@@ -23,17 +23,6 @@
                     @include('partials.home-hot-deals', ['hotDeals' => $hotDealsList])
                 @endif
 
-                {{-- DEALER STOCK CAROUSEL — partner/supplier vehicles only --}}
-                @if (($dealerStock ?? collect())->isNotEmpty())
-                    @include('partials.home-hot-deals', ['hotDeals' => $dealerStock, 'carousel' => [
-                        'kicker' => 'Partner network',
-                        'heading' => 'Dealer Stock',
-                        'icon' => 'star',
-                        'ribbon' => 'Dealer Stock',
-                        'ribbonClass' => 'bg-toco-navy',
-                        'viewAllUrl' => route('vehicles.index').'?supplier='.($dealerStockSupplier ?? ''),
-                    ]])
-                @endif
 
                 {{-- RECENTLY VIEWED (renders client-side from localStorage) --}}
                 @include('partials.home-recently-viewed')
@@ -54,8 +43,12 @@
                         <div class="bg-white border border-line rounded-sm p-8 text-center text-ink-soft">No published vehicles yet.</div>
                     @else
                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-                            @foreach ($latestList as $vehicle)
-                                <x-vehicle-card :vehicle="$vehicle" :priority="$loop->first" />
+                            {{-- Two rows at every width: 1/2/3/4 columns → 2/4/6/8 cards. --}}
+                            @foreach ($latestList->take(8) as $vehicle)
+                                @php($rowClass = match (true) { $loop->index < 2 => '', $loop->index < 4 => 'hidden sm:block', $loop->index < 6 => 'hidden md:block', default => 'hidden xl:block' })
+                                <div class="{{ $rowClass }}">
+                                    <x-vehicle-card :vehicle="$vehicle" :priority="$loop->first" />
+                                </div>
                             @endforeach
                         </div>
                         <div class="mt-4 text-right">
@@ -65,6 +58,18 @@
                         </div>
                     @endif
                 </div>
+
+                {{-- DEALER STOCK CAROUSEL — partner/supplier vehicles only --}}
+                @if (($dealerStock ?? collect())->isNotEmpty())
+                    @include('partials.home-hot-deals', ['hotDeals' => $dealerStock, 'carousel' => [
+                        'kicker' => 'Partner network',
+                        'heading' => 'Dealer Stock',
+                        'icon' => 'star',
+                        'ribbon' => 'Dealer Stock',
+                        'ribbonClass' => 'bg-toco-navy',
+                        'viewAllUrl' => route('vehicles.index').'?supplier='.($dealerStockSupplier ?? ''),
+                    ]])
+                @endif
             </div>
 
             {{-- RIGHT SIDEBARS --}}
