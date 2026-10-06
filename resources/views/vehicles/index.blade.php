@@ -28,7 +28,8 @@
 
     // Active filter chips — clicking removes that one filter
     $chipDefs = [
-        'supplier' => ($filters['supplier'] ?? '') ? ($suppliers->firstWhere('slug', $filters['supplier'])?->name) : null,
+        'supplier' => ($filters['supplier'] ?? '') === 'partners' ? 'Dealer stock'
+            : (($filters['supplier'] ?? '') ? ($suppliers->firstWhere('slug', $filters['supplier'])?->name) : null),
         'make' => $activeMake,
         'vehicle_model' => $activeModel,
         'body_type' => $activeBody,
@@ -136,6 +137,7 @@
                                     <label class="block font-mono text-[9px] uppercase tracking-widest text-ink-soft mb-1">Stock</label>
                                     <select name="supplier" class="w-full text-sm">
                                         <option value="">All stock</option>
+                                        <option value="partners" @selected(($filters['supplier'] ?? '') === 'partners')>Dealer stock (all partners)</option>
                                         @foreach ($suppliers as $sup)
                                             <option value="{{ $sup->slug }}" @selected(($filters['supplier'] ?? '') === $sup->slug)>{{ $sup->name }}</option>
                                         @endforeach

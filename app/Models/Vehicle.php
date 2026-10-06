@@ -371,6 +371,16 @@ class Vehicle extends Model implements HasMedia
         $query->where(fn ($q) => $q->whereIn('supplier_id', Supplier::idsWithSetting($placement))->orWhereNull('supplier_id'));
     }
 
+    /**
+     * Supplier-feed stock (OnePrice, JWT …), i.e. everything that is not Toco's own.
+     *
+     * @param  Builder<Vehicle>  $query
+     */
+    public function scopePartnerStock($query): void
+    {
+        $query->whereNotNull('supplier_id')->where('supplier_id', '!=', Supplier::ownStockId());
+    }
+
     /** @param  Builder<Vehicle>  $query */
     public function scopeFeatured($query): void
     {
@@ -411,7 +421,9 @@ class Vehicle extends Model implements HasMedia
     public function scopeFilter($query, array $filters): void
     {
         $query
-            ->when(! empty($filters['supplier']), fn ($q) => $q->whereIn('supplier_id', Supplier::query()->where('slug', $filters['supplier'])->select('id')))
+            // supplier=partners → every supplier except Toco's own stock.
+            ->when(($filters['supplier'] ?? null) === 'partners', fn ($q) => $q->partnerStock())
+            ->when(! empty($filters['supplier']) && $filters['supplier'] !== 'partners', fn ($q) => $q->whereIn('supplier_id', Supplier::query()->where('slug', $filters['supplier'])->select('id')))
             ->when(! empty($filters['make']), fn ($q) => $q->whereHas('make', fn ($q) => $q->where('slug', $filters['make'])))
             ->when(! empty($filters['vehicle_model']), fn ($q) => $q->whereHas('vehicleModel', fn ($q) => $q->where('slug', $filters['vehicle_model'])))
             ->when(! empty($filters['body_type']), fn ($q) => $q->whereHas('bodyType', fn ($q) => $q->where('slug', $filters['body_type'])))

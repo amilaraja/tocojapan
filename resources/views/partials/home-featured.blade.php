@@ -23,6 +23,18 @@
                     @include('partials.home-hot-deals', ['hotDeals' => $hotDealsList])
                 @endif
 
+                {{-- DEALER STOCK CAROUSEL — partner/supplier vehicles only --}}
+                @if (($dealerStock ?? collect())->isNotEmpty())
+                    @include('partials.home-hot-deals', ['hotDeals' => $dealerStock, 'carousel' => [
+                        'kicker' => 'Partner network',
+                        'heading' => 'Dealer Stock',
+                        'icon' => 'star',
+                        'ribbon' => 'Dealer Stock',
+                        'ribbonClass' => 'bg-toco-navy',
+                        'viewAllUrl' => route('vehicles.index').'?supplier='.($dealerStockSupplier ?? ''),
+                    ]])
+                @endif
+
                 {{-- RECENTLY VIEWED (renders client-side from localStorage) --}}
                 @include('partials.home-recently-viewed')
 

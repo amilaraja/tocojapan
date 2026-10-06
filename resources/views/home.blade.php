@@ -145,7 +145,7 @@
                     <div class="bg-white text-ink border border-line rounded-sm shadow-[0_10px_30px_rgba(16,20,58,.18)] p-4 md:p-5 mt-3"
                         x-data="{
                             tab: 'make',
-                            makeSlug: '', modelSlug: '', yearFrom: '', priceTo: '', transmission: '', bodyType: '', stockRef: '',
+                            makeSlug: '', modelSlug: '', yearFrom: '', yearTo: '', priceFrom: '', priceTo: '', transmission: '', bodyType: '', stockRef: '',
                             models: [], loadingModels: false,
                             matchCount: {{ (int) $totalPublished }},
                             countLoading: false,
@@ -154,6 +154,8 @@
                                 this.$watch('makeSlug',     () => this.queueRecount());
                                 this.$watch('modelSlug',    () => this.queueRecount());
                                 this.$watch('yearFrom',     () => this.queueRecount());
+                                this.$watch('yearTo',       () => this.queueRecount());
+                                this.$watch('priceFrom',    () => this.queueRecount());
                                 this.$watch('priceTo',      () => this.queueRecount());
                                 this.$watch('transmission', () => this.queueRecount());
                                 this.$watch('bodyType',     () => this.queueRecount());
@@ -176,6 +178,8 @@
                                 if (this.makeSlug)     p.set('make', this.makeSlug);
                                 if (this.modelSlug)    p.set('vehicle_model', this.modelSlug);
                                 if (this.yearFrom)     p.set('year_from', this.yearFrom);
+                                if (this.yearTo)       p.set('year_to', this.yearTo);
+                                if (this.priceFrom)    p.set('price_from', this.priceFrom);
                                 if (this.priceTo)      p.set('price_to', this.priceTo);
                                 if (this.transmission) p.set('transmission', this.transmission);
                                 if (this.bodyType)     p.set('body_type', this.bodyType);
@@ -197,6 +201,8 @@
                                     if (this.makeSlug) p.set('make', this.makeSlug);
                                     if (this.modelSlug) p.set('vehicle_model', this.modelSlug);
                                     if (this.yearFrom) p.set('year_from', this.yearFrom);
+                                    if (this.yearTo) p.set('year_to', this.yearTo);
+                                    if (this.priceFrom) p.set('price_from', this.priceFrom);
                                     if (this.priceTo) p.set('price_to', this.priceTo);
                                     if (this.transmission) p.set('transmission', this.transmission);
                                 } else if (this.tab === 'body') {
@@ -220,7 +226,7 @@
                             @endforeach
                         </div>
 
-                        <form @submit.prevent="submit()" x-show="tab === 'make'" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+                        <form @submit.prevent="submit()" x-show="tab === 'make'" class="grid grid-cols-2 lg:grid-cols-4 gap-2">
                             <select x-model="makeSlug" @change="loadModels(makeSlug)" aria-label="Make" class="w-full text-sm">
                                 <option value="">Any make</option>
                                 @foreach ($allMakes as $m)
@@ -233,15 +239,24 @@
                                     <option :value="m.slug" x-text="m.name"></option>
                                 </template>
                             </select>
+                            {{-- Year and price ranges: From / To pairs (second row on desktop). --}}
                             <select x-model="yearFrom" aria-label="Year from" class="w-full text-sm">
-                                <option value="">Any year</option>
-                                @for ($y = (int) date('Y'); $y >= 1990; $y--)<option value="{{ $y }}">{{ $y }}+</option>@endfor
+                                <option value="">Year from</option>
+                                @for ($y = (int) date('Y'); $y >= 1990; $y--)<option value="{{ $y }}">{{ $y }}</option>@endfor
                             </select>
-                            <select x-model="priceTo" aria-label="Maximum price" class="w-full text-sm">
-                                <option value="">Any price</option>
-                                @foreach ([3000, 5000, 8000, 12000, 20000, 35000, 60000] as $p)<option value="{{ $p }}">≤ ${{ number_format($p) }}</option>@endforeach
+                            <select x-model="yearTo" aria-label="Year to" class="w-full text-sm">
+                                <option value="">Year to</option>
+                                @for ($y = (int) date('Y'); $y >= 1990; $y--)<option value="{{ $y }}">{{ $y }}</option>@endfor
                             </select>
-                            <button type="submit" :disabled="matchCount === 0" class="col-span-2 md:col-span-2 lg:col-span-1 bg-toco-red hover:bg-toco-red-deep disabled:bg-toco-silver-2 disabled:text-ink-soft disabled:cursor-not-allowed text-white font-bold uppercase tracking-widest text-xs px-3 py-2.5 rounded-sm inline-flex items-center justify-center gap-1.5 whitespace-nowrap">
+                            <select x-model="priceFrom" aria-label="Price from" class="w-full text-sm">
+                                <option value="">Price from</option>
+                                @foreach ([1000, 3000, 5000, 8000, 12000, 20000, 35000, 60000, 100000] as $p)<option value="{{ $p }}">${{ number_format($p) }}</option>@endforeach
+                            </select>
+                            <select x-model="priceTo" aria-label="Price to" class="w-full text-sm">
+                                <option value="">Price to</option>
+                                @foreach ([1000, 3000, 5000, 8000, 12000, 20000, 35000, 60000, 100000] as $p)<option value="{{ $p }}">${{ number_format($p) }}</option>@endforeach
+                            </select>
+                            <button type="submit" :disabled="matchCount === 0" class="col-span-2 bg-toco-red hover:bg-toco-red-deep disabled:bg-toco-silver-2 disabled:text-ink-soft disabled:cursor-not-allowed text-white font-bold uppercase tracking-widest text-xs px-3 py-2.5 rounded-sm inline-flex items-center justify-center gap-1.5 whitespace-nowrap">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
                                 <span class="lg:hidden" x-text="countLoading ? 'Counting…' : ('Search ' + matchCount.toLocaleString() + ' vehicles')"></span>
                                 <span class="hidden lg:inline" x-text="countLoading ? '…' : ('Search · ' + matchCount.toLocaleString())"></span>

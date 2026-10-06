@@ -295,10 +295,6 @@
                         <span class="text-white/70">Japan time</span>
                         <span id="jp-clock" class="font-mono text-white tabular-nums">—</span>
                     </span>
-                    <a href="#" class="hidden lg:inline-flex items-center gap-1.5 hover:text-white">
-                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-toco-red"></span>
-                        <span>Live: {{ rand(10, 20) }} buyers viewing now</span>
-                    </a>
                     <a href="https://wa.me/819057628702" target="_blank" rel="noopener" class="hidden sm:inline-flex items-center gap-1.5 hover:text-white notranslate" translate="no">
                         <x-icons.whatsapp class="w-3.5 h-3.5 shrink-0" />
                         <span>+81 90 5762 8702</span>

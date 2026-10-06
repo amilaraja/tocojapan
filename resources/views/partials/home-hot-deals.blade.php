@@ -1,11 +1,22 @@
 @props(['hotDeals'])
-<div x-data="hotDealCarousel()" x-init="init()">
-    @include('partials.home-section-heading', [
+@php
+    // Shared by the Hot Deal and Dealer Stock carousels (same tuned markup).
+    $carousel = array_merge([
         'kicker' => 'Limited time',
         'heading' => 'Hot Deal',
         'icon' => 'fire',
-        'sublabel' => null,
+        'ribbon' => 'Hot Deal',
+        'ribbonClass' => 'bg-orange-700',
         'viewAllUrl' => route('vehicles.index').'?featured=1',
+    ], $carousel ?? []);
+@endphp
+<div x-data="hotDealCarousel()" x-init="init()">
+    @include('partials.home-section-heading', [
+        'kicker' => $carousel['kicker'],
+        'heading' => $carousel['heading'],
+        'icon' => $carousel['icon'],
+        'sublabel' => null,
+        'viewAllUrl' => $carousel['viewAllUrl'],
     ])
 
     <div class="relative">
@@ -27,9 +38,9 @@
                     <div class="relative">
                         {{-- diagonal HOT ribbon (top-left) --}}
                         <div class="absolute top-0 left-0 z-10 pointer-events-none">
-                            <div class="bg-orange-700 text-white font-extrabold uppercase tracking-widest text-[10px] px-3 py-1 shadow-md"
+                            <div class="{{ $carousel['ribbonClass'] }} text-white font-extrabold uppercase tracking-widest text-[10px] px-3 py-1 shadow-md"
                                  style="clip-path: polygon(0 0, 100% 0, 90% 100%, 0 100%);">
-                                Hot Deal
+                                {{ $carousel['ribbon'] }}
                             </div>
                         </div>
                         <x-vehicle-card :vehicle="$vehicle" />

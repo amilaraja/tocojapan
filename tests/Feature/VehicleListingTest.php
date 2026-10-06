@@ -85,3 +85,18 @@ it('returns 404 for a non-published vehicle detail', function () {
 
     $this->get('/vehicles/'.$vehicle->slug)->assertNotFound();
 });
+
+it('filters by partner (dealer) stock and shows the dealer carousel on the homepage', function () {
+    $make = Make::create(['slug' => 'mazda', 'name' => 'Mazda']);
+    $model = VehicleModel::create(['make_id' => $make->id, 'slug' => 'demio', 'name' => 'Demio']);
+    $oneprice = \App\Models\Supplier::query()->where('slug', 'oneprice')->value('id');
+    Vehicle::factory()->create(['make_id' => $make->id, 'vehicle_model_id' => $model->id, 'status' => 'published', 'published_at' => now(), 'title' => 'Own Demio']);
+    Vehicle::factory()->create(['make_id' => $make->id, 'vehicle_model_id' => $model->id, 'status' => 'published', 'published_at' => now(), 'title' => 'Dealer Demio',
+        'supplier_id' => $oneprice, 'supplier_ref' => '77', 'price_on_request' => false, 'price_fob' => 5000, 'external_photos' => ['https://example.com/a.jpg']]);
+
+    $this->get('/vehicles?supplier=partners')->assertOk()->assertSee('Dealer Demio')->assertDontSee('Own Demio');
+
+    $home = $this->get('/')->assertOk();
+    $home->assertSee('Dealer Stock')->assertSee('supplier=partners', false)->assertDontSee('buyers viewing now');
+    $home->assertSee('Year to')->assertSee('Price from');
+});

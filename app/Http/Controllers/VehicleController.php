@@ -38,6 +38,18 @@ class VehicleController extends Controller
             ->limit(16)
             ->get();
 
+        // Dealer Stock carousel: partner/supplier vehicles only, priced and with photos.
+        $dealerStock = Vehicle::query()
+            ->published()
+            ->partnerStock()
+            ->where('price_on_request', false)
+            ->whereNotNull('external_photos')
+            ->with(['make', 'vehicleModel', 'bodyType', 'media'])
+            ->orderByDesc('published_at')
+            ->orderByDesc('id')
+            ->limit(12)
+            ->get();
+
         $makesWithCounts = Vehicle::withPublishedCounts(Make::where('is_active', true)
             ->with('media')
             ->orderBy('sort_order')
@@ -68,6 +80,8 @@ class VehicleController extends Controller
 
         $shared = [
             'hotDeals' => $hotDeals,
+            'dealerStock' => $dealerStock,
+            'dealerStockSupplier' => 'partners',
             'latest' => $latest,
             // Back-compat: existing partials still reference $featured.
             'featured' => $latest,
