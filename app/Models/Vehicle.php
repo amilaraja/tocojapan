@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Image\Enums\Fit;
@@ -31,6 +33,14 @@ class Vehicle extends Model implements HasMedia
      */
     protected static function booted(): void
     {
+        // Anything created by hand (admin form, factories, API) is own stock
+        // unless a supplier is given; feed imports always set it explicitly.
+        static::creating(function (Vehicle $vehicle): void {
+            if ($vehicle->supplier_id === null && ($own = Supplier::ownStockId())) {
+                $vehicle->supplier_id = $own;
+            }
+        });
+
         static::saving(function (Vehicle $vehicle): void {
             if ($vehicle->status === 'published' && $vehicle->published_at === null) {
                 $vehicle->published_at = now();
@@ -52,6 +62,12 @@ class Vehicle extends Model implements HasMedia
         'published_at' => 'datetime',
         'sold_at' => 'datetime',
         'fb_shared_at' => 'datetime',
+        'delisted_at' => 'datetime',
+        'supplier_synced_at' => 'datetime',
+        'external_photos' => 'array',
+        'supplier_meta' => 'array',
+        'sync_locked' => 'bool',
+        'source_price' => 'decimal:2',
         'year_first_reg' => 'integer',
         'registration_month' => 'integer',
         'manufacture_year' => 'integer',
@@ -101,6 +117,32 @@ class Vehicle extends Model implements HasMedia
         $masked = preg_replace_callback('/[A-Za-z0-9]/u', fn () => '*', $tail) ?? $tail;
 
         return $head.$masked;
+    }
+
+    /** @return BelongsTo<Supplier, $this> */
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    /** Stock that comes from a supplier feed (OnePrice, JWT …) rather than Toco's yard. */
+    public function isSupplierStock(): bool
+    {
+        return $this->supplier_id !== null && (int) $this->supplier_id !== Supplier::ownStockId();
+    }
+
+    /**
+     * PayPal / bank-transfer checkout. Supplier stock is quote-only unless the
+     * supplier's "allow online checkout" setting is on, because its
+     * availability is only confirmed when sales contacts the supplier.
+     */
+    public function canCheckoutOnline(): bool
+    {
+        if (! $this->isSupplierStock()) {
+            return true;
+        }
+
+        return (bool) $this->supplier?->setting('allow_online_checkout');
     }
 
     /** @return BelongsTo<Make, $this> */
@@ -155,6 +197,42 @@ class Vehicle extends Model implements HasMedia
         });
     }
 
+    /**
+     * Published vehicles per make_id / body_type_id from one cached GROUP BY
+     * (10 min). Replaces correlated COUNT subqueries per make/body type,
+     * which get slow once supplier feeds add tens of thousands of rows.
+     *
+     * @return array<int, int>
+     */
+    public static function publishedCountsBy(string $column): array
+    {
+        abort_unless(in_array($column, ['make_id', 'body_type_id'], true), 500);
+
+        return Cache::remember("vehicles.published_counts.{$column}", now()->addMinutes(10), fn () => static::query()
+            ->where('status', 'published')
+            ->whereNotNull($column)
+            ->groupBy($column)
+            ->selectRaw("{$column} as k, COUNT(*) as c")
+            ->pluck('c', 'k')
+            ->map(fn ($c) => (int) $c)
+            ->all());
+    }
+
+    /**
+     * Set `published_count` on each make/body type from publishedCountsBy().
+     *
+     * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  \Illuminate\Database\Eloquent\Collection<int, TModel>  $items
+     * @return \Illuminate\Database\Eloquent\Collection<int, TModel>
+     */
+    public static function withPublishedCounts(\Illuminate\Database\Eloquent\Collection $items, string $column): \Illuminate\Database\Eloquent\Collection
+    {
+        $counts = static::publishedCountsBy($column);
+
+        return $items->each(fn ($item) => $item->setAttribute('published_count', $counts[$item->getKey()] ?? 0));
+    }
+
     public function isSold(): bool
     {
         return $this->status === 'sold';
@@ -169,11 +247,17 @@ class Vehicle extends Model implements HasMedia
      */
     public static function latestArrivalIds(int $limit = 7): array
     {
+        // Keyed by app instance: one cache per request (and per test), never
+        // shared across requests in a long-lived process.
         static $cache = [];
+        $key = spl_object_id(app()).':'.$limit;
 
-        if (! isset($cache[$limit])) {
-            $cache[$limit] = static::query()
+        if (! isset($cache[$key])) {
+            // Badge population is own stock only — a supplier feed import would
+            // otherwise flood the "new arrival" slots.
+            $cache[$key] = static::query()
                 ->where('status', 'published')
+                ->where(fn ($q) => $q->where('supplier_id', Supplier::ownStockId())->orWhereNull('supplier_id'))
                 ->whereNotNull('published_at')
                 ->orderByDesc('published_at')
                 ->orderByDesc('id')
@@ -182,7 +266,7 @@ class Vehicle extends Model implements HasMedia
                 ->all();
         }
 
-        return $cache[$limit];
+        return $cache[$key];
     }
 
     /** Whether this vehicle is among the latest-N new arrivals. */
@@ -215,7 +299,14 @@ class Vehicle extends Model implements HasMedia
         return static::query()
             ->published()
             ->where('id', '<>', $this->id)
+            // Candidate set limited to the two tiers that can rank at all —
+            // keeps the sort small now that supplier feeds add tens of
+            // thousands of rows.
+            ->where(fn ($q) => $q->where('make_id', $this->make_id)
+                ->when($this->body_type_id, fn ($q) => $q->orWhere('body_type_id', $this->body_type_id)))
             ->with(['make', 'vehicleModel', 'bodyType', 'media'])
+            // Same source first: own-stock pages recommend own stock.
+            ->orderByRaw('CASE WHEN supplier_id = ? THEN 1 ELSE 0 END DESC', [$this->supplier_id])
             ->orderByRaw('CASE WHEN make_id = ? AND vehicle_model_id = ? THEN 1 ELSE 0 END DESC', [$this->make_id, $this->vehicle_model_id])
             ->orderByRaw('CASE WHEN make_id = ? AND body_type_id = ? THEN 1 ELSE 0 END DESC', [$this->make_id, $this->body_type_id])
             ->orderByRaw('CASE WHEN make_id = ? THEN 1 ELSE 0 END DESC', [$this->make_id])
@@ -249,6 +340,35 @@ class Vehicle extends Model implements HasMedia
             && (float) $this->price_fob_discount > 0
             && (float) $this->price_fob > 0
             && (float) $this->price_fob_discount < (float) $this->price_fob;
+    }
+
+    /**
+     * Order by supplier priority (own stock first), as set on each supplier.
+     *
+     * @param  Builder<Vehicle>  $query
+     */
+    public function scopeOrderBySupplierPriority($query): void
+    {
+        $priorities = Supplier::query()->pluck('sort_priority', 'id');
+        if ($priorities->unique()->count() <= 1) {
+            return;
+        }
+        $case = 'CASE supplier_id';
+        foreach ($priorities as $id => $priority) {
+            $case .= ' WHEN '.(int) $id.' THEN '.(int) $priority;
+        }
+        $query->orderByRaw($case.' ELSE 1000 END ASC');
+    }
+
+    /**
+     * Own stock plus suppliers whose setting allows this placement
+     * ('show_on_homepage', 'in_sitemap').
+     *
+     * @param  Builder<Vehicle>  $query
+     */
+    public function scopeVisibleIn($query, string $placement): void
+    {
+        $query->where(fn ($q) => $q->whereIn('supplier_id', Supplier::idsWithSetting($placement))->orWhereNull('supplier_id'));
     }
 
     /** @param  Builder<Vehicle>  $query */
@@ -291,6 +411,7 @@ class Vehicle extends Model implements HasMedia
     public function scopeFilter($query, array $filters): void
     {
         $query
+            ->when(! empty($filters['supplier']), fn ($q) => $q->whereIn('supplier_id', Supplier::query()->where('slug', $filters['supplier'])->select('id')))
             ->when(! empty($filters['make']), fn ($q) => $q->whereHas('make', fn ($q) => $q->where('slug', $filters['make'])))
             ->when(! empty($filters['vehicle_model']), fn ($q) => $q->whereHas('vehicleModel', fn ($q) => $q->where('slug', $filters['vehicle_model'])))
             ->when(! empty($filters['body_type']), fn ($q) => $q->whereHas('bodyType', fn ($q) => $q->where('slug', $filters['body_type'])))
@@ -317,6 +438,7 @@ class Vehicle extends Model implements HasMedia
                 $q->where('title', 'like', $term)
                     ->orWhere('ref_no', 'like', $term)
                     ->orWhere('stock_no', 'like', $term)
+                    ->orWhere('supplier_ref', 'like', $term)
                     ->orWhereHas('make', fn ($q) => $q->where('name', 'like', $term))
                     ->orWhereHas('vehicleModel', fn ($q) => $q->where('name', 'like', $term));
             }));
@@ -378,13 +500,50 @@ class Vehicle extends Model implements HasMedia
     /** Card-sized photo URL — uses the 'card' conversion once it is generated. */
     public function cardPhotoUrl(): ?string
     {
-        return $this->conversionUrl('card');
+        return $this->conversionUrl('card') ?? $this->externalPhotoUrls()[0] ?? null;
     }
 
-    /** 1280px hero/retina photo URL — uses the 'gallery' conversion. */
+    /** 1280px hero/retina photo URL — uses the 'gallery' conversion. Null for hotlinked supplier photos (no 2x variant). */
     public function galleryPhotoUrl(): ?string
     {
         return $this->conversionUrl('gallery');
+    }
+
+    /** First photo at original size: uploaded photo, else the supplier's first photo. */
+    public function primaryPhotoUrl(): ?string
+    {
+        return ($this->getFirstMediaUrl('photos') ?: null) ?? $this->externalPhotoUrls()[0] ?? null;
+    }
+
+    /**
+     * Supplier-hosted photo URLs (hotlinked). Uploaded photos always win:
+     * once an admin uploads photos for a supplier vehicle these are ignored.
+     *
+     * @return array<int, string>
+     */
+    public function externalPhotoUrls(): array
+    {
+        return array_values(array_filter((array) ($this->external_photos ?? []), 'is_string'));
+    }
+
+    /**
+     * Every photo for the detail page in three sizes.
+     *
+     * @return array{gallery: Collection<int, string>, thumb: Collection<int, string>, full: Collection<int, string>}
+     */
+    public function photoSet(): array
+    {
+        $photos = $this->getMedia('photos');
+        if ($photos->isNotEmpty()) {
+            return [
+                'gallery' => $photos->map(fn ($m) => $m->hasGeneratedConversion('gallery') ? $m->getUrl('gallery') : $m->getUrl())->values(),
+                'thumb' => $photos->map(fn ($m) => $m->hasGeneratedConversion('thumb') ? $m->getUrl('thumb') : $m->getUrl())->values(),
+                'full' => $photos->map(fn ($m) => $m->getUrl())->values(),
+            ];
+        }
+        $external = collect($this->externalPhotoUrls());
+
+        return ['gallery' => $external, 'thumb' => $external, 'full' => $external];
     }
 
     /** First-photo URL for a given conversion, falling back to the original. */

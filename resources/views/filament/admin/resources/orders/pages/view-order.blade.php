@@ -12,7 +12,7 @@
                 <h2 class="text-lg font-bold text-gray-900 mt-1">{{ $order->vehicle->title }}</h2>
                 <p class="text-xs text-gray-500 mt-0.5">{{ $order->vehicle->ref_no }}</p>
 
-                @php($photo = $order->vehicle->getFirstMediaUrl('photos'))
+                @php($photo = $order->vehicle->primaryPhotoUrl())
                 @if ($photo)
                     <a href="{{ url('/vehicles/'.$order->vehicle->slug) }}" target="_blank" class="block mt-3 aspect-[16/10] bg-gray-100 rounded-lg overflow-hidden">
                         <img src="{{ $photo }}" alt="" class="w-full h-full object-cover">

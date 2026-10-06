@@ -8,6 +8,7 @@ use App\Models\Make;
 use App\Models\Page;
 use App\Models\Testimonial;
 use App\Models\Vehicle;
+use App\Support\HowToBuyIcons;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -223,7 +224,7 @@ class HomeTemplate implements PageTemplate
                                 TextInput::make('num')->required()->placeholder('01')->maxLength(4)->columnSpan(1),
                                 Select::make('icon')
                                     ->label('Built-in icon')
-                                    ->options(\App\Support\HowToBuyIcons::options())
+                                    ->options(HowToBuyIcons::options())
                                     ->searchable()
                                     ->helperText('Used when no icon image is uploaded.')
                                     ->columnSpan(2),
@@ -249,7 +250,7 @@ class HomeTemplate implements PageTemplate
                                         TextInput::make('url')->placeholder('https://… or /vehicles')->required()->columnSpan(2),
                                         Select::make('icon')
                                             ->label('Built-in icon')
-                                            ->options(\App\Support\HowToBuyIcons::options())
+                                            ->options(HowToBuyIcons::options())
                                             ->searchable()
                                             ->columnSpan(1),
                                         Select::make('style')
@@ -297,33 +298,30 @@ class HomeTemplate implements PageTemplate
     {
         $featured = Vehicle::query()
             ->published()
+            ->visibleIn('show_on_homepage')
             ->with(['make', 'vehicleModel', 'bodyType', 'media'])
             ->orderByDesc('published_at')
             ->limit(8)
             ->get();
 
-        $makesWithCounts = Make::where('is_active', true)
-            ->with('media')
-            ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
-            ->orderByDesc('published_count')->orderBy('name')->limit(12)->get();
+        // Counts come from one cached GROUP BY (see Vehicle::publishedCountsBy).
+        $makesWithCounts = Vehicle::withPublishedCounts(Make::where('is_active', true)->with('media')->get(), 'make_id')
+            ->sortBy([['published_count', 'desc'], ['name', 'asc']])->take(12)->values();
 
-        $bodyTypesWithCounts = BodyType::where('is_active', true)
+        $bodyTypesWithCounts = Vehicle::withPublishedCounts(BodyType::where('is_active', true)
             ->with('media')
-            ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
-            ->orderBy('sort_order')->orderBy('name')->limit(12)->get();
+            ->orderBy('sort_order')->orderBy('name')->limit(12)->get(), 'body_type_id');
 
         return view('home', [
             'content' => $page->data ?? [],
             'featured' => $featured,
             'makesWithCounts' => $makesWithCounts,
             'bodyTypesWithCounts' => $bodyTypesWithCounts,
-            'allMakes' => Make::where('is_active', true)
-                ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
-                ->orderBy('name')->get(['id', 'slug', 'name']),
-            'allBodyTypes' => BodyType::where('is_active', true)
+            'allMakes' => Vehicle::withPublishedCounts(Make::where('is_active', true)
+                ->orderBy('name')->get(['id', 'slug', 'name']), 'make_id'),
+            'allBodyTypes' => Vehicle::withPublishedCounts(BodyType::where('is_active', true)
                 ->with('media')
-                ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
-                ->orderBy('name')->get(),
+                ->orderBy('name')->get(), 'body_type_id'),
             'totalPublished' => Vehicle::query()->published()->count(),
             'testimonials' => Testimonial::query()
                 ->featured()->with('media')->orderBy('sort_order')->orderByDesc('created_at')->limit(12)->get(),

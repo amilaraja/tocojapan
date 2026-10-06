@@ -11,7 +11,7 @@
         </div>
 
         <div class="bg-white border border-line rounded-sm p-5 flex items-center gap-4">
-            @php($photo = $order->vehicle->getFirstMediaUrl('photos'))
+            @php($photo = $order->vehicle->primaryPhotoUrl())
             <div class="w-28 h-20 bg-toco-silver-2 rounded-sm overflow-hidden shrink-0">
                 @if ($photo)
                     <img src="{{ $photo }}" alt="" class="w-full h-full object-cover">

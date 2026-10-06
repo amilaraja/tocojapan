@@ -136,6 +136,7 @@ Write safety: `Vehicle::booted()` has a `saving` hook. `VehicleSource` never cal
 | `phpunit.xml`, `tests/Pest.php` | add the `tests/Mailer` suite | test wiring |
 | `CLAUDE.md` | new file with the Mailer section | plan section 3 |
 | `.gitignore` | ignore the design zip | done in 7d76bd7 |
+| `app/Modules/Mailer/Domain/Vehicles/VehicleSource.php` | campaign vehicle search limited to Toco own stock (supplier-feed vehicles excluded) | OnePrice supplier import 2026-10-06: feed vehicles have hotlinked photos only |
 
 ## 10. Open items still needed from TOCO before later phases
 

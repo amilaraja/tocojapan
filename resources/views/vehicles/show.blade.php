@@ -1,9 +1,11 @@
 @php
-    $photos = $vehicle->getMedia('photos');
     // Hero carousel: 1280px WebP. Thumb strip: 300px WebP. Lightbox: originals.
-    $photoUrls = $photos->map(fn ($m) => $m->hasGeneratedConversion('gallery') ? $m->getUrl('gallery') : $m->getUrl())->values();
-    $thumbUrls = $photos->map(fn ($m) => $m->hasGeneratedConversion('thumb') ? $m->getUrl('thumb') : $m->getUrl())->values();
-    $fullUrls = $photos->map(fn ($m) => $m->getUrl())->values();
+    // Supplier stock without uploads falls back to the supplier's hotlinked photos.
+    ['gallery' => $photoUrls, 'thumb' => $thumbUrls, 'full' => $fullUrls] = $vehicle->photoSet();
+    $isPartnerStock = $vehicle->isSupplierStock();
+    // LC proforma: same eligibility as online checkout (priced, has M3, not quote-only partner stock).
+    $proformaEligible = app(\App\Services\ProformaInvoiceService::class)->vehicleError($vehicle) === null;
+    $supplierMeta = $vehicle->supplier_meta ?? [];
     if ($photoUrls->isEmpty()) {
         $photoUrls = $thumbUrls = $fullUrls = collect(['/img/v5/car-'.((($vehicle->id % 4) + 1)).'.jpg']);
     }
@@ -29,6 +31,7 @@
                     'age_limit' => $reg->year_restriction,
                     'shipment_time' => $reg->time_of_shipment,
                     'notes' => $reg->comments,
+                    'lc' => $reg->allowsLc(),
                 ] : null,
             ];
         })->all(),
@@ -43,7 +46,7 @@
         && ! empty(config("paypal.{$paypalMode}.client_secret"));
     $bankReady = $payment->bank_transfer_enabled;
     $isSold = $vehicle->status === 'sold';
-    $buyable = ! $isSold && ! $vehicle->price_on_request && $vehicle->effectivePriceFob() > 0;
+    $buyable = ! $isSold && ! $vehicle->price_on_request && $vehicle->effectivePriceFob() > 0 && $vehicle->canCheckoutOnline();
 
     // --- SEO meta ---
     // Title format: "{Year} {Make} {Model} for sale — Toco Japan"
@@ -631,6 +634,30 @@
                         </div>
                     </div>
                 @endif
+
+                {{-- Partner (supplier feed) stock: auction grade, sheet, yard. --}}
+                @if ($isPartnerStock)
+                    <div class="bg-white border border-line rounded-sm p-5">
+                        <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">Partner stock</p>
+                        <h2 class="font-bold text-toco-navy text-lg mt-1 mb-3">Inspection &amp; availability</h2>
+                        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                            @if (! empty($supplierMeta['evaluation_score']))
+                                <div class="flex justify-between border-b border-line py-1"><dt class="text-ink-soft">Evaluation score</dt><dd class="font-semibold text-toco-navy">{{ $supplierMeta['evaluation_score'] }}</dd></div>
+                            @endif
+                            <div class="flex justify-between border-b border-line py-1"><dt class="text-ink-soft">Listing updated</dt><dd class="font-semibold text-toco-navy">{{ optional($vehicle->supplier_synced_at)->format('j M Y') ?? '—' }}</dd></div>
+                            @foreach (($supplierMeta['extras'] ?? []) as $extra)
+                                <div class="flex justify-between border-b border-line py-1"><dt class="text-ink-soft">{{ $extra }}</dt><dd class="font-semibold text-toco-navy">Yes</dd></div>
+                            @endforeach
+                            @if (! empty($supplierMeta['m3_estimated']))
+                                <div class="sm:col-span-2 text-[12px] text-ink-soft pt-1">Shipping volume (M3) is estimated from the same model; the final freight is confirmed with your quote.</div>
+                            @endif
+                        </dl>
+                        <p class="text-sm text-ink-soft mt-3 leading-relaxed">This vehicle is offered through our partner network in Japan. Our team checks availability and condition with the seller before confirming your quote and invoice.</p>
+                        @if (! empty($supplierMeta['auction_sheet']))
+                            <a href="{{ $supplierMeta['auction_sheet'] }}" target="_blank" rel="noopener nofollow" class="inline-flex items-center gap-2 mt-3 text-sm font-bold text-toco-red underline">View inspection sheet</a>
+                        @endif
+                    </div>
+                @endif
             </div>
 
             {{-- Sticky aside.
@@ -681,6 +708,9 @@
                             </div>
                         @else
                             <p class="font-extrabold text-3xl text-toco-red mt-1">@money($vehicle->price_fob)</p>
+                        @endif
+                        @if ($isPartnerStock && ! $isSold)
+                            <p class="text-[12px] text-ink-soft mt-2 leading-tight">Partner stock in Japan — availability and final price are confirmed with your quote.</p>
                         @endif
                         @if (! $vehicle->price_on_request && $vehicle->price_fob > 0 && ($destPort ?? null) && $vehicle->m3 > 0)
                             {{-- Reads cifCalc state hoisted to <aside>. Shows the
@@ -778,6 +808,19 @@
                                 <div x-show="regulation()?.notes" class="flex gap-2"><dt class="text-ink-soft w-28 shrink-0">Notes</dt><dd class="text-ink whitespace-pre-line" x-text="regulation()?.notes"></dd></div>
                             </dl>
                         </div>
+
+                        @if ($proformaEligible)
+                            {{-- LC destinations (Import regulations → Payment modes) get a proforma invoice. --}}
+                            <div x-show="regulation()?.lc" x-cloak class="mt-3 border border-toco-navy/30 rounded-sm p-3 text-[12px] leading-snug">
+                                <p class="font-mono text-[10px] uppercase tracking-widest text-toco-navy font-bold mb-1">LC payment accepted</p>
+                                <p class="text-ink-soft mb-2">Paying by Letter of Credit? Download a proforma invoice for this vehicle to open your LC.</p>
+                                @auth
+                                    <a :href="'{{ route('proforma.create', $vehicle->slug) }}?port_id=' + portId" class="block text-center bg-toco-navy hover:bg-toco-navy-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-2.5 rounded-sm">LC proforma invoice</a>
+                                @else
+                                    <a href="{{ route('login') }}" class="block text-center bg-toco-navy hover:bg-toco-navy-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-2.5 rounded-sm">Sign in for an LC proforma invoice</a>
+                                @endauth
+                            </div>
+                        @endif
 
                         <div x-show="error" x-cloak class="text-toco-red text-[12px] mt-3" x-text="error"></div>
 

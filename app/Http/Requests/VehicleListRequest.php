@@ -18,6 +18,7 @@ class VehicleListRequest extends FormRequest
     {
         return [
             'q' => ['nullable', 'string', 'max:120'],
+            'supplier' => ['nullable', 'string', 'max:60'],
             'make' => ['nullable', 'string', 'max:60'],
             'vehicle_model' => ['nullable', 'string', 'max:60'],
             'body_type' => ['nullable', 'string', 'max:60'],

@@ -10,6 +10,7 @@
         ['orders', 'My Orders', route('orders.index'), 'M3 7l9-4 9 4-9 4-9-4zm0 0v10l9 4 9-4V7M12 11v10'],
         ['favorites', 'Wishlist', route('favorites.index'), 'M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.7A4 4 0 0 1 19 11c0 5.5-7 10-7 10z'],
         ['quotes', 'Quotes', route('quotes.index'), 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'],
+        ['proforma', 'Proforma Invoices', route('proforma.index'), 'M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5'],
         ['profile', 'Account Details', route('profile.edit'), 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0z'],
     ];
     $accountUser = Auth::user();

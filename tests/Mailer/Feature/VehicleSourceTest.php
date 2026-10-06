@@ -2,6 +2,7 @@
 
 use App\Models\BodyType;
 use App\Models\Make;
+use App\Models\Supplier;
 use App\Models\Vehicle;
 use App\Modules\Mailer\Domain\Vehicles\VehicleDTO;
 use App\Modules\Mailer\Domain\Vehicles\VehicleSource;
@@ -74,6 +75,14 @@ it('never returns sold, draft or deleted vehicles in search (TOC-VEH-003)', func
 
     // includeReserved is accepted for admins but never widens to sold.
     expect(collect($this->source->search([], 1, includeReserved: true)->items())->pluck('id')->all())->toBe([$available->id]);
+});
+
+it('never offers supplier-feed stock for campaigns (own stock only)', function () {
+    $own = mailerVehicle(['stock_no' => 'E1']);
+    $oneprice = Supplier::query()->where('slug', 'oneprice')->value('id');
+    mailerVehicle(['stock_no' => 'OP-1', 'supplier_id' => $oneprice, 'supplier_ref' => '1']);
+
+    expect(collect($this->source->search()->items())->pluck('id')->all())->toBe([$own->id]);
 });
 
 it('returns the exact stock ref first (TOC-VEH-004)', function () {

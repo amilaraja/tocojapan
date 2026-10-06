@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 class FacebookPosterService
 {
     protected const API_VERSION = 'v19.0';
+
     protected const BASE_URL = 'https://graph.facebook.com';
 
     public function __construct(protected SocialSettings $settings) {}
@@ -106,7 +107,7 @@ class FacebookPosterService
             return null;
         }
 
-        $url = $vehicle->getFirstMediaUrl('photos');
+        $url = $vehicle->primaryPhotoUrl();
         if (! $url) {
             return null;
         }

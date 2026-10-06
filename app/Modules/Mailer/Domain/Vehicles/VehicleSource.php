@@ -2,6 +2,7 @@
 
 namespace App\Modules\Mailer\Domain\Vehicles;
 
+use App\Models\Supplier;
 use App\Models\Vehicle;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -37,6 +38,9 @@ class VehicleSource
         $query = Vehicle::query()
             ->with(self::WITH)
             ->where('status', 'published')
+            // Own stock only: supplier-feed vehicles (OnePrice …) have
+            // hotlinked photos the email image pipeline cannot process.
+            ->where(fn (Builder $b) => $b->where('supplier_id', Supplier::ownStockId())->orWhereNull('supplier_id'))
             // Reuse the storefront filter scope (keyword, make, body type,
             // effective-price range, featured) instead of duplicating it.
             ->filter([

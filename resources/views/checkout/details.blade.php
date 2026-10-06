@@ -109,7 +109,7 @@
             {{-- Summary --}}
             <aside class="space-y-4 lg:sticky lg:top-20 self-start">
                 <div class="bg-white border border-line rounded-sm overflow-hidden">
-                    @php($photo = $vehicle->getFirstMediaUrl('photos'))
+                    @php($photo = $vehicle->primaryPhotoUrl())
                     @if ($photo)
                         <div class="aspect-[16/10] bg-toco-silver-2">
                             <img src="{{ $photo }}" alt="" class="w-full h-full object-cover">

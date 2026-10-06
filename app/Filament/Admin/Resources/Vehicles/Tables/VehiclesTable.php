@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Resources\Vehicles\Tables;
 
 use App\Models\BodyType;
 use App\Models\Make;
+use App\Models\Supplier;
 use App\Models\Vehicle;
 use App\Services\Social\FacebookPosterService;
 use App\Settings\SocialSettings;
@@ -27,9 +28,12 @@ class VehiclesTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->with(['supplier', 'make', 'vehicleModel']))
             ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('stock_no')->label('Stock ID')->searchable()->sortable()->weight('bold'),
+                TextColumn::make('supplier.name')->label('Supplier')->badge()
+                    ->color(fn (Vehicle $r) => $r->isSupplierStock() ? 'info' : 'gray')->toggleable(),
                 TextColumn::make('ref_no')->label('Ref no.')->searchable()->sortable()->toggleable(),
                 TextColumn::make('title')->searchable()->limit(40)->toggleable(),
                 TextColumn::make('make.name')->label('Make')->sortable()->toggleable(),
@@ -53,6 +57,7 @@ class VehiclesTable
                         'draft' => 'gray',
                         'sold' => 'danger',
                         'reserved' => 'warning',
+                        'delisted' => 'gray',
                         default => 'gray',
                     })
                     ->sortable()
@@ -79,6 +84,12 @@ class VehiclesTable
                     ->toggleable(),
             ])
             ->filters([
+                // 70 000 supplier-feed vehicles would bury Toco's own stock,
+                // so the list opens on own stock; pick a supplier to switch.
+                SelectFilter::make('supplier_id')
+                    ->label('Supplier')
+                    ->options(fn () => Supplier::query()->orderBy('sort_priority')->orderBy('name')->pluck('name', 'id')->all())
+                    ->default(fn () => Supplier::ownStockId()),
                 SelectFilter::make('is_featured')
                     ->label('Hot deals')
                     ->placeholder('Any')
@@ -88,6 +99,7 @@ class VehiclesTable
                     'published' => 'Published',
                     'sold' => 'Sold',
                     'reserved' => 'Reserved',
+                    'delisted' => 'Delisted (supplier)',
                 ]),
                 SelectFilter::make('make_id')
                     ->label('Make')

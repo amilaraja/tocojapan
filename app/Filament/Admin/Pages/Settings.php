@@ -2,11 +2,15 @@
 
 namespace App\Filament\Admin\Pages;
 
+use App\Cms\Editor;
 use App\Settings\CifSettings;
 use App\Settings\GeneralSettings;
 use App\Settings\ImageSettings;
 use App\Settings\PaymentSettings;
+use App\Settings\ProformaSettings;
 use App\Settings\SocialSettings;
+use App\Settings\StockSettings;
+use App\Support\SocialPlatforms;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
@@ -40,6 +44,13 @@ class Settings extends Page implements HasForms
     /** @var array<string, mixed> */
     public array $data = [];
 
+    /** ProformaSettings properties edited on the "Proforma invoice" tab. */
+    private const PROFORMA_FIELDS = [
+        'company_name', 'company_address', 'company_tel', 'company_fax', 'company_email', 'company_url',
+        'corporate_number', 'port_of_loading', 'validity_days', 'beneficiary_account_no', 'bank_name',
+        'bank_branch', 'bank_address', 'bank_swift', 'bank_charge', 'payment_terms', 'signatory',
+    ];
+
     public function mount(): void
     {
         $general = app(GeneralSettings::class);
@@ -47,8 +58,15 @@ class Settings extends Page implements HasForms
         $social = app(SocialSettings::class);
         $image = app(ImageSettings::class);
         $payment = app(PaymentSettings::class);
+        $stock = app(StockSettings::class);
+        $proforma = app(ProformaSettings::class);
 
         $this->form->fill([
+            'stock' => [
+                'supplier_margin_percent' => $stock->supplier_margin_percent,
+                'supplier_margin_fixed_usd' => $stock->supplier_margin_fixed_usd,
+            ],
+            'proforma' => collect(self::PROFORMA_FIELDS)->mapWithKeys(fn ($f) => [$f => $proforma->{$f}])->all(),
             'general' => [
                 'site_name' => $general->site_name,
                 'contact_email' => $general->contact_email,
@@ -267,8 +285,51 @@ class Settings extends Page implements HasForms
                                     ->description('When enabled, a "Buy with bank transfer" button appears alongside PayPal. After clicking, the customer sees these account details and is asked to reference the order number on the transfer.')
                                     ->schema([
                                         Toggle::make('payment.bank_transfer_enabled')->label('Enable bank transfer checkout')->columnSpanFull(),
-                                        \App\Cms\Editor::make('payment.bank_account_details', 'Account details shown to customers')
+                                        Editor::make('payment.bank_account_details', 'Account details shown to customers')
                                             ->helperText('Shown to customers on their order page after they choose bank transfer.'),
+                                    ]),
+                            ]),
+                        Tab::make('Supplier stock')
+                            ->schema([
+                                Section::make('Default profit margin')
+                                    ->description('Added to supplier-feed vehicles (OnePrice …) when their price is converted to USD: price ÷ exchange rate × (1 + margin %) + fixed profit. A supplier (Catalogue → Suppliers) or a single import can override it.')
+                                    ->columns(2)
+                                    ->schema([
+                                        TextInput::make('stock.supplier_margin_percent')->label('Margin %')->numeric()->minValue(0)->suffix('%')->required(),
+                                        TextInput::make('stock.supplier_margin_fixed_usd')->label('Fixed profit per vehicle')->numeric()->minValue(0)->prefix('$')->required(),
+                                    ]),
+                            ]),
+                        Tab::make('Proforma invoice')
+                            ->schema([
+                                Section::make('Company (invoice header & seller)')
+                                    ->columns(2)
+                                    ->schema([
+                                        TextInput::make('proforma.company_name')->required(),
+                                        TextInput::make('proforma.corporate_number'),
+                                        TextInput::make('proforma.company_address')->required()->columnSpanFull(),
+                                        TextInput::make('proforma.company_tel')->label('Tel')->required(),
+                                        TextInput::make('proforma.company_fax')->label('Fax'),
+                                        TextInput::make('proforma.company_email')->label('Email')->email()->required(),
+                                        TextInput::make('proforma.company_url')->label('Website')->required(),
+                                    ]),
+                                Section::make('Shipping & validity')
+                                    ->columns(2)
+                                    ->schema([
+                                        TextInput::make('proforma.port_of_loading')->required(),
+                                        TextInput::make('proforma.validity_days')->label('Valid for (days)')->numeric()->minValue(1)->required()
+                                            ->helperText('Expiry date = issue date + this many days.'),
+                                    ]),
+                                Section::make('Payment information (beneficiary & bank)')
+                                    ->columns(2)
+                                    ->schema([
+                                        TextInput::make('proforma.beneficiary_account_no')->label('Account no.')->required(),
+                                        TextInput::make('proforma.bank_name')->required(),
+                                        TextInput::make('proforma.bank_branch')->label('Branch')->required(),
+                                        TextInput::make('proforma.bank_swift')->label('SWIFT code')->required(),
+                                        TextInput::make('proforma.bank_address')->required()->columnSpanFull(),
+                                        TextInput::make('proforma.bank_charge')->required(),
+                                        TextInput::make('proforma.signatory')->label('Signed by')->required(),
+                                        TextInput::make('proforma.payment_terms')->required()->columnSpanFull(),
                                     ]),
                             ]),
                         Tab::make('Social media')
@@ -283,11 +344,11 @@ class Settings extends Page implements HasForms
                                             ->columns(3)
                                             ->itemLabel(fn (array $state): ?string => trim(($state['label'] ?? '') !== ''
                                                 ? $state['label']
-                                                : (\App\Support\SocialPlatforms::find($state['platform'] ?? '')['name'] ?? null)))
+                                                : (SocialPlatforms::find($state['platform'] ?? '')['name'] ?? null)))
                                             ->schema([
                                                 Select::make('platform')
                                                     ->label('Platform')
-                                                    ->options(\App\Support\SocialPlatforms::options())
+                                                    ->options(SocialPlatforms::options())
                                                     ->searchable()
                                                     ->required()
                                                     ->columnSpan(1),
@@ -390,6 +451,22 @@ class Settings extends Page implements HasForms
         $payment->bank_transfer_enabled = (bool) ($state['payment']['bank_transfer_enabled'] ?? false);
         $payment->bank_account_details = (string) ($state['payment']['bank_account_details'] ?? '');
         $payment->save();
+
+        $stock = app(StockSettings::class);
+        $stock->supplier_margin_percent = (float) ($state['stock']['supplier_margin_percent'] ?? 0);
+        $stock->supplier_margin_fixed_usd = (float) ($state['stock']['supplier_margin_fixed_usd'] ?? 0);
+        $stock->save();
+
+        $proforma = app(ProformaSettings::class);
+        foreach (self::PROFORMA_FIELDS as $field) {
+            $value = $state['proforma'][$field] ?? null;
+            $proforma->{$field} = match ($field) {
+                'validity_days' => max(1, (int) $value),
+                'company_fax', 'corporate_number' => filled($value) ? (string) $value : null,
+                default => (string) $value,
+            };
+        }
+        $proforma->save();
 
         Notification::make()->title('Settings saved.')->success()->send();
     }

@@ -5,14 +5,15 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CifController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CurrencyController;
-use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PayPalWebhookController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProformaInvoiceController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\SparePartController;
@@ -25,6 +26,9 @@ Route::get('/', [VehicleController::class, 'home'])->name('home');
 Route::get('/vehicles', [VehicleController::class, 'index'])->name('vehicles.index');
 Route::get('/vehicles/recently-viewed', [VehicleController::class, 'recentlyViewed'])->name('vehicles.recently-viewed');
 Route::get('/vehicles/{slug}', [VehicleController::class, 'show'])->name('vehicles.show');
+// Old WordPress OnePrice plugin detail pages.
+Route::get('/vehicle/{id}', [VehicleController::class, 'legacyOnePrice'])->whereNumber('id')->name('vehicles.legacy-oneprice');
+Route::get('/one-price', [VehicleController::class, 'legacyOnePriceIndex'])->name('vehicles.legacy-oneprice-index');
 
 Route::get('/cif', [CifController::class, 'index'])->name('cif.index');
 
@@ -76,6 +80,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/checkout/{slug}', [CheckoutController::class, 'start'])->name('checkout.start');
     Route::get('/checkout/{order}/return', [CheckoutController::class, 'return'])->name('checkout.return');
     Route::get('/checkout/{order}/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
+
+    // LC proforma invoices (ports whose import regulation accepts LC).
+    Route::get('/proforma-invoices', [ProformaInvoiceController::class, 'index'])->name('proforma.index');
+    Route::get('/proforma-invoices/{invoice}/download', [ProformaInvoiceController::class, 'download'])->name('proforma.download');
+    Route::get('/vehicles/{slug}/proforma-invoice', [ProformaInvoiceController::class, 'create'])->name('proforma.create');
+    Route::post('/vehicles/{slug}/proforma-invoice', [ProformaInvoiceController::class, 'store'])->name('proforma.store');
 
     Route::get('/checkout/bank/{slug}', [BankTransferController::class, 'show'])->name('checkout.bank.show');
     Route::post('/checkout/bank/{slug}', [BankTransferController::class, 'store'])->name('checkout.bank.store');

@@ -24,7 +24,29 @@ class LiteSpeedCache
 
     public static function shouldPurge(): bool
     {
-        return static::$purge;
+        if (static::$purge) {
+            return true;
+        }
+
+        // Purge requested from a queue job / CLI (no response to attach the
+        // header to): the next web response carries it instead.
+        $flag = static::flagFile();
+        if (is_file($flag) && @unlink($flag)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /** Request a full-page purge from outside an HTTP request (jobs, artisan). */
+    public static function queuePurge(): void
+    {
+        @touch(static::flagFile());
+    }
+
+    protected static function flagFile(): string
+    {
+        return storage_path('framework/litespeed-purge.flag');
     }
 
     /**

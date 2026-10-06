@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\ImportRegulations\Tables;
 
+use App\Models\ImportRegulation;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -30,6 +31,12 @@ class ImportRegulationsTable
                     ->label('Ports')
                     ->badge()
                     ->placeholder('All ports'),
+                TextColumn::make('payment_modes')
+                    ->label('Payment')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state) => $state === ImportRegulation::PAYMENT_LC ? 'LC' : 'Other')
+                    ->color(fn (string $state) => $state === ImportRegulation::PAYMENT_LC ? 'success' : 'gray')
+                    ->placeholder('—'),
                 TextColumn::make('year_restriction')
                     ->label('Age limit')
                     ->searchable()
@@ -47,6 +54,10 @@ class ImportRegulationsTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                SelectFilter::make('payment_mode')
+                    ->label('Payment mode')
+                    ->options(ImportRegulation::PAYMENT_MODES)
+                    ->query(fn ($query, array $data) => $query->when($data['value'] ?? null, fn ($query, $mode) => $query->whereJsonContains('payment_modes', $mode))),
                 SelectFilter::make('country')
                     ->relationship('country', 'name')
                     ->searchable()

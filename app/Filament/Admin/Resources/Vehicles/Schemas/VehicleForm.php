@@ -4,6 +4,8 @@ namespace App\Filament\Admin\Resources\Vehicles\Schemas;
 
 use App\Models\BodyType;
 use App\Models\Make;
+use App\Models\Supplier;
+use App\Models\Vehicle;
 use App\Models\VehicleModel;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
@@ -12,6 +14,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Fieldset;
+use Filament\Schemas\Components\Html;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -35,6 +38,26 @@ class VehicleForm
                             ->columnSpan(2)
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug((string) $state))),
+                        Select::make('supplier_id')
+                            ->label('Supplier')
+                            ->relationship('supplier', 'name', fn ($query) => $query->orderBy('sort_priority')->orderBy('name'))
+                            ->default(fn () => Supplier::ownStockId())
+                            ->required()
+                            ->live()
+                            ->helperText('Toco own stock, or the partner feed this vehicle comes from.'),
+                        TextInput::make('supplier_ref')
+                            ->label("Supplier's vehicle ID")
+                            ->maxLength(64)
+                            ->visible(fn (Get $get) => (int) $get('supplier_id') !== Supplier::ownStockId())
+                            ->helperText('Links this vehicle to the supplier file. Imports update the vehicle with this ID instead of creating a new one.'),
+                        Toggle::make('sync_locked')
+                            ->label('Keep my edits (lock against supplier updates)')
+                            ->visible(fn (Get $get) => (int) $get('supplier_id') !== Supplier::ownStockId())
+                            ->helperText('On: imports leave price, specs and photos as you set them and only delist/relist the vehicle.')
+                            ->columnSpan(2),
+                        Html::make(fn (?Vehicle $record) => self::supplierSummary($record))
+                            ->visible(fn (?Vehicle $record) => $record?->isSupplierStock() ?? false)
+                            ->columnSpan(2),
                         TextInput::make('stock_no')
                             ->label('Stock ID')
                             ->required()
@@ -60,6 +83,7 @@ class VehicleForm
                                 'published' => 'Published',
                                 'sold' => 'Sold',
                                 'reserved' => 'Reserved',
+                                'delisted' => 'Delisted (no longer in supplier stock)',
                             ])
                             ->default('draft')
                             ->required(),
@@ -216,6 +240,9 @@ class VehicleForm
 
                 Tab::make('Photos')
                     ->schema([
+                        Html::make(fn (?Vehicle $record) => self::externalPhotosPreview($record))
+                            ->visible(fn (?Vehicle $record) => ! empty($record?->external_photos))
+                            ->columnSpanFull(),
                         SpatieMediaLibraryFileUpload::make('video')
                             ->label('Walkaround video')
                             ->collection('video')
@@ -297,5 +324,45 @@ class VehicleForm
         }
 
         return $components;
+    }
+
+    /** Read-only summary of the supplier data behind a feed vehicle. */
+    protected static function supplierSummary(?Vehicle $record): string
+    {
+        if (! $record) {
+            return '';
+        }
+        $meta = $record->supplier_meta ?? [];
+        $yen = fn ($v) => $v ? '¥'.number_format((int) $v) : '—';
+        $rows = [
+            'Supplier retail price' => $yen($meta['retail_price'] ?? null),
+            'Supplier wholesale price' => $yen($meta['wholesale_price'] ?? null),
+            'Price used for FOB' => $record->source_price ? $yen($record->source_price).' → $'.number_format((float) $record->price_fob) : 'Price on request',
+            'Evaluation score' => e($meta['evaluation_score'] ?? '—'),
+            'Yard' => e(trim(($meta['yard_prefecture'] ?? '').' '.($meta['yard_city'] ?? '')) ?: '—'),
+            'Last seen in supplier file' => $record->supplier_synced_at?->format('Y-m-d H:i') ?? '—',
+            'Delisted' => $record->delisted_at?->format('Y-m-d H:i') ?? '—',
+        ];
+        $html = '<div class="rounded-lg border border-gray-200 dark:border-white/10 p-3 text-sm"><table class="w-full">';
+        foreach ($rows as $label => $value) {
+            $html .= '<tr><td class="py-0.5 pr-4 text-gray-500">'.e($label).'</td><td class="py-0.5 font-medium">'.$value.'</td></tr>';
+        }
+        if (! empty($meta['auction_sheet'])) {
+            $html .= '<tr><td class="py-0.5 pr-4 text-gray-500">Inspection sheet</td><td class="py-0.5"><a class="text-primary-600 underline" target="_blank" rel="noopener" href="'.e($meta['auction_sheet']).'">Open</a></td></tr>';
+        }
+
+        return $html.'</table></div>';
+    }
+
+    /** Thumbnails of the supplier-hosted photos used while no photos are uploaded. */
+    protected static function externalPhotosPreview(?Vehicle $record): string
+    {
+        $urls = $record?->externalPhotoUrls() ?? [];
+        $html = '<p class="text-sm text-gray-500 mb-2">'.count($urls).' photo(s) from the supplier, shown on the site while no photos are uploaded below. Uploading photos replaces them.</p><div class="flex flex-wrap gap-2">';
+        foreach (array_slice($urls, 0, 20) as $url) {
+            $html .= '<a href="'.e($url).'" target="_blank" rel="noopener"><img src="'.e($url).'" loading="lazy" style="width:120px;height:90px;object-fit:cover;border-radius:4px"></a>';
+        }
+
+        return $html.'</div>';
     }
 }

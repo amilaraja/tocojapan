@@ -55,3 +55,17 @@ Access: MailerAccess::canUse() (mailer.admin or mailer.marketer) and MailerAcces
 - php artisan mailer:sync-stats            # hourly; status + stats for campaigns pushed in the last 60 days
 - php artisan mailer:cleanup               # daily; deletes run logs/audit older than 12 months
 - php artisan mailer:backfill --pause | --resume | --status
+
+## Supplier stock (OnePrice, JWT …)
+Supplier-feed vehicles live in the same `vehicles` table, linked by `supplier_id` (+ `supplier_ref` = the supplier's id).
+`suppliers` row with `is_own_stock` = Toco's yard; feed settings (pricing, publishing, delist guard) are JSON on the supplier (Admin → Catalogue → Suppliers).
+- Sync key is (supplier_id, supplier_ref); slugs are created once and never rewritten. Missing vehicles in a *full* file become status `delisted` (never deleted); `/vehicles/{slug}` of a gone vehicle 301s to the make/model listing; old WP URLs `/vehicle/{id}` and `/one-price` redirect.
+- Imports are staged: upload → preview (Admin → Catalogue → Stock imports) → approve → applied by `App\Jobs\RunSupplierImport` in 35 s slices (scheduler worker has a 50 s timeout). Engine: `App\Suppliers\SupplierImporter`; feed parsers in `App\Suppliers\Feeds` (OnePrice = 29 positional columns, no header, SJIS ok).
+- Supplier stock is quote-only unless `allow_online_checkout`; hotlinked photos (`external_photos`) are used while no photos are uploaded; Mailer, homepage "latest", new-arrival badges and sitemap are own stock unless the supplier setting allows.
+- Web upload limit is 2 MB (php.ini) — big files go zipped or via the inbox `storage/app/private/supplier-inbox/{supplier}/`, or the CLI.
+- New Filament resources/pages only appear after `php artisan filament:cache-components` (panel component cache in bootstrap/cache/filament); run `php artisan optimize` after deploying.
+- php artisan suppliers:import oneprice /path/file.csv[.gz|.zip] [--partial] [--apply [--force]]   # same pipeline; without --apply it stops at preview
+- php artisan suppliers:reprice [supplier]   # daily 03:15 after currency:fetch-rates
+- php artisan suppliers:purge [--dry-run]    # weekly; delisted > N days with no orders/quotes/favourites
+- Run tests with the config cache bypassed (bootstrap/cache/config.php otherwise points tests at production MySQL):
+  APP_CONFIG_CACHE=/tmp/x.php APP_ROUTES_CACHE=/tmp/y.php APP_EVENTS_CACHE=/tmp/z.php APP_ENV=testing DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test

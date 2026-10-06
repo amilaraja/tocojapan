@@ -22,6 +22,9 @@ class CheckoutFlow
     /** Null when the vehicle can be checked out, otherwise the reason it cannot. */
     public function eligibilityError(Vehicle $vehicle): ?string
     {
+        if (! $vehicle->canCheckoutOnline()) {
+            return 'Availability of this partner vehicle is confirmed with a quote — please request a quote.';
+        }
         if (! $vehicle->effectivePriceFob() || $vehicle->effectivePriceFob() <= 0) {
             return 'This vehicle is priced on request — please send an inquiry.';
         }

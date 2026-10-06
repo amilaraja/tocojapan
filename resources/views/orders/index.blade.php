@@ -8,7 +8,7 @@
         <div class="bg-white border border-line rounded-sm divide-y divide-line">
             @foreach ($orders as $order)
                 <a href="{{ route('orders.show', $order) }}" class="flex items-center gap-4 p-4 hover:bg-toco-silver-2">
-                    @php($photo = $order->vehicle->getFirstMediaUrl('photos'))
+                    @php($photo = $order->vehicle->primaryPhotoUrl())
                     <div class="w-20 h-14 bg-toco-silver-2 rounded-sm overflow-hidden shrink-0">
                         @if ($photo)
                             <img src="{{ $photo }}" alt="" class="w-full h-full object-cover">

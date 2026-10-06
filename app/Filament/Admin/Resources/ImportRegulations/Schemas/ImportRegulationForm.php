@@ -2,10 +2,12 @@
 
 namespace App\Filament\Admin\Resources\ImportRegulations\Schemas;
 
+use App\Models\ImportRegulation;
 use App\Models\Port;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 
@@ -36,6 +38,12 @@ class ImportRegulationForm
                     ->options(fn (callable $get) => $get('country_id')
                         ? Port::where('country_id', $get('country_id'))->orderBy('name')->pluck('name', 'id')->all()
                         : [])
+                    ->columnSpanFull(),
+                CheckboxList::make('payment_modes')
+                    ->label('Payment modes')
+                    ->options(ImportRegulation::PAYMENT_MODES)
+                    ->columns(2)
+                    ->helperText('Payment modes accepted for these ports. With LC ticked, signed-in customers can download an LC proforma invoice for vehicles shipped here.')
                     ->columnSpanFull(),
                 TextInput::make('year_restriction')
                     ->label('Age limit (display text)')

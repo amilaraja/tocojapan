@@ -66,10 +66,12 @@ class VehicleResource extends JsonResource
                 'slug' => $this->bodyType->slug,
                 'name' => $this->bodyType->name,
             ] : null),
-            'photos' => $this->getMedia('photos')->map(fn ($media) => [
-                'url' => $media->getUrl(),
-                'thumb_url' => $media->getUrl(),
-            ])->all(),
+            'photos' => $this->getMedia('photos')->isNotEmpty()
+                ? $this->getMedia('photos')->map(fn ($media) => [
+                    'url' => $media->getUrl(),
+                    'thumb_url' => $media->getUrl(),
+                ])->all()
+                : array_map(fn (string $url) => ['url' => $url, 'thumb_url' => $url], $this->externalPhotoUrls()),
             'features' => $this->features,
             'description' => $this->when($request->routeIs('api.v1.vehicles.show'), $this->description),
             'published_at' => $this->published_at,

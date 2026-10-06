@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Page;
 use App\Models\Post;
 use App\Models\Vehicle;
+use Carbon\Carbon;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\URL;
@@ -91,6 +92,7 @@ class SitemapController extends Controller
             $entries = [];
             Vehicle::query()
                 ->published()
+                ->visibleIn('in_sitemap')
                 ->select(['slug', 'updated_at'])
                 ->chunk(500, function ($vehicles) use (&$entries) {
                     foreach ($vehicles as $v) {
@@ -177,10 +179,10 @@ class SitemapController extends Controller
             return null;
         }
         if ($value instanceof \DateTimeInterface) {
-            return \Carbon\Carbon::instance($value)->toIso8601String();
+            return Carbon::instance($value)->toIso8601String();
         }
         try {
-            return \Carbon\Carbon::parse((string) $value)->toIso8601String();
+            return Carbon::parse((string) $value)->toIso8601String();
         } catch (\Throwable) {
             return null;
         }

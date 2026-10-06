@@ -8,10 +8,14 @@ use App\Models\BodyType;
 use App\Models\Country;
 use App\Models\Make;
 use App\Models\Page;
+use App\Models\Supplier;
 use App\Models\Testimonial;
 use App\Models\Vehicle;
 use App\Models\VehicleModel;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 
 class VehicleController extends Controller
@@ -28,26 +32,25 @@ class VehicleController extends Controller
 
         $latest = Vehicle::query()
             ->published()
+            ->visibleIn('show_on_homepage')
             ->with(['make', 'vehicleModel', 'bodyType', 'media'])
             ->orderByDesc('published_at')
             ->limit(16)
             ->get();
 
-        $makesWithCounts = Make::where('is_active', true)
+        $makesWithCounts = Vehicle::withPublishedCounts(Make::where('is_active', true)
             ->with('media')
-            ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
             ->orderBy('sort_order')
             ->orderBy('name')
             ->limit(12)
-            ->get();
+            ->get(), 'make_id');
 
-        $bodyTypesWithCounts = BodyType::where('is_active', true)
+        $bodyTypesWithCounts = Vehicle::withPublishedCounts(BodyType::where('is_active', true)
             ->with('media')
-            ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
             ->orderBy('sort_order')
             ->orderBy('name')
             ->limit(12)
-            ->get();
+            ->get(), 'body_type_id');
 
         $testimonials = Testimonial::query()
             ->featured()
@@ -70,13 +73,11 @@ class VehicleController extends Controller
             'featured' => $latest,
             'makesWithCounts' => $makesWithCounts,
             'bodyTypesWithCounts' => $bodyTypesWithCounts,
-            'allMakes' => Make::where('is_active', true)
-                ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
-                ->orderBy('sort_order')->orderBy('name')->get(['id', 'slug', 'name']),
-            'allBodyTypes' => BodyType::where('is_active', true)
+            'allMakes' => Vehicle::withPublishedCounts(Make::where('is_active', true)
+                ->orderBy('sort_order')->orderBy('name')->get(['id', 'slug', 'name']), 'make_id'),
+            'allBodyTypes' => Vehicle::withPublishedCounts(BodyType::where('is_active', true)
                 ->with('media')
-                ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
-                ->orderBy('name')->get(),
+                ->orderBy('name')->get(), 'body_type_id'),
             // Cheap, serialization-safe cache: a single integer. The published
             // COUNT(*) scans the vehicles table on every homepage hit; the
             // number barely moves, so cache it for 10 minutes. (We deliberately
@@ -103,7 +104,7 @@ class VehicleController extends Controller
      * client-side "Recently viewed" block. Accepts ?slugs=foo,bar,baz and
      * preserves that order. Cards capped at 8.
      */
-    public function recentlyViewed(\Illuminate\Http\Request $request): View|\Illuminate\Http\Response
+    public function recentlyViewed(Request $request): View|Response
     {
         $raw = (string) $request->query('slugs', '');
         $slugs = array_values(array_filter(array_slice(array_map('trim', explode(',', $raw)), 0, 8)));
@@ -145,6 +146,11 @@ class VehicleController extends Controller
         } elseif ($sort === 'price_desc') {
             $query->orderByRaw('COALESCE(price_fob_discount, price_fob) desc');
         } else {
+            // Default "latest" keeps own stock above supplier feeds;
+            // explicit sorts compare all stock evenly.
+            if ($sort === 'latest') {
+                $query->orderBySupplierPriority();
+            }
             $query->orderBy(...self::sortColumns($sort));
         }
 
@@ -153,18 +159,19 @@ class VehicleController extends Controller
         return view('vehicles.index', [
             'vehicles' => $vehicles,
             'filters' => $filters,
-            'makes' => Make::where('is_active', true)
+            'makes' => Vehicle::withPublishedCounts(Make::where('is_active', true)
                 ->with('media')
-                ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
-                ->orderBy('sort_order')->orderBy('name')->get(),
-            'bodyTypes' => BodyType::where('is_active', true)
+                ->orderBy('sort_order')->orderBy('name')->get(), 'make_id'),
+            'bodyTypes' => Vehicle::withPublishedCounts(BodyType::where('is_active', true)
                 ->with('media')
-                ->withCount(['vehicles as published_count' => fn ($q) => $q->where('status', 'published')])
-                ->orderBy('sort_order')->orderBy('name')->get(),
-            'destCountries' => \App\Models\Country::query()
+                ->orderBy('sort_order')->orderBy('name')->get(), 'body_type_id'),
+            'destCountries' => Country::query()
                 ->where('is_active', true)
                 ->with(['ports' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')])
                 ->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'iso2']),
+            'suppliers' => Supplier::query()->where('is_active', true)
+                ->whereHas('vehicles', fn ($q) => $q->where('status', 'published'))
+                ->orderBy('sort_priority')->orderBy('name')->get(['id', 'slug', 'name', 'is_own_stock']),
             'models' => isset($filters['make'])
                 ? VehicleModel::whereHas('make', fn ($q) => $q->where('slug', $filters['make']))
                     ->orderBy('name')->get(['id', 'slug', 'name', 'make_id'])
@@ -172,13 +179,17 @@ class VehicleController extends Controller
         ]);
     }
 
-    public function show(string $slug): View
+    public function show(string $slug): View|RedirectResponse
     {
         $vehicle = Vehicle::query()
             ->published()
             ->where('slug', $slug)
-            ->with(['make', 'vehicleModel', 'bodyType', 'media'])
-            ->firstOrFail();
+            ->with(['make', 'vehicleModel', 'bodyType', 'media', 'supplier'])
+            ->first();
+
+        if (! $vehicle) {
+            return $this->redirectGoneVehicle($slug);
+        }
 
         $countries = Country::query()
             ->where('is_active', true)
@@ -195,6 +206,51 @@ class VehicleController extends Controller
             'countries' => $countries,
             'relatedVehicles' => $vehicle->relatedVehicles(8),
         ]);
+    }
+
+    /**
+     * A vehicle that existed but is no longer listed (supplier delisted it,
+     * sold more than 90 days ago, deleted) keeps its URL useful: 301 to the
+     * listing for the same make/model instead of a 404.
+     */
+    private function redirectGoneVehicle(string $slug): RedirectResponse
+    {
+        $gone = Vehicle::withTrashed()->where('slug', $slug)->with(['make', 'vehicleModel'])->first();
+        // Drafts were never public — keep them a plain 404.
+        abort_if(! $gone || ($gone->status === 'draft' && ! $gone->trashed()), 404);
+
+        return redirect()->route('vehicles.index', array_filter([
+            'make' => $gone->make?->slug,
+            'vehicle_model' => $gone->vehicleModel?->slug,
+        ]), 301);
+    }
+
+    /**
+     * Old WordPress "/one-price" stock page → the OnePrice-filtered listing
+     * (plain listing while no OnePrice stock is live).
+     */
+    public function legacyOnePriceIndex(): RedirectResponse
+    {
+        $live = Vehicle::query()->published()
+            ->whereHas('supplier', fn ($q) => $q->where('slug', 'oneprice'))
+            ->exists();
+
+        return redirect()->route('vehicles.index', $live ? ['supplier' => 'oneprice'] : [], 301);
+    }
+
+    /**
+     * Old WordPress OnePrice plugin URLs: /vehicle/{OnePrice id}.
+     */
+    public function legacyOnePrice(string $id): RedirectResponse
+    {
+        $slug = Vehicle::withTrashed()
+            ->whereHas('supplier', fn ($q) => $q->where('slug', 'oneprice'))
+            ->where('supplier_ref', $id)
+            ->value('slug');
+
+        return $slug
+            ? redirect()->route('vehicles.show', $slug, 301)
+            : redirect()->route('vehicles.index', ['supplier' => 'oneprice'], 301);
     }
 
     /**
