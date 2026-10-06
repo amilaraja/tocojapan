@@ -5,6 +5,7 @@
     $isPartnerStock = $vehicle->isSupplierStock();
     // LC proforma: same eligibility as online checkout (priced, has M3, not quote-only partner stock).
     $proformaEligible = app(\App\Services\ProformaInvoiceService::class)->vehicleError($vehicle) === null;
+    $showLcPrompt = $proformaEligible && \App\Models\ImportRegulation::anyLcDestination();
     $supplierMeta = $vehicle->supplier_meta ?? [];
     if ($photoUrls->isEmpty()) {
         $photoUrls = $thumbUrls = $fullUrls = collect(['/img/v5/car-'.((($vehicle->id % 4) + 1)).'.jpg']);
@@ -724,6 +725,14 @@
                                 CIF to <span class="font-semibold text-toco-navy" x-text="result?.port?.name || initialPortName"></span>:
                                 <span class="font-bold text-toco-navy" x-text="fmt(result ? grandTotal() : initialCif)"></span>
                             </p>
+                        @endif
+                        @if ($showLcPrompt)
+                            {{-- Guests are sent to sign in, then straight back to the proforma form. --}}
+                            <a href="{{ route('proforma.create', array_filter(['slug' => $vehicle->slug, 'port_id' => $destPort?->id])) }}"
+                               class="mt-3 flex items-center justify-between gap-2 border border-toco-navy/25 bg-toco-silver-2/60 hover:border-toco-navy rounded-sm px-3 py-2 text-[12px] leading-tight group">
+                                <span><span class="font-bold text-toco-navy">Paying by LC?</span> <span class="text-ink-soft">Generate a proforma invoice</span></span>
+                                <svg class="shrink-0 text-toco-red group-hover:translate-x-0.5 transition" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                            </a>
                         @endif
                     </div>
                     <div class="p-5 space-y-2">

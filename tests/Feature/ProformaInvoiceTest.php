@@ -11,6 +11,7 @@ use App\Models\Vehicle;
 use App\Models\VehicleModel;
 use App\Notifications\NewProformaInvoice;
 use App\Services\ProformaInvoiceService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Role;
 
@@ -116,4 +117,13 @@ it('lists proforma invoices in the admin', function () {
         ->get('/admin/proforma-invoices')->assertOk()->assertSee('E01948');
     $this->actingAs(User::factory()->create()->assignRole('admin'))
         ->get('/admin/import-regulations')->assertOk()->assertSee('Payment');
+});
+
+it('shows the "Paying by LC?" prompt by the price only when some destination accepts LC', function () {
+    $this->get('/vehicles/'.$this->vehicle->slug)->assertOk()->assertSee('Paying by LC?')
+        ->assertSee(route('proforma.create', $this->vehicle->slug), false);
+
+    ImportRegulation::query()->update(['payment_modes' => json_encode(['other'])]);
+    Cache::forget('import_regulations.any_lc');
+    $this->get('/vehicles/'.$this->vehicle->slug)->assertOk()->assertDontSee('Paying by LC?');
 });

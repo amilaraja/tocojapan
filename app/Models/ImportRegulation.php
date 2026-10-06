@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Support\LiteSpeedCache;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Cache;
 
 class ImportRegulation extends Model
 {
@@ -68,6 +70,27 @@ class ImportRegulation extends Model
         }
 
         return $ids;
+    }
+
+    /**
+     * Whether any destination accepts LC at all — drives the "Paying by LC?"
+     * prompt on vehicle pages. Cached 10 min; reset when a rule is saved.
+     */
+    public static function anyLcDestination(): bool
+    {
+        return Cache::remember('import_regulations.any_lc', now()->addMinutes(10), fn () => static::lcPortIds() !== []);
+    }
+
+    protected static function booted(): void
+    {
+        // Vehicle pages are full-page cached: purge so the LC prompt/button
+        // follows the admin's change straight away.
+        $forget = function (): void {
+            Cache::forget('import_regulations.any_lc');
+            LiteSpeedCache::flagPurge();
+        };
+        static::saved($forget);
+        static::deleted($forget);
     }
 
     /** True when buyers shipping to this port may pay by LC. */
