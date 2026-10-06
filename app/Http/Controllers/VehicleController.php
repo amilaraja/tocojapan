@@ -162,11 +162,7 @@ class VehicleController extends Controller
         } elseif ($sort === 'price_desc') {
             $query->orderByRaw('COALESCE(price_fob_discount, price_fob) desc');
         } else {
-            // Default "latest" keeps own stock above supplier feeds;
-            // explicit sorts compare all stock evenly.
-            if ($sort === 'latest') {
-                $query->orderBySupplierPriority();
-            }
+            // Supplier stock lists like any other vehicle (newest first).
             $query->orderBy(...self::sortColumns($sort));
         }
 

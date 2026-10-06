@@ -244,7 +244,7 @@ it('redirects old WordPress OnePrice URLs', function () {
     $this->get('/one-price')->assertStatus(301)->assertRedirectContains('supplier=oneprice');
 });
 
-it('lists own stock before supplier stock and filters by supplier', function () {
+it('lists supplier stock like any other vehicle and filters by supplier', function () {
     runImport([opLine(100)]);
     $make = Make::query()->where('slug', 'toyota')->first();
     $model = VehicleModel::query()->where('make_id', $make->id)->first();
@@ -253,7 +253,8 @@ it('lists own stock before supplier stock and filters by supplier', function () 
         'published_at' => now()->subYear(), 'title' => 'Old Own Stock Car',
     ]);
 
-    $this->get('/vehicles')->assertOk()->assertSeeInOrder(['Old Own Stock Car', '2018 TOYOTA PRIUS']);
+    // Newest first, whoever supplies it: the just-imported Prius comes before last year's own car.
+    $this->get('/vehicles')->assertOk()->assertSeeInOrder(['2018 TOYOTA PRIUS', 'Old Own Stock Car']);
     $this->get('/vehicles?supplier=oneprice')->assertOk()->assertDontSee('Old Own Stock Car')->assertSee('2018 TOYOTA PRIUS');
 });
 
