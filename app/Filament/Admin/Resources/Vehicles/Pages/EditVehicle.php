@@ -22,7 +22,11 @@ class EditVehicle extends EditRecord
     {
         return [
             $this->shareToFacebookAction(),
-            DeleteAction::make(),
+            DeleteAction::make()
+                ->label('Move to trash')
+                ->modalHeading(fn () => 'Move "'.$this->record->title.'" to the trash?')
+                ->modalDescription('It disappears from the website and from the vehicle list. To bring it back: Vehicles → filter "Trashed records: Only trashed" → Restore.')
+                ->modalSubmitActionLabel('Yes, move to trash'),
             ForceDeleteAction::make(),
             RestoreAction::make(),
         ];

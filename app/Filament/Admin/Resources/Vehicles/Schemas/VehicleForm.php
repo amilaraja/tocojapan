@@ -108,7 +108,8 @@ class VehicleForm
                                 TextInput::make('slug')->required()->maxLength(80),
                                 Toggle::make('is_active')->default(true),
                             ])
-                            ->createOptionUsing(fn (array $data) => Make::create($data + ['is_active' => true, 'sort_order' => 0])->id),
+                            // Reuse an existing make with the same slug instead of failing on the unique key.
+                            ->createOptionUsing(fn (array $data) => Make::firstOrCreate(['slug' => Str::slug($data['slug'] ?: $data['name'])], ['name' => $data['name'], 'is_active' => $data['is_active'] ?? true, 'sort_order' => 0])->id),
                         Select::make('vehicle_model_id')
                             ->label('Model')
                             ->options(fn (Get $get) => VehicleModel::query()
@@ -129,11 +130,10 @@ class VehicleForm
                                 $makeId = $get('make_id');
                                 abort_if(! $makeId, 422, 'Pick a make first.');
 
-                                return VehicleModel::create($data + [
-                                    'make_id' => $makeId,
-                                    'is_active' => true,
-                                    'sort_order' => 0,
-                                ])->id;
+                                return VehicleModel::firstOrCreate(
+                                    ['make_id' => $makeId, 'slug' => Str::slug($data['slug'] ?: $data['name'])],
+                                    ['name' => $data['name'], 'is_active' => true, 'sort_order' => 0],
+                                )->id;
                             })
                             ->disabled(fn (Get $get) => ! $get('make_id'))
                             ->helperText(fn (Get $get) => $get('make_id') ? null : 'Pick a make first to enable model selection / creation.'),
@@ -149,7 +149,8 @@ class VehicleForm
                                 TextInput::make('slug')->required()->maxLength(80),
                                 Toggle::make('is_active')->default(true),
                             ])
-                            ->createOptionUsing(fn (array $data) => BodyType::create($data + ['is_active' => true, 'sort_order' => 0])->id),
+                            // Typing an existing body type (e.g. "SUV") selects it instead of a duplicate-key error.
+                            ->createOptionUsing(fn (array $data) => BodyType::firstOrCreate(['slug' => Str::slug($data['slug'] ?: $data['name'])], ['name' => $data['name'], 'is_active' => $data['is_active'] ?? true, 'sort_order' => 0])->id),
                         TextInput::make('grade')
                             ->label('Grade / trim')
                             ->maxLength(60)

@@ -84,12 +84,19 @@ class VehiclesTable
                     ->toggleable(),
             ])
             ->filters([
-                // 70 000 supplier-feed vehicles would bury Toco's own stock,
-                // so the list opens on own stock; pick a supplier to switch.
-                SelectFilter::make('supplier_id')
+                // Bulk feed stock (OnePrice ≈ 70 000 cars) would bury everything
+                // else, so the list opens on Toco + hand-entered suppliers
+                // (As Net …); feed stock is one click away.
+                SelectFilter::make('supplier')
                     ->label('Supplier')
-                    ->options(fn () => Supplier::query()->orderBy('sort_priority')->orderBy('name')->pluck('name', 'id')->all())
-                    ->default(fn () => Supplier::ownStockId()),
+                    ->options(fn () => ['manual' => 'Toco + hand-entered suppliers', 'all' => 'All suppliers']
+                        + Supplier::query()->orderBy('sort_priority')->orderBy('name')->pluck('name', 'id')->all())
+                    ->default('manual')
+                    ->query(fn ($query, array $data) => match ($data['value'] ?? null) {
+                        null, '', 'all' => $query,
+                        'manual' => $query->whereIn('supplier_id', Supplier::query()->whereNull('feed_format')->select('id')),
+                        default => $query->where('supplier_id', (int) $data['value']),
+                    }),
                 SelectFilter::make('is_featured')
                     ->label('Hot deals')
                     ->placeholder('Any')

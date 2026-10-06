@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Image\Enums\Fit;
@@ -42,6 +43,11 @@ class Vehicle extends Model implements HasMedia
         });
 
         static::saving(function (Vehicle $vehicle): void {
+            // Two cars with the same title (or a trashed one) would otherwise
+            // collide on the unique slug and crash the admin save.
+            if ($vehicle->isDirty('slug') || ! $vehicle->exists) {
+                $vehicle->slug = static::uniqueSlug((string) ($vehicle->slug ?: $vehicle->title), $vehicle->id, $vehicle->stock_no);
+            }
             if ($vehicle->status === 'published' && $vehicle->published_at === null) {
                 $vehicle->published_at = now();
             }
@@ -75,6 +81,28 @@ class Vehicle extends Model implements HasMedia
         'mileage_km' => 'integer',
         'engine_cc' => 'integer',
     ];
+
+    /**
+     * The slug, or the slug + stock no. / counter when another vehicle
+     * (trashed ones included) already uses it.
+     */
+    public static function uniqueSlug(string $slug, ?int $ignoreId = null, ?string $stockNo = null): string
+    {
+        $base = Str::slug($slug) ?: 'vehicle';
+        $taken = fn (string $candidate) => static::withTrashed()
+            ->where('slug', $candidate)
+            ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
+            ->exists();
+        if (! $taken($base)) {
+            return $base;
+        }
+        $candidate = $stockNo ? $base.'-'.Str::slug($stockNo) : $base.'-2';
+        for ($i = 2; $taken($candidate); $i++) {
+            $candidate = $base.'-'.$i;
+        }
+
+        return $candidate;
+    }
 
     /** Registration YYYY/MM string for display. Returns just the year when month is unknown. */
     public function registrationYmDisplay(): ?string
