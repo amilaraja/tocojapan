@@ -31,7 +31,7 @@
                 <div>
                     @include('partials.home-section-heading', [
                         'kicker' => 'Just in',
-                        'heading' => 'Latest Stock',
+                        'heading' => 'Latest from our stock',
                         'icon' => 'star',
                         'sublabel' => $showStockCounts
                             ? number_format($totalPublished ?? 0) . ' vehicles currently listed for export.'
