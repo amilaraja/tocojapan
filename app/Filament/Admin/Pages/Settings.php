@@ -71,6 +71,7 @@ class Settings extends Page implements HasForms
                 'site_name' => $general->site_name,
                 'contact_email' => $general->contact_email,
                 'contact_phone' => $general->contact_phone,
+                'notification_emails' => $general->notification_emails,
                 'whatsapp_number' => $general->whatsapp_number,
                 'header_logo' => $general->header_logo,
                 'footer_logos' => $general->footer_logos,
@@ -125,6 +126,21 @@ class Settings extends Page implements HasForms
                                         TextInput::make('general.site_name')->label('Site name')->required(),
                                         TextInput::make('general.contact_email')->label('Contact email')->email()->required(),
                                         TextInput::make('general.contact_phone')->label('Contact phone'),
+                                        Textarea::make('general.notification_emails')
+                                            ->label('Staff notification emails')
+                                            ->rows(2)
+                                            ->placeholder('sales@example.com, first@toco-int.com')
+                                            ->helperText('Who receives website alerts: contact form, quote requests and replies, spare-part requests, proforma invoices. Separate with commas. Empty = the contact email. Use an inbox other than the one the site sends from ('.e((string) config('mail.mailers.smtp.username')).') — Gmail files mail an account sends to itself under Sent, not the Inbox.')
+                                            ->rule(function () {
+                                                return function (string $attribute, $value, \Closure $fail): void {
+                                                    foreach (preg_split('/[\s,;]+/', (string) $value, -1, PREG_SPLIT_NO_EMPTY) as $email) {
+                                                        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                                                            $fail("\"{$email}\" is not a valid email address.");
+                                                        }
+                                                    }
+                                                };
+                                            })
+                                            ->columnSpanFull(),
                                         TextInput::make('general.whatsapp_number')->label('WhatsApp number'),
                                         TextInput::make('general.google_analytics_id')
                                             ->label('Google Analytics ID')
@@ -401,6 +417,7 @@ class Settings extends Page implements HasForms
         $general->site_name = $state['general']['site_name'];
         $general->contact_email = $state['general']['contact_email'];
         $general->contact_phone = $state['general']['contact_phone'] ?? null;
+        $general->notification_emails = filled($state['general']['notification_emails'] ?? null) ? trim((string) $state['general']['notification_emails']) : null;
         $general->whatsapp_number = $state['general']['whatsapp_number'] ?? null;
         $general->header_logo = $state['general']['header_logo'] ?: null;
         $general->footer_logos = array_values(array_filter(

@@ -24,6 +24,7 @@ class NewSparePartInquiry extends Notification
 
         return (new MailMessage())
             ->subject('New spare-part order inquiry from '.$i->name)
+            ->replyTo($i->email, $i->name)
             ->line("From: {$i->name} <{$i->email}>")
             ->line('Phone: '.$i->phone.($i->country ? ' · '.$i->country : ''))
             ->line('Vehicle: '.trim(($i->year ? $i->year.' ' : '').$i->model_name))

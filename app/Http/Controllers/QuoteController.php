@@ -6,6 +6,8 @@ use App\Http\Requests\QuoteStoreRequest;
 use App\Models\Country;
 use App\Models\Quote;
 use App\Models\Vehicle;
+use App\Notifications\NewQuoteRequest;
+use App\Support\StaffMail;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -73,6 +75,8 @@ class QuoteController extends Controller
             ]);
         }
 
+        StaffMail::send(new NewQuoteRequest($quote), "quote {$quote->reference}");
+
         return redirect()->route('quotes.show', $quote)
             ->with('flash', "Quote {$quote->reference} submitted. We'll be in touch shortly.");
     }
@@ -92,6 +96,7 @@ class QuoteController extends Controller
         ]);
 
         $quote->update(['last_customer_reply_at' => now()]);
+        StaffMail::send(new NewQuoteRequest($quote, $data['body']), "quote reply {$quote->reference}");
 
         return redirect()->route('quotes.show', $quote)->with('flash', 'Reply sent.');
     }

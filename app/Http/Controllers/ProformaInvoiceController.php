@@ -7,13 +7,11 @@ use App\Models\ProformaInvoice;
 use App\Models\Vehicle;
 use App\Notifications\NewProformaInvoice;
 use App\Services\ProformaInvoiceService;
-use App\Settings\GeneralSettings;
+use App\Support\StaffMail;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Notification;
 
 /**
  * LC proforma invoices for signed-in customers shipping to a port whose
@@ -73,12 +71,7 @@ class ProformaInvoiceController extends Controller
             'consignee_email' => $data['consignee_email'],
         ]);
 
-        try {
-            $to = app(GeneralSettings::class)->contact_email ?: config('mail.from.address');
-            Notification::route('mail', $to)->notify(new NewProformaInvoice($invoice));
-        } catch (\Throwable $e) {
-            Log::warning('Proforma invoice mail failed: '.$e->getMessage());
-        }
+        StaffMail::send(new NewProformaInvoice($invoice), "proforma {$invoice->invoice_no}");
 
         return redirect()->route('proforma.index')
             ->with('status', "Proforma invoice {$invoice->invoice_no} is ready.")

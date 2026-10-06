@@ -5,11 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\ContactInquiry;
 use App\Notifications\NewContactInquiry;
 use App\Rules\Turnstile;
-use App\Settings\GeneralSettings;
+use App\Support\StaffMail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Notification;
 
 class ContactController extends Controller
 {
@@ -40,12 +38,7 @@ class ContactController extends Controller
             'user_agent' => substr((string) $request->userAgent(), 0, 255),
         ]);
 
-        try {
-            $to = app(GeneralSettings::class)->contact_email ?: config('mail.from.address');
-            Notification::route('mail', $to)->notify(new NewContactInquiry($inquiry));
-        } catch (\Throwable $e) {
-            Log::warning('Contact inquiry mail failed: '.$e->getMessage());
-        }
+        StaffMail::send(new NewContactInquiry($inquiry), "contact inquiry #{$inquiry->id}");
 
         return redirect()
             ->route('cms.page', 'contact')

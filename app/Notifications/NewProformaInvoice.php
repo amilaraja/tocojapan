@@ -27,6 +27,7 @@ class NewProformaInvoice extends Notification
 
         return (new MailMessage)
             ->subject("LC proforma invoice {$i->invoice_no} — {$v['title']}")
+            ->replyTo($i->consignee_email, $i->consignee_name)
             ->line("{$i->consignee_name} <{$i->consignee_email}> generated an LC proforma invoice.")
             ->line("Vehicle: {$v['title']} (stock {$v['stock_no']})")
             ->line("Destination: {$v['port']} / {$v['country']}")

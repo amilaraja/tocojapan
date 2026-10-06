@@ -12,6 +12,9 @@ class GeneralSettings extends Settings
 
     public ?string $contact_phone;
 
+    /** Comma/newline separated staff alert recipients; empty = contact_email. */
+    public ?string $notification_emails;
+
     public ?string $whatsapp_number;
 
     public ?string $header_logo;

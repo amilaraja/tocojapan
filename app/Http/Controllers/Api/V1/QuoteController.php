@@ -7,6 +7,8 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Country;
 use App\Models\Quote;
 use App\Models\Vehicle;
+use App\Notifications\NewQuoteRequest;
+use App\Support\StaffMail;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -67,6 +69,8 @@ class QuoteController extends Controller
             ]);
         }
 
+        StaffMail::send(new NewQuoteRequest($quote), "quote {$quote->reference} (app)");
+
         return ApiResponse::created(self::serialize($quote->fresh(['vehicle', 'country', 'port', 'messages'])));
     }
 
@@ -92,6 +96,7 @@ class QuoteController extends Controller
         ]);
 
         $quote->update(['last_customer_reply_at' => now()]);
+        StaffMail::send(new NewQuoteRequest($quote, $data['body']), "quote reply {$quote->reference} (app)");
 
         return ApiResponse::created(self::serialize($quote->fresh(['vehicle', 'country', 'port', 'messages.user']), withMessages: true));
     }

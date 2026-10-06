@@ -24,6 +24,7 @@ class NewContactInquiry extends Notification
 
         $mail = (new MailMessage())
             ->subject('New website inquiry'.($i->subject ? ': '.$i->subject : ''))
+            ->replyTo($i->email, $i->name)
             ->line("From: {$i->name} <{$i->email}>");
 
         if ($i->phone) {
