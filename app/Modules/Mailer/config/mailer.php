@@ -41,6 +41,9 @@ return [
     // TOC-LOG-004
     'retention_months' => 12,
 
+    // TOC-BUY-010: buyers with no enquiry for this long are deleted (privacy).
+    'buyer_retention_months' => 24,
+
     'campaign' => [
         'min_vehicles' => 2,
         'max_vehicles' => 12,

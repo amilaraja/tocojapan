@@ -25,6 +25,7 @@ class ApprovedSender extends Model
         'use_reply_to' => 'bool',
         'brevo_list_ids' => 'array',
         'field_rules' => 'array',
+        'collect_buyer_details' => 'bool',
         'max_per_message' => 'integer',
         'doi_template_id' => 'integer',
     ];

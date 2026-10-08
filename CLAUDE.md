@@ -55,6 +55,7 @@ Access: MailerAccess::canUse() (mailer.admin or mailer.marketer) and MailerAcces
 - php artisan mailer:sync-stats            # hourly; status + stats for campaigns pushed in the last 60 days
 - php artisan mailer:cleanup               # daily; deletes run logs/audit older than 12 months
 - php artisan mailer:backfill --pause | --resume | --status
+- php artisan mailer:buyers:backfill [--brevo] [--status]   # buyer database from past messages (read-only), then fill Brevo (addendum A1, TOC-BUY)
 
 ## Supplier stock (OnePrice, JWT …)
 Supplier-feed vehicles live in the same `vehicles` table, linked by `supplier_id` (+ `supplier_ref` = the supplier's id).

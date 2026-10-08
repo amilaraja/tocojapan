@@ -5,13 +5,17 @@ namespace App\Modules\Mailer\Domain\Importer;
 use App\Models\User;
 use App\Modules\Mailer\Domain\Brevo\BrevoUnavailable;
 use App\Modules\Mailer\Domain\Brevo\ContactSync;
+use App\Modules\Mailer\Domain\Buyers\BuyerDetailsParser;
+use App\Modules\Mailer\Domain\Buyers\BuyerRecorder;
 use App\Modules\Mailer\Models\ApprovedSender;
+use App\Modules\Mailer\Models\Buyer;
 use App\Modules\Mailer\Models\ContactImport;
 use App\Modules\Mailer\Models\ImportRun;
 use App\Modules\Mailer\Models\ImportState;
 use App\Modules\Mailer\Models\ProcessedMessage;
 use App\Modules\Mailer\Notifications\ImportFailingAlert;
 use App\Modules\Mailer\Support\MailerAccess;
+use App\Modules\Mailer\Support\MailerSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -46,6 +50,7 @@ class ImportRunner
         protected SenderMatcher $matcher,
         protected Extraction $extraction,
         protected ContactSync $contacts,
+        protected BuyerRecorder $buyers,
     ) {}
 
     public function run(string $trigger = ImportRun::TRIGGER_SCHEDULE): ImportRun
@@ -240,7 +245,15 @@ class ImportRunner
                     continue;
                 }
 
-                $sync = $this->contacts->sync($address['email'], $result['fields'], $sender);
+                // Buyer database first (TOC-BUY-003), so Brevo gets the up-to-date counts.
+                $buyer = $sender->collect_buyer_details && BuyerDetailsParser::hasDetails($result['buyer'])
+                    ? $this->buyers->record($address['email'], $message, $sender, $result['buyer'])
+                    : null;
+
+                $sync = $this->contacts->sync($address['email'], $result['fields'], $sender, $buyer ? BuyerRecorder::brevoAttributes($buyer) : []);
+                if ($buyer && in_array($sync->outcome, [ContactImport::OUTCOME_ADDED, ContactImport::OUTCOME_UPDATED], true)) {
+                    Buyer::query()->whereKey($buyer->id)->toBase()->update(['brevo_synced_at' => now()]);
+                }
                 $this->audit($address['email'], $message, $sender, $run, $sync->outcome, $sync->reason, $sync->status, $result['fields']);
 
                 match ($sync->outcome) {
@@ -338,6 +351,6 @@ class ImportRunner
 
     protected function mailboxKey(): string
     {
-        return strtolower((string) (app(\App\Modules\Mailer\Support\MailerSettings::class)->get('mailbox') ?: 'default'));
+        return strtolower((string) (app(MailerSettings::class)->get('mailbox') ?: 'default'));
     }
 }

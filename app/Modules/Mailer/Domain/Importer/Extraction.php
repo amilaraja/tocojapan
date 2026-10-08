@@ -2,6 +2,8 @@
 
 namespace App\Modules\Mailer\Domain\Importer;
 
+use App\Modules\Mailer\Domain\Buyers\BuyerDetailsParser;
+use App\Modules\Mailer\Domain\Buyers\BuyerRecorder;
 use App\Modules\Mailer\Models\ApprovedSender;
 use App\Modules\Mailer\Models\IgnoreRule;
 use App\Modules\Mailer\Support\MailerSettings;
@@ -20,11 +22,12 @@ class Extraction
         protected AddressValidator $validator,
         protected FieldRuleEngine $rules,
         protected MailerSettings $settings,
+        protected BuyerDetailsParser $buyers,
     ) {}
 
     /**
      * @param  list<array{value: string, type: string}>|null  $ignoreRules  defaults to the ignore list table
-     * @return array{addresses: list<array{email: string, keep: bool, reason: ?string}>, fields: array<string, string>}
+     * @return array{addresses: list<array{email: string, keep: bool, reason: ?string}>, fields: array<string, string>, buyer: array<string, mixed>}
      */
     public function run(ParsedMessage $message, ApprovedSender $sender, ?array $ignoreRules = null): array
     {
@@ -53,9 +56,15 @@ class Extraction
             $addresses[] = ['email' => $email, 'keep' => $reason === null, 'reason' => $reason];
         }
 
+        // Buyer details (TOC-BUY-001) only for senders that collect them.
+        $buyer = $sender->collect_buyer_details ? $this->buyers->parse($message) : [];
+        // Hand-written field rules win; buyer details fill the gaps.
+        $fields = $this->rules->apply($sender->field_rules, $message->bodyText()) + BuyerRecorder::contactFields($buyer);
+
         return [
             'addresses' => $addresses,
-            'fields' => $this->rules->apply($sender->field_rules, $message->bodyText()),
+            'fields' => $fields,
+            'buyer' => $buyer,
         ];
     }
 

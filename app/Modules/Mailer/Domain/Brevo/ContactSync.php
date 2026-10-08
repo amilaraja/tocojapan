@@ -4,6 +4,7 @@ namespace App\Modules\Mailer\Domain\Brevo;
 
 use App\Modules\Mailer\Models\ApprovedSender;
 use App\Modules\Mailer\Models\ContactImport;
+use App\Modules\Mailer\Support\MailerSettings;
 
 /**
  * Creates or updates one Brevo contact (TOC-BRV-001 to 006).
@@ -26,8 +27,14 @@ class ContactSync
 
     public function __construct(protected BrevoClient $client) {}
 
-    /** @param  array<string, string>  $fields  extracted FIRSTNAME, LASTNAME, COUNTRY, PHONE, STOCK_REF */
-    public function sync(string $email, array $fields, ApprovedSender $sender): SyncResult
+    /** Buyer attributes (TOC-BUY-005), created in Brevo by mailer:brevo:setup. */
+    public const BUYER_ATTRIBUTES = ['PORT', 'BUYER_TYPE', 'COUNTRY_CODE', 'LAST_MAKE', 'LAST_MODEL', 'LAST_YEAR', 'ENQUIRY_COUNT'];
+
+    /**
+     * @param  array<string, string>  $fields  extracted FIRSTNAME, LASTNAME, COUNTRY, PHONE, STOCK_REF
+     * @param  array<string, string|int>  $buyer  buyer attributes; sent only once they exist in Brevo
+     */
+    public function sync(string $email, array $fields, ApprovedSender $sender, array $buyer = []): SyncResult
     {
         $existing = $this->client->get('contacts/'.rawurlencode($email));
         $retries = $this->client->lastRetries;
@@ -47,7 +54,7 @@ class ContactSync
             $contact = null;
         }
 
-        $attributes = $this->attributes($contact['attributes'] ?? [], $fields, $sender, isNew: $contact === null);
+        $attributes = $this->attributes($contact['attributes'] ?? [], $fields, $sender, isNew: $contact === null) + $this->buyerAttributes($buyer);
         $lists = array_values(array_map('intval', $sender->brevo_list_ids ?? []));
 
         if ($sender->consent_mode === ApprovedSender::CONSENT_CONFIRM
@@ -87,6 +94,64 @@ class ContactSync
             $response->status(),
             $this->client->lastRetries,
         );
+    }
+
+    /**
+     * Fill in details on an existing Brevo contact without touching its
+     * lists, SOURCE or dates (buyer backfill, TOC-BUY-006). Same rules as
+     * sync(): blacklisted / bounced contacts are skipped and names,
+     * country and phone are only written when empty in Brevo. A contact
+     * that is not in Brevo is left alone.
+     *
+     * @param  array<string, string>  $fields
+     * @param  array<string, string|int>  $buyer
+     */
+    public function enrich(string $email, array $fields, array $buyer): SyncResult
+    {
+        $existing = $this->client->get('contacts/'.rawurlencode($email));
+        if ($existing->status() === 404) {
+            return new SyncResult(ContactImport::OUTCOME_SKIPPED, 'not_in_brevo', 404, $this->client->lastRetries);
+        }
+        if (! $existing->successful()) {
+            return new SyncResult(ContactImport::OUTCOME_FAILED, 'brevo_error', $existing->status(), $this->client->lastRetries);
+        }
+        $contact = $existing->json();
+        if (! empty($contact['emailBlacklisted'])) {
+            return new SyncResult(ContactImport::OUTCOME_SKIPPED, 'unsubscribed', $existing->status(), $this->client->lastRetries);
+        }
+        if (! empty($contact['statistics']['hardBounces'])) {
+            return new SyncResult(ContactImport::OUTCOME_SKIPPED, 'bounced', $existing->status(), $this->client->lastRetries);
+        }
+
+        $current = $contact['attributes'] ?? [];
+        $attributes = $this->buyerAttributes($buyer);
+        foreach (self::FIELD_ATTRIBUTES as $name) {
+            if (filled($fields[$name] ?? null) && blank($current[$name] ?? null)) {
+                $attributes[$name] = $fields[$name];
+            }
+        }
+        if ($attributes === []) {
+            return new SyncResult(ContactImport::OUTCOME_SKIPPED, 'nothing_to_add', $existing->status(), $this->client->lastRetries);
+        }
+
+        $response = $this->client->put('contacts/'.rawurlencode($email), ['attributes' => (object) $attributes]);
+
+        return $response->successful()
+            ? new SyncResult(ContactImport::OUTCOME_UPDATED, null, $response->status(), $this->client->lastRetries)
+            : new SyncResult(ContactImport::OUTCOME_FAILED, 'brevo_error', $response->status(), $this->client->lastRetries);
+    }
+
+    /**
+     * @param  array<string, string|int>  $buyer
+     * @return array<string, string|int>
+     */
+    protected function buyerAttributes(array $buyer): array
+    {
+        if ($buyer === [] || ! app(MailerSettings::class)->get('brevo_buyer_attributes')) {
+            return [];
+        }
+
+        return array_intersect_key($buyer, array_flip(self::BUYER_ATTRIBUTES));
     }
 
     /**

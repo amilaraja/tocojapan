@@ -121,6 +121,13 @@ class ApprovedSenderResource extends Resource
                         ->visible(fn (Get $get) => $get('consent_mode') === ApprovedSender::CONSENT_CONFIRM)
                         ->required(fn (Get $get) => $get('consent_mode') === ApprovedSender::CONSENT_CONFIRM),
                 ]),
+            Section::make('Buyer database')
+                ->description('For enquiry emails with labelled lines such as "Country : Kenya" or "Make : Toyota" (Japanese Car Trade and similar portals).')
+                ->schema([
+                    Toggle::make('collect_buyer_details')
+                        ->label('Collect buyer details')
+                        ->helperText('Saves name, country, port, phone, buyer type and the vehicle asked about for each enquiry, and fills them into Brevo. The buyer\'s own message is never saved.'),
+                ]),
             Section::make('Field rules')
                 ->description('Optional. Pick up details from the message text. Put ( ) around the part to keep, for example  Name: (.+)  or  Country: (.+)')
                 ->schema([

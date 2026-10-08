@@ -43,6 +43,13 @@
             @empty
                 <p style="margin:0;">None. Add field rules to the sender to pick up names, countries or phone numbers.</p>
             @endforelse
+
+            @if (! empty($result['buyer']))
+                <h3 style="margin:1.25rem 0 .5rem 0;font-weight:600;">Buyer details (for the buyer database)</h3>
+                @foreach ($result['buyer'] as $label => $value)
+                    <p style="margin:0;">{{ $label }}: <strong>{{ $value }}</strong></p>
+                @endforeach
+            @endif
         </x-filament::section>
     @endif
 </x-filament-panels::page>

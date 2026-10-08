@@ -5,6 +5,7 @@ namespace App\Modules\Mailer\Filament\Pages\Importer;
 use App\Modules\Mailer\Domain\Importer\Extraction;
 use App\Modules\Mailer\Domain\Importer\MessageParser;
 use App\Modules\Mailer\Domain\Importer\Reasons;
+use App\Modules\Mailer\Domain\Importer\SenderMatcher;
 use App\Modules\Mailer\Filament\Clusters\Importer;
 use App\Modules\Mailer\Models\ApprovedSender;
 use App\Modules\Mailer\Support\MailerAccess;
@@ -80,13 +81,17 @@ class RuleTester extends Page implements HasForms
 
         $this->result = [
             'from' => $message->from,
-            'fromMatches' => $message->from === null ? null : app(\App\Modules\Mailer\Domain\Importer\SenderMatcher::class)->match($message->from, collect([$sender])) !== null,
+            'fromMatches' => $message->from === null ? null : app(SenderMatcher::class)->match($message->from, collect([$sender])) !== null,
             'addresses' => array_map(fn ($a) => [
                 'email' => $a['email'],
                 'keep' => $a['keep'],
                 'reason' => $a['keep'] ? 'Would be imported' : Reasons::label($a['reason']),
             ], $out['addresses']),
             'fields' => collect($out['fields'])->mapWithKeys(fn ($v, $k) => [ucfirst(strtolower(str_replace('_', ' ', $k))) => $v])->all(),
+            // Buyer details (TOC-BUY-001), shown flat for checking.
+            'buyer' => collect($out['buyer'] ?? [])->except('details')->merge($out['buyer']['details'] ?? [])
+                ->filter(fn ($v) => $v !== null && $v !== '' && $v !== [])
+                ->mapWithKeys(fn ($v, $k) => [ucfirst(str_replace('_', ' ', $k)) => is_array($v) ? implode(', ', $v) : (string) $v])->all(),
         ];
     }
 }

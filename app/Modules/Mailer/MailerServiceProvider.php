@@ -6,24 +6,29 @@ use App\Modules\Mailer\Console\BackfillCommand;
 use App\Modules\Mailer\Console\BrevoCheck;
 use App\Modules\Mailer\Console\BrevoSaveTemplate;
 use App\Modules\Mailer\Console\BrevoSetup;
+use App\Modules\Mailer\Console\BuyersBackfill;
 use App\Modules\Mailer\Console\Cleanup;
 use App\Modules\Mailer\Console\Import;
 use App\Modules\Mailer\Console\RenderSample;
 use App\Modules\Mailer\Console\SyncStats;
 use App\Modules\Mailer\Domain\Importer\GmailReader;
 use App\Modules\Mailer\Domain\Importer\MailboxReader;
+use App\Modules\Mailer\Filament\Clusters\Buyers;
 use App\Modules\Mailer\Filament\Clusters\Importer;
+use App\Modules\Mailer\Filament\Pages\Buyers\DemandPage;
+use App\Modules\Mailer\Filament\Pages\Buyers\MatchingPage;
 use App\Modules\Mailer\Filament\Pages\Importer\BackfillPage;
 use App\Modules\Mailer\Filament\Pages\Importer\ImporterStatus;
 use App\Modules\Mailer\Filament\Pages\Importer\RuleTester;
 use App\Modules\Mailer\Filament\Pages\MailerSettingsPage;
+use App\Modules\Mailer\Filament\Pages\Overview;
 use App\Modules\Mailer\Filament\Resources\ApprovedSenders\ApprovedSenderResource;
 use App\Modules\Mailer\Filament\Resources\Banners\BannerResource;
+use App\Modules\Mailer\Filament\Resources\Buyers\BuyerResource;
 use App\Modules\Mailer\Filament\Resources\Campaigns\CampaignResource;
 use App\Modules\Mailer\Filament\Resources\ContactImports\ContactImportResource;
 use App\Modules\Mailer\Filament\Resources\IgnoreRules\IgnoreRuleResource;
 use App\Modules\Mailer\Filament\Resources\ImportRuns\ImportRunResource;
-use App\Modules\Mailer\Filament\Pages\Overview;
 use App\Modules\Mailer\Filament\Widgets\ImportStats;
 use App\Modules\Mailer\Support\MailerSettings;
 use Illuminate\Console\Scheduling\Schedule;
@@ -61,6 +66,7 @@ class MailerServiceProvider extends ServiceProvider
                 BrevoCheck::class,
                 BrevoSetup::class,
                 BrevoSaveTemplate::class,
+                BuyersBackfill::class,
             ]);
         }
 
@@ -91,6 +97,9 @@ class MailerServiceProvider extends ServiceProvider
             BackfillPage::class,
             RuleTester::class,
             MailerSettingsPage::class,
+            Buyers::class,
+            DemandPage::class,
+            MatchingPage::class,
         ];
     }
 
@@ -104,6 +113,7 @@ class MailerServiceProvider extends ServiceProvider
             IgnoreRuleResource::class,
             ImportRunResource::class,
             ContactImportResource::class,
+            BuyerResource::class,
         ];
     }
 }

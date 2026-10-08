@@ -195,3 +195,19 @@ Built and tested against a fake mailbox and a faked Brevo (no live calls):
 - ⚠ Existing banners 1–3 were saved cropped, and the original uploads are not kept. TOCO needs to re-upload them from the original files. Campaigns already in Brevo keep their old HTML.
 - ⚠ 1e34f74, 525afb7, be39247 and this note are committed locally but not pushed: this server has no GitHub key.
 - Environment on this server: run tests with `php -d memory_limit=1G vendor/bin/pest tests/Mailer`, because the CLI limit is 128M and the full run stops silently. Git needs `-c safe.directory=…` (dubious ownership). Chrome is not installed, so screenshots aren't possible.
+
+## Buyer database, addendum A1 (8 Oct 2026)
+
+**Covers:** TOC-BUY-001 to 010 (docs/mailer/addendum-buyer-database.md). Approved by the client: configure details for Japanese Car Trade, extract all labelled fields, backfill past messages, buyer database with demand and stock matching. Not approved: storing the buyer's message (TOC-LOG-003 unchanged).
+
+Done:
+- `Domain/Buyers`: `BuyerDetailsParser` (labelled lines, skips the message block, enquiry kind from the subject), `BuyerNormalizer` (ISO country, E.164 phone via libphonenumber-lite with portal-quirk repair, titles, buyer type, year), `BuyerRecorder`, `BuyerBackfill`, `BuyerExport` (CSV, formula cells neutralised).
+- Tables `mailer_buyers`, `mailer_buyer_enquiries`; columns `mailer_approved_senders.collect_buyer_details`, `mailer_processed_messages.buyer_scanned_at`.
+- Importer: buyers recorded in the same transaction as the audit rows; Brevo gets FIRSTNAME/LASTNAME/COUNTRY/PHONE from the details (rule 6 unchanged) and the 7 buyer attributes once `mailer:brevo:setup` has created them (setting `brevo_buyer_attributes`). `ContactSync::enrich` (PUT attributes only) for the backfill.
+- Admin: Mailer > Buyers (All buyers, Demand, Stock matching), "Collect buyer details" switch on approved senders, buyer details in the Rule Tester.
+- `mailer:buyers:backfill [--brevo] [--status]`, job `RunBuyerBackfill`; `mailer:cleanup` deletes buyers inactive 24 months.
+- Real-data checks (read-only, counts only): fields as in the addendum; 96 % of shared phones normalise; slowest parse 9 ms. A name with two titles ("Mr. Dr. …") looped forever in the first version; fixed with a regression test before go-live.
+- Tests: `tests/Mailer/Feature/BuyerDatabaseTest.php` (12).
+
+Live (8 Oct): migration run; Japanese Car Trade has "Collect buyer details" on; `mailer:brevo:setup` created PORT, BUYER_TYPE, COUNTRY_CODE, LAST_MAKE, LAST_MODEL, LAST_YEAR, ENQUIRY_COUNT; backfill of the 8,100 past messages started. DB backup before: /home/tocojapan.com/toco_db2026.pre-buyers-2026-10-08.sql.gz.
+

@@ -3,6 +3,7 @@
 namespace App\Modules\Mailer\Console;
 
 use App\Modules\Mailer\Domain\Brevo\BrevoClient;
+use App\Modules\Mailer\Support\MailerSettings;
 use Illuminate\Console\Command;
 use Throwable;
 
@@ -18,6 +19,14 @@ class BrevoSetup extends Command
         'LASTNAME' => 'text',
         'COUNTRY' => 'text',
         'PHONE' => 'text',
+        // Buyer database (TOC-BUY-005).
+        'PORT' => 'text',
+        'BUYER_TYPE' => 'text',
+        'COUNTRY_CODE' => 'text',
+        'LAST_MAKE' => 'text',
+        'LAST_MODEL' => 'text',
+        'LAST_YEAR' => 'float',
+        'ENQUIRY_COUNT' => 'float',
     ];
 
     public const ATTRIBUTES_NEEDED = ['SOURCE', 'TOCO_IMPORTED_AT', 'TOCO_LAST_ENQUIRY_AT', 'FIRSTNAME', 'LASTNAME', 'COUNTRY', 'PHONE'];
@@ -26,7 +35,7 @@ class BrevoSetup extends Command
 
     protected $description = 'Create missing Brevo contact attributes used by TOCO Mailer';
 
-    public function handle(BrevoClient $client): int
+    public function handle(BrevoClient $client, MailerSettings $settings): int
     {
         try {
             $existing = collect($client->get('contacts/attributes')->throw()->json('attributes') ?? [])->pluck('name')->all();
@@ -40,6 +49,8 @@ class BrevoSetup extends Command
                 $client->post("contacts/attributes/normal/{$name}", ['type' => $type])->throw();
                 $this->info("  {$name}: created ({$type})");
             }
+            // Buyer attributes are only sent once they all exist in Brevo.
+            $settings->set('brevo_buyer_attributes', true);
         } catch (Throwable $e) {
             $this->error($e->getMessage());
 
