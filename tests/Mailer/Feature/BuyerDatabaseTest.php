@@ -7,6 +7,7 @@ use App\Modules\Mailer\Domain\Buyers\BuyerDetailsParser;
 use App\Modules\Mailer\Domain\Buyers\BuyerExport;
 use App\Modules\Mailer\Domain\Buyers\BuyerNormalizer;
 use App\Modules\Mailer\Domain\Buyers\BuyerRecorder;
+use App\Modules\Mailer\Domain\Buyers\CountryLists;
 use App\Modules\Mailer\Domain\Importer\ImportRunner;
 use App\Modules\Mailer\Domain\Importer\ParsedMessage;
 use App\Modules\Mailer\Filament\Pages\Buyers\MatchingPage;
@@ -275,4 +276,52 @@ it('hides the buyer screens from users without Mailer access', function () {
     $this->actingAs(User::factory()->create()->assignRole('sales'));
 
     $this->get('/admin/mailer/buyers/list')->assertForbidden();
+});
+
+it('adds buyers to one Brevo list per country in its own folder, reusing existing lists (TOC-BUY-011)', function () {
+    $sender = jctSender();
+    $recorder = app(BuyerRecorder::class);
+    foreach (['a@gmail.com' => 'Kenya', 'b@gmail.com' => 'Kenya', 'c@gmail.com' => 'United Kingdom'] as $email => $country) {
+        $m = jctMessage('m-'.$email, ['email' => $email, 'country' => $country]);
+        $recorder->record($email, $m, $sender, app(BuyerDetailsParser::class)->parse($m));
+    }
+    app(MailerSettings::class)->set('brevo_country_lists', true);
+    Http::fake([
+        'api.brevo.com/v3/contacts/folders*' => Http::sequence()->push(['folders' => [], 'count' => 0])->push(['id' => 77], 201),
+        'api.brevo.com/v3/contacts/lists?*' => Http::response(['lists' => [['id' => 500, 'name' => 'Buyers – United Kingdom (GB)']]]),
+        'api.brevo.com/v3/contacts/lists' => Http::response(['id' => 501], 201),
+        'api.brevo.com/v3/contacts/lists/*/contacts/add' => Http::response(['contacts' => ['success' => ['x'], 'failure' => []]], 201),
+    ]);
+
+    $lists = app(CountryLists::class);
+    $r = $lists->sync(microtime(true) + 30);
+
+    expect($r['lists_created'])->toBe(1)                          // Kenya created; UK list already existed
+        ->and($lists->pendingCount())->toBe(0)
+        ->and(Buyer::where('country_code', 'KE')->pluck('brevo_country_list_id')->unique()->all())->toBe([501])
+        ->and(Buyer::where('country_code', 'GB')->value('brevo_country_list_id'))->toBe(500);
+    Http::assertSent(fn (Request $q) => $q->method() === 'POST' && $q->url() === 'https://api.brevo.com/v3/contacts/lists'
+        && $q['name'] === 'Buyers – Kenya (KE)' && $q['folderId'] === 77);
+    Http::assertSent(fn (Request $q) => str_ends_with($q->url(), 'lists/501/contacts/add') && $q['emails'] === ['a@gmail.com', 'b@gmail.com']);
+
+    // Second run: nothing to do.
+    expect($lists->sync(microtime(true) + 30))->toBe(['added' => 0, 'not_in_brevo' => 0, 'lists_created' => 0]);
+});
+
+it('adds new enquiries to their country list during import when country lists are on (TOC-BUY-011)', function () {
+    jctSender();
+    app(MailerSettings::class)->set('brevo_country_lists', true);
+    app(MailerSettings::class)->set('brevo_country_lists_folder_id', 77);
+    DB::table('mailer_country_lists')->insert(['country_code' => 'KE', 'brevo_list_id' => 501, 'name' => 'Buyers – Kenya (KE)', 'created_at' => now(), 'updated_at' => now()]);
+    $this->box->add(jctMessage('gm-9'));
+    Http::fake([
+        'api.brevo.com/v3/contacts/jim.example%40gmail.com' => Http::response([], 404),
+        'api.brevo.com/v3/contacts' => Http::response(['id' => 1], 201),
+        'api.brevo.com/v3/contacts/lists/501/contacts/add' => Http::response(['contacts' => ['success' => ['jim.example@gmail.com'], 'failure' => []]], 201),
+    ]);
+
+    app(ImportRunner::class)->run();
+
+    expect(Buyer::sole()->brevo_country_list_id)->toBe(501);
+    Http::assertSent(fn (Request $q) => str_ends_with($q->url(), 'lists/501/contacts/add') && $q['emails'] === ['jim.example@gmail.com']);
 });

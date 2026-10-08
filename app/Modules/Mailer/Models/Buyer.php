@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property ?\Illuminate\Support\Carbon $first_enquiry_at
  * @property ?\Illuminate\Support\Carbon $last_enquiry_at
  * @property ?\Illuminate\Support\Carbon $brevo_synced_at
+ * @property ?int $brevo_country_list_id
  * @property-read ?BuyerEnquiry $latestEnquiry
  */
 class Buyer extends Model

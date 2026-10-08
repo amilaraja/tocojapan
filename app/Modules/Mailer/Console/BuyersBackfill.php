@@ -3,6 +3,8 @@
 namespace App\Modules\Mailer\Console;
 
 use App\Modules\Mailer\Domain\Buyers\BuyerBackfill;
+use App\Modules\Mailer\Domain\Buyers\CountryLists;
+use App\Modules\Mailer\Support\MailerSettings;
 use Illuminate\Console\Command;
 
 /** TOC-BUY-006: build the buyer database from already-imported messages, then fill Brevo. */
@@ -10,6 +12,7 @@ class BuyersBackfill extends Command
 {
     protected $signature = 'mailer:buyers:backfill
         {--brevo : Fill the buyer details into Brevo (phase 2) instead of reading messages}
+        {--lists : Add buyers to one Brevo list per country (phase 3; turns on country lists for new enquiries too)}
         {--seconds=0 : Stop after this many seconds (0 = run until done)}
         {--limit=0 : Stop after this many messages or buyers (0 = no limit)}
         {--status : Only show progress}';
@@ -27,6 +30,21 @@ class BuyersBackfill extends Command
         $seconds = (int) $this->option('seconds');
         $deadline = $seconds > 0 ? microtime(true) + $seconds : PHP_FLOAT_MAX;
         $limit = (int) $this->option('limit') ?: PHP_INT_MAX;
+
+        if ($this->option('lists')) {
+            $lists = app(CountryLists::class);
+            app(MailerSettings::class)->set('brevo_country_lists', true);
+            $total = ['added' => 0, 'not_in_brevo' => 0, 'lists_created' => 0];
+            do {
+                $r = $lists->sync(min($deadline, microtime(true) + 30));
+                foreach ($r as $k => $v) {
+                    $total[$k] += $v;
+                }
+                $this->line(sprintf('Country lists: %d added, %d not in Brevo, %d lists created, %d buyers left', $total['added'], $total['not_in_brevo'], $total['lists_created'], $lists->pendingCount()));
+            } while ($lists->pendingCount() > 0 && microtime(true) < $deadline);
+
+            return self::SUCCESS;
+        }
 
         if ($this->option('brevo')) {
             if (! $backfill->brevoReady()) {

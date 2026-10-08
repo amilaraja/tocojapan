@@ -3,6 +3,7 @@
 namespace App\Modules\Mailer\Jobs;
 
 use App\Modules\Mailer\Domain\Buyers\BuyerBackfill;
+use App\Modules\Mailer\Domain\Buyers\CountryLists;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUniqueUntilProcessing;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -39,6 +40,17 @@ class RunBuyerBackfill implements ShouldBeUniqueUntilProcessing, ShouldQueue
         $synced = $backfill->syncBrevo($deadline);
         if ($synced['done'] > 0 && $backfill->status()['brevo_left'] > 0) {
             self::dispatch();
+
+            return;
+        }
+
+        // Phase 3 (TOC-BUY-011), once country lists are switched on.
+        $lists = app(CountryLists::class);
+        if ($lists->enabled() && $lists->pendingCount() > 0) {
+            $r = $lists->sync($deadline);
+            if ($r['added'] + $r['not_in_brevo'] > 0 && $lists->pendingCount() > 0) {
+                self::dispatch();
+            }
         }
     }
 }

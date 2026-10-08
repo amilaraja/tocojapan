@@ -7,6 +7,7 @@ use App\Modules\Mailer\Domain\Brevo\BrevoUnavailable;
 use App\Modules\Mailer\Domain\Brevo\ContactSync;
 use App\Modules\Mailer\Domain\Buyers\BuyerDetailsParser;
 use App\Modules\Mailer\Domain\Buyers\BuyerRecorder;
+use App\Modules\Mailer\Domain\Buyers\CountryLists;
 use App\Modules\Mailer\Models\ApprovedSender;
 use App\Modules\Mailer\Models\Buyer;
 use App\Modules\Mailer\Models\ContactImport;
@@ -253,6 +254,7 @@ class ImportRunner
                 $sync = $this->contacts->sync($address['email'], $result['fields'], $sender, $buyer ? BuyerRecorder::brevoAttributes($buyer) : []);
                 if ($buyer && in_array($sync->outcome, [ContactImport::OUTCOME_ADDED, ContactImport::OUTCOME_UPDATED], true)) {
                     Buyer::query()->whereKey($buyer->id)->toBase()->update(['brevo_synced_at' => now()]);
+                    $this->countryLists($buyer);
                 }
                 $this->audit($address['email'], $message, $sender, $run, $sync->outcome, $sync->reason, $sync->status, $result['fields']);
 
@@ -274,6 +276,16 @@ class ImportRunner
         });
 
         $counts = $local;
+    }
+
+    /** TOC-BUY-011: a list problem must not fail the import; the buyer stays pending for the next list sync. */
+    protected function countryLists(Buyer $buyer): void
+    {
+        try {
+            app(CountryLists::class)->addBuyer($buyer->refresh());
+        } catch (Throwable $e) {
+            Log::warning('Mailer: country list add failed', ['buyer' => $buyer->id, 'error' => $e->getMessage()]);
+        }
     }
 
     /** @param  array<string, string>  $fields */

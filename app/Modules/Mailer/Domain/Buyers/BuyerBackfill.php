@@ -34,7 +34,7 @@ class BuyerBackfill
         protected MailerSettings $settings,
     ) {}
 
-    /** @return array{messages_total: int, messages_left: int, buyers: int, brevo_left: int} */
+    /** @return array{messages_total: int, messages_left: int, buyers: int, brevo_left: int, country_lists_left: int} */
     public function status(): array
     {
         $senders = $this->senderIds();
@@ -44,6 +44,7 @@ class BuyerBackfill
             'messages_left' => $this->pendingMessages($senders)->count(),
             'buyers' => Buyer::query()->count(),
             'brevo_left' => $this->brevoReady() ? $this->pendingBrevo()->count() : 0,
+            'country_lists_left' => app(CountryLists::class)->enabled() ? app(CountryLists::class)->pendingCount() : 0,
         ];
     }
 
