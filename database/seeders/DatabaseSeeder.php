@@ -11,6 +11,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             \App\Modules\Mailer\Database\Seeders\MailerPermissionSeeder::class,
+            \App\Modules\PartnerApi\Database\Seeders\PartnerPermissionSeeder::class,
             CountrySeeder::class,
             PortSeeder::class,
             MakeSeeder::class,

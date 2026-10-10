@@ -4,6 +4,9 @@ namespace App\Modules\PartnerApi;
 
 use App\Models\Vehicle;
 use App\Modules\PartnerApi\Domain\Images\ImageVariants;
+use App\Modules\PartnerApi\Filament\Resources\Holds\VehicleHoldResource;
+use App\Modules\PartnerApi\Filament\Resources\Partners\PartnerResource;
+use App\Modules\PartnerApi\Http\Controllers\DocsController;
 use App\Modules\PartnerApi\Http\Middleware\AuthenticatePartner;
 use App\Modules\PartnerApi\Http\Middleware\EnforceLimits;
 use App\Modules\PartnerApi\Http\Middleware\PartnerBoundary;
@@ -36,6 +39,7 @@ class PartnerApiServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/Database/Migrations');
+        $this->loadViewsFrom(__DIR__.'/resources/views', 'partner-api');
 
         $router = $this->app->make(Router::class);
         $router->aliasMiddleware('partner.auth', AuthenticatePartner::class);
@@ -72,6 +76,23 @@ class PartnerApiServiceProvider extends ServiceProvider
         });
     }
 
+    /**
+     * Admin pages registered on the panel by AdminPanelProvider. Each gates
+     * itself with PartnerAccess::canAdmin().
+     *
+     * @return list<class-string>
+     */
+    public static function filamentPages(): array
+    {
+        return [];
+    }
+
+    /** @return list<class-string> */
+    public static function filamentResources(): array
+    {
+        return [PartnerResource::class, VehicleHoldResource::class];
+    }
+
     private function registerRoutes(): void
     {
         if ($this->app->routesAreCached()) {
@@ -87,5 +108,11 @@ class PartnerApiServiceProvider extends ServiceProvider
         }
 
         $routes->group(__DIR__.'/routes/partner.php');
+
+        // Partner developer docs on the main site (FR-DOC-01), outside the API prefix.
+        Route::middleware('web')->group(function () {
+            Route::get('partner/docs', [DocsController::class, 'guide'])->name('partner-docs');
+            Route::get('partner/docs/openapi.json', [DocsController::class, 'openapi'])->name('partner-docs.openapi');
+        });
     }
 }

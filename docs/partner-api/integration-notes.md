@@ -51,6 +51,8 @@ Every edit outside `app/Modules/PartnerApi` is listed here.
 | 2026-10-10 | app/Services/ProformaInvoiceService.php, app/Http/Controllers/ProformaInvoiceController.php | Proforma claims a hold; rivals refused | FR-HLD-03 |
 | 2026-10-10 | app/Filament/Admin/Resources/Vehicles/* (HoldActions new, VehiclesTable, EditVehicle, VehicleForm) | Hold for buyer, Extend, Release, hold-aware Mark sold; Under offer subheading; manual "Reserved" option disabled | UI brief 5, Amendment 01 |
 | 2026-10-10 | app/Listeners/ConvertVehiclePhotoOnUpload.php | Copies the clean original to storage/app/private/media-masters/{media id}/ before watermarking (first pass only) | FR-IMG-01 |
+| 2026-10-10 | app/Providers/Filament/AdminPanelProvider.php | "Partner Network" navigation group; registers PartnerApiServiceProvider::filamentPages()/filamentResources() | Menu registration |
+| 2026-10-10 | database/seeders/DatabaseSeeder.php | Calls PartnerPermissionSeeder | Permission seeding |
 | 2026-10-10 | resources/views/components/vehicle-card, vehicle-row, vehicles/show, vehicles/quick-view, partials/vehicle-buy-actions | "Under offer" badge and banner, buy buttons off, race message | UI brief 7 |
 
 ## 4. Progress
@@ -61,6 +63,7 @@ Every edit outside `app/Modules/PartnerApi` is listed here.
 | P2 Holds + own channels | Done 2026-10-10 | MIS task #204. Built and live in the admin; checkout enforcement waits for `HOLDS_ENFORCED=true`. 24 feature tests + MariaDB race test. |
 | P3 Read API | Done 2026-10-10 | `GET /vehicles` (full + change sync, tombstones, cursor, ETag/304), `GET /vehicles/{stock_no}`, `/catalog/*`, `POST /cif`. Whitelist resource with contract test. Signed photo links (endpoint in P4). Partner tests also pass on MariaDB. |
 | P4 Images, limits, usage | Done 2026-10-10 | `GET /img/{token}` (signed, partner-bound, bare 404s, variants cached privately), per-minute/per-day/photo limits with RateLimit headers (304 free), request log + `GET /usage`, clean masters kept for new uploads. |
-| P5 Admin + docs page | Next | |
+| P5 Admin + docs page | Done 2026-10-10 | Partner Network group (partners.admin, seeded for super_admin + admin): Partners (wizard/tabs, suspend/reactivate/revoke with typed name), connection keys (one-time reveal, rotate, revoke), Holds (tabs, 30 s countdown, extend/release/mark sold). Docs at /partner/docs (+ openapi.json), admins only until go-live. Live smoke test in a rolled-back transaction: token, 71 vehicles, photo 1280 px WebP, catalogue, usage; no supplier data leaked. First real partner waits on the JWT pull/push answer. |
+| P6 Webhooks, partner holds, usage page | Next | |
 
 Known unrelated failures in the full suite (they fail without this module too): Auth AuthenticationTest, PasswordResetTest x3, RegistrationTest, CmsTest sitemap.

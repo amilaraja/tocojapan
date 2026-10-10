@@ -7,6 +7,7 @@ use App\Filament\Admin\Widgets\QuotesAndOrders;
 use App\Filament\Admin\Widgets\SearchConsoleChart;
 use App\Filament\Admin\Widgets\StatsOverview;
 use App\Modules\Mailer\MailerServiceProvider;
+use App\Modules\PartnerApi\PartnerApiServiceProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Support\Facades\FilamentTimezone;
 use Filament\Support\Facades\FilamentView;
@@ -48,7 +49,7 @@ class AdminPanelProvider extends PanelProvider
             ->login(Login::class)
             ->brandName('Toco Japan Admin')
             ->maxContentWidth(Width::Full)
-            ->navigationGroups(['Catalogue', 'Content', 'Enquiries', 'Mailer', 'Shipping', 'System'])
+            ->navigationGroups(['Catalogue', 'Content', 'Enquiries', 'Mailer', 'Partner Network', 'Shipping', 'System'])
             ->renderHook(PanelsRenderHook::HEAD_END, fn (): string => Blade::render('@include("filament.admin.auth.head")'))
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn (): string => Blade::render('@include("filament.admin.auth.turnstile")'))
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_BEFORE, fn (): string => Blade::render('@include("filament.admin.auth.brand")'))
@@ -63,8 +64,10 @@ class AdminPanelProvider extends PanelProvider
                 Dashboard::class,
                 // TOCO Mailer module screens (each gates itself via canAccess()).
                 ...MailerServiceProvider::filamentPages(),
+                // Partner Stock API screens (gated by partners.admin).
+                ...PartnerApiServiceProvider::filamentPages(),
             ])
-            ->resources(MailerServiceProvider::filamentResources())
+            ->resources([...MailerServiceProvider::filamentResources(), ...PartnerApiServiceProvider::filamentResources()])
             ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\\Filament\\Admin\\Widgets')
             ->widgets([
                 AccountWidget::class,
