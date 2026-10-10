@@ -69,4 +69,5 @@ Supplier-feed vehicles live in the same `vehicles` table, linked by `supplier_id
 - php artisan suppliers:reprice [supplier]   # daily 03:15 after currency:fetch-rates
 - php artisan suppliers:purge [--dry-run]    # weekly; delisted > N days with no orders/quotes/favourites
 - Run tests with the config cache bypassed (bootstrap/cache/config.php otherwise points tests at production MySQL):
-  APP_CONFIG_CACHE=/tmp/x.php APP_ROUTES_CACHE=/tmp/y.php APP_EVENTS_CACHE=/tmp/z.php APP_ENV=testing DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test
+  APP_CONFIG_CACHE=/tmp/x.php APP_ROUTES_CACHE=/tmp/y.php APP_EVENTS_CACHE=/tmp/z.php VIEW_COMPILED_PATH=/tmp/toco-test-views APP_ENV=testing DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test
+  Never leave root-owned files in storage/ or bootstrap/cache (root-compiled views caused a 500 on 2026-10-10): `chown -R tocoj9771:tocoj9771 storage bootstrap/cache` after running artisan as root.
