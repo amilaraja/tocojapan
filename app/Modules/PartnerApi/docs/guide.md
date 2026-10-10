@@ -76,14 +76,106 @@ You can also send `client_id` and `client_secret` as form fields instead of HTTP
 
 **Too many failed token requests** from one IP address are refused for a minute (`429`, with `Retry-After`).
 
-## 5. Conventions
+## 5. Syncing stock
+
+Keep a copy of Toco's stock in your own database and update it on a schedule. There are two kinds of sync.
+
+**Full sync.** `GET /vehicles` without `updated_since` returns every vehicle in your scope that is available or under offer. Page through it with `next_cursor` until it is `null`. Then delete from your copy anything the full sync did not return. Run a full sync:
+
+- the first time,
+- once a day as a safety net,
+- whenever `meta.scope_version` changes. Toco changed what you see (your stock scope, prices or photo settings).
+
+**Change sync.** `GET /vehicles?updated_since=<time>` returns only vehicles that changed after that time, oldest change first. Run it every 5 to 15 minutes. Use the time you *started* your previous sync, minus a minute, so nothing slips between runs. A change sync can include:
+
+- vehicles with status `available`, `reserved` or `sold`: update your copy;
+- **tombstones**, `{"stock_no": "E02060", "status": "removed", "updated_at": "…"}`. The vehicle was withdrawn, deleted or left your scope: remove it from your site.
+
+`updated_since` can go back at most 30 days. Further back, you get `400 sync_window_exceeded`: do a full sync instead.
+
+```bash
+curl -s "https://tocojapan.com/partner/v1/vehicles?updated_since=2026-10-10T04:00:00Z&limit=100" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+```json
+{
+  "data": [ { "stock_no": "E02060", "status": "reserved", "…": "…" },
+            { "stock_no": "E01987", "status": "removed", "updated_at": "2026-10-10T05:12:44Z" } ],
+  "meta": { "limit": 100, "next_cursor": null, "scope_version": 3, "sync": "changes" }
+}
+```
+
+**Paging.** Pages are at most 100 vehicles (`limit`, default 50). `next_cursor` is opaque: pass it back exactly as `cursor`, with the same filters. Cursors stay correct while stock changes underneath them.
+
+**Filters** on `GET /vehicles`: `make`, `model`, `body_type` (slugs from the catalogue), `year_min`, `year_max`, `price_min`, `price_max` (in *your* prices) and `status` (`available` or `reserved`).
+
+**Save your quota with ETags.** Every list and vehicle response has an `ETag` header. Send it back as `If-None-Match`; if nothing changed you get an empty `304`, which does not count against your daily limit.
+
+## 6. Vehicle status and your obligations
+
+| Status | Meaning | What your site must do |
+|---|---|---|
+| `available` | On sale. | Show it. |
+| `reserved` | Under offer: another buyer is paying or negotiating. | Show it as **"Under offer"**, with the same wording. Take no money and promise it to nobody. If the reservation lapses it becomes `available` again. |
+| `sold` | Sold. | Remove it, or mark it sold, **within 15 minutes**. Sold vehicles stay readable for 30 days, then return 404. |
+| `removed` | Withdrawn or out of your scope (tombstone). | Remove it within 15 minutes. |
+
+These timings are part of your partner contract. A listing partner never takes payment: every buyer goes to Toco through `detail_url`.
+
+## 7. Vehicle fields
+
+`GET /vehicles/{stock_no}` returns one vehicle. Out of scope and unknown look the same: `404`.
+
+Main fields: `stock_no`, `title`, `status`, `make`, `model`, `body_type` (each `{slug, name}`), `year`, `registration` and `manufacture` (`{year, month}`), `mileage_km`, `engine_cc`, `fuel`, `transmission`, `drive`, `steering`, `exterior_color`, `doors`, `seats`, `grade`, `m3` (shipping volume), `price`, `photos`, `image_mode_applied`, `detail_url` and `updated_at`. Partners on the extended field set also get `chassis_number`, `model_code`, `dimensions_cm`, `interior_color`, `features` and `description`. The OpenAPI file lists every field and its type.
+
+**Link buyers to `detail_url`.** It opens the vehicle on tocojapan.com with your attribution code (`?ref=P-…`), so inquiries and sales are credited to you.
+
+## 8. Prices
+
+`price` is always FOB (free on board, Japan), already adjusted to your contract:
+
+```json
+"price": { "amount": 18450, "currency": "USD", "basis": "FOB", "on_request": false, "reason": null }
+```
+
+When there is no price to show, `amount` is `null`, `on_request` is `true` and `reason` says why: `price_on_request` (Toco has no public price for this car) or `partner_price_on_request` (your contract shows all prices on request). Show "Price on request" and link to `detail_url`.
+
+## 9. Photos
+
+Each photo has a stable `id` and a signed `url`:
+
+```json
+"photos": [ { "id": "ph_3f9c1a07b2d4e6f80a1c", "url": "https://tocojapan.com/partner/v1/img/eyJ…", "width": 1280 } ]
+```
+
+- Photos carry the Toco watermark (`image_mode_applied: "watermarked"`).
+- **Download each photo once and serve it from your own storage** (the default, "re-host" mode). If you already have a photo `id`, you already have the file: skip it. The `url` changes over time; the `id` does not.
+- Signed links expire after 1 hour, so never put them in your pages. Partners Toco has set to "Toco-hosted" may embed them; those links last 24 hours and must be refreshed on every sync.
+- When a vehicle is sold or removed, delete its photos too.
+
+## 10. Catalogue and CIF estimates
+
+Reference lists, each with the number of vehicles in your scope where it applies:
+
+| Endpoint | Returns |
+|---|---|
+| `GET /catalog/makes` | `slug`, `name`, `vehicle_count` |
+| `GET /catalog/models?make=toyota` | `slug`, `name`, `make`, `vehicle_count` |
+| `GET /catalog/body-types` | `slug`, `name`, `vehicle_count` |
+| `GET /catalog/countries` | `code` (ISO 3166-1 alpha-2), `name` |
+| `GET /catalog/ports?country=KE` | `id`, `name`, `country`, `unlocode` |
+
+`POST /cif` with `{"stock_no": "E02060", "port_id": 12}` estimates cost, insurance and freight to that port, on your price. It needs the `cif:read` scope. It is an estimate: inspection fees and import duties are not included.
+
+## 11. Conventions
 
 - **Request IDs.** Every response has an `X-Request-Id` header. Quote it when you contact Toco about a problem.
 - **Unknown parameters are rejected** with `400 unknown_parameter`, not ignored. A typo in a filter name will not silently return the wrong stock.
 - **Request bodies** are limited to 64 KB.
 - **Times** are UTC, in ISO 8601 format (`2026-10-10T04:12:09Z`).
 
-## 6. Errors
+## 12. Errors
 
 Errors use [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem details, with content type `application/problem+json`:
 
@@ -106,6 +198,9 @@ Branch on `code`. `title` and `detail` are for people and may change. Errors fro
 | <a id="error-unsupported-grant-type"></a>`unsupported_grant_type` | 400 | Only `grant_type=client_credentials` is supported. |
 | <a id="error-invalid-scope"></a>`invalid_scope` | 400 | You asked for a scope your account does not have. |
 | <a id="error-unknown-parameter"></a>`unknown_parameter` | 400 | The request has a parameter this endpoint does not accept. `unknown` lists them. |
+| <a id="error-invalid-cursor"></a>`invalid_cursor` | 400 | The cursor was changed or truncated. Pass `next_cursor` back exactly, or start again without it. |
+| <a id="error-sync-window-exceeded"></a>`sync_window_exceeded` | 400 | `updated_since` is more than 30 days back. Do a full sync. |
+| <a id="error-price-filter-unavailable"></a>`price_filter_unavailable` | 400 | Your prices are on request, so price filters cannot apply. |
 | <a id="error-invalid-client"></a>`invalid_client` | 401 | Wrong client ID or secret, or the key was revoked. |
 | <a id="error-invalid-token"></a>`invalid_token` | 401 | Missing, invalid or expired access token. Get a new token. |
 | <a id="error-partner-suspended"></a>`partner_suspended` | 403 | Toco has paused your access. Contact Toco. |
@@ -118,11 +213,14 @@ Branch on `code`. `title` and `detail` are for people and may change. Errors fro
 | <a id="error-method-not-allowed"></a>`method_not_allowed` | 405 | Wrong HTTP method for this endpoint. |
 | <a id="error-body-too-large"></a>`body_too_large` | 413 | The request body is over 64 KB. |
 | <a id="error-validation-failed"></a>`validation_failed` | 422 | Invalid values. `errors` lists the problems per field. |
+| <a id="error-unknown-port"></a>`unknown_port` | 422 | The port id is not an active destination. Use `GET /catalog/ports`. |
+| <a id="error-cif-unavailable"></a>`cif_unavailable` | 422 | No CIF estimate for this vehicle: its price is on request or its shipping volume is not known yet. |
 | <a id="error-too-many-requests"></a>`too_many_requests` | 429 | Slow down. Retry after `Retry-After` seconds. |
 | <a id="error-server-error"></a>`server_error` | 500 | Our fault. Retry later, and send us the `request_id` if it continues. |
 
-## 7. Changelog
+## 13. Changelog
 
 | Date | Change |
 |---|---|
+| 2026-10-10 | Stock: `GET /vehicles` (full and change sync, tombstones, ETags), `GET /vehicles/{stock_no}`, catalogue lists, `POST /cif`. |
 | 2026-10-10 | Draft: authentication, `GET /me`, conventions and errors. |

@@ -2,6 +2,7 @@
 
 namespace App\Modules\PartnerApi;
 
+use App\Models\Vehicle;
 use App\Modules\PartnerApi\Http\Middleware\AuthenticatePartner;
 use App\Modules\PartnerApi\Http\Middleware\PartnerBoundary;
 use App\Modules\PartnerApi\Http\Middleware\RequireScope;
@@ -15,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Throwable;
 
 /**
@@ -45,6 +47,16 @@ class PartnerApiServiceProvider extends ServiceProvider
                 return PartnerApi::isPartnerRequest($request) ? Problem::fromThrowable($e, $request) : null;
             });
         }
+
+        // Photo added, removed or reordered: the vehicle counts as changed, so
+        // partners' change syncs pick it up (FR-SYNC-01).
+        $touchVehicle = function (Media $media): void {
+            if ($media->model_type === (new Vehicle)->getMorphClass() && ($media->wasRecentlyCreated || $media->wasChanged('order_column') || ! $media->exists)) {
+                Vehicle::withTrashed()->whereKey($media->model_id)->first()?->touch();
+            }
+        };
+        Media::saved($touchVehicle);
+        Media::deleted($touchVehicle);
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->call(fn () => PartnerAccessToken::where('expires_at', '<', now()->subDay())->delete())

@@ -24,6 +24,10 @@ class Partner extends Model
 
     public const STATUS_REVOKED = 'revoked';
 
+    /** Settings that change which vehicles, prices or photos a partner gets. */
+    public const SCOPE_FIELDS = ['stock_scope', 'price_mode', 'price_markup', 'field_set', 'image_mode',
+        'image_max_width', 'image_ref_pill', 'image_delivery'];
+
     /** Attributes never copied into the audit log in clear. */
     protected const AUDIT_MASKED = ['webhook_secret'];
 
@@ -38,6 +42,7 @@ class Partner extends Model
         'price_mode' => 'as_is',
         'image_mode' => 'watermarked',
         'image_ref_pill' => true,
+        'image_delivery' => 'rehost',
     ];
 
     protected $hidden = ['webhook_secret'];
@@ -65,6 +70,14 @@ class Partner extends Model
                 $partner->{$attribute} ??= $value;
             }
             $partner->attribution_code ??= self::newAttributionCode();
+        });
+
+        // Anything that changes what the partner sees bumps scope_version: list
+        // responses carry it, and a new value tells the partner to resync fully.
+        static::updating(function (Partner $partner): void {
+            if ($partner->isDirty(self::SCOPE_FIELDS)) {
+                $partner->scope_version = (int) $partner->getOriginal('scope_version') + 1;
+            }
         });
 
         static::created(function (Partner $partner): void {

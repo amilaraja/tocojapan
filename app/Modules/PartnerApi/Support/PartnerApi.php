@@ -47,6 +47,15 @@ class PartnerApi
         return $response;
     }
 
+    /** Absolute base of the partner API, e.g. https://api.tocojapan.com/partner/v1. */
+    public static function baseUrl(): string
+    {
+        $host = config('partner_api.host');
+        $root = $host ? 'https://'.$host : rtrim((string) config('app.url'), '/');
+
+        return $root.'/'.trim((string) config('partner_api.prefix'), '/');
+    }
+
     public static function docsUrl(): string
     {
         return rtrim((string) config('app.url'), '/').'/partner/docs';

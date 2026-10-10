@@ -35,6 +35,18 @@ return [
         'hold_hours' => 48,
     ],
 
+    'images' => [
+        // kid => secret. PARTNER_API_IMAGE_KEYS="k2:secret2,k1:secret1"; the first
+        // (or PARTNER_API_IMAGE_KID) signs new links, the rest still verify.
+        'keys' => collect(explode(',', (string) env('PARTNER_API_IMAGE_KEYS', '')))
+            ->filter(fn ($pair) => str_contains($pair, ':'))
+            ->mapWithKeys(fn ($pair) => [trim(strstr($pair, ':', true)) => trim(substr(strstr($pair, ':'), 1))])
+            ->all(),
+        'current_kid' => env('PARTNER_API_IMAGE_KID'),
+        'variant_disk_path' => 'private/partner-variants',
+        'master_disk_path' => 'private/media-masters', // FR-IMG-01
+    ],
+
     'hold_hours_min' => 24,
     'hold_hours_max' => 96,
 ];

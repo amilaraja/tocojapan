@@ -25,6 +25,9 @@ Module: `app/Modules/PartnerApi`. Tests: `tests/PartnerApi` (testsuite PartnerAp
 - PayPal: before capturing (browser return and webhook), the order must still hold the car or win it back; otherwise the order is cancelled and nothing is captured. A paid order whose car is held elsewhere gets a loud admin note.
 - `reserved` cars are now in `Vehicle::published()` (listed, "Under offer"); buy and proforma buttons show only to the buyer holding the car.
 - Every hold status change purges the LiteSpeed page cache (existing `LiteSpeedCache` mechanism).
+- Change sync is not narrowed by scope: a car that moves out of a partner's scope still reaches it as a tombstone (stock number only). Scope, price and photo setting changes bump `partners.scope_version`; partners do a full sync when it changes.
+- Photo add, delete or reorder touches the vehicle (Media model hook in PartnerApiServiceProvider) so change syncs pick it up.
+- Photo `id` is stable per partner and photo; signed URLs are aligned to the hour so list bodies and ETags stay stable within an hour.
 - Follow-up outside this project: the Mailer's "include reserved" option (TOC-VEH-003, docs/mailer/integration-notes.md section 4) can now map to `reserved`. Not changed here (Mailer is a separate contract).
 
 ## 3. Shared-code change register
@@ -51,6 +54,7 @@ Every edit outside `app/Modules/PartnerApi` is listed here.
 |---|---|---|
 | P1 Foundation | Done 2026-10-10 | Tables partners, partner_clients, partner_access_tokens, partner_audit_logs (migrated on live, empty). Token endpoint, `GET /me`, problem+json, request IDs, 64 KB cap, unknown-parameter rejection, IP allow-list, audit log. 30 tests. |
 | P2 Holds + own channels | Done 2026-10-10 | MIS task #204. Built and live in the admin; checkout enforcement waits for `HOLDS_ENFORCED=true`. 24 feature tests + MariaDB race test. |
-| P3 Read API | Next | |
+| P3 Read API | Done 2026-10-10 | `GET /vehicles` (full + change sync, tombstones, cursor, ETag/304), `GET /vehicles/{stock_no}`, `/catalog/*`, `POST /cif`. Whitelist resource with contract test. Signed photo links (endpoint in P4). Partner tests also pass on MariaDB. |
+| P4 Images, limits, usage | Next | |
 
 Known unrelated failures in the full suite (they fail without this module too): Auth AuthenticationTest, PasswordResetTest x3, RegistrationTest, CmsTest sitemap.

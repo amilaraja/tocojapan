@@ -5,60 +5,887 @@
     "version": "1.0.0-draft",
     "summary": "Show Toco International's live vehicle stock on your own website.",
     "description": "Server-to-server API for approved Toco partners. Read the partner guide first: it explains authentication, syncing, photos and errors. Browser calls are not supported.",
-    "contact": { "name": "Toco International", "url": "https://tocojapan.com/contact" }
+    "contact": {
+      "name": "Toco International",
+      "url": "https://tocojapan.com/contact"
+    }
   },
   "servers": [
-    { "url": "https://api.tocojapan.com/partner/v1", "description": "Production (once the API host is live)" },
-    { "url": "https://tocojapan.com/partner/v1", "description": "Production (current host)" }
+    {
+      "url": "https://api.tocojapan.com/partner/v1",
+      "description": "Production (once the API host is live)"
+    },
+    {
+      "url": "https://tocojapan.com/partner/v1",
+      "description": "Production (current host)"
+    }
   ],
-  "security": [ { "bearer": [] } ],
+  "security": [
+    {
+      "bearer": []
+    }
+  ],
   "tags": [
-    { "name": "Authentication", "description": "Exchange your client credentials for a 15-minute access token." }
+    {
+      "name": "Authentication",
+      "description": "Exchange your client credentials for a 15-minute access token."
+    },
+    {
+      "name": "Stock",
+      "description": "Toco vehicles in your contracted scope, with full and change-only sync."
+    },
+    {
+      "name": "Catalogue",
+      "description": "Reference lists for filters and CIF estimates."
+    },
+    {
+      "name": "CIF",
+      "description": "Shipping cost estimates on your own prices."
+    }
   ],
   "paths": {
     "/oauth/token": {
       "post": {
-        "tags": ["Authentication"],
+        "tags": [
+          "Authentication"
+        ],
         "operationId": "createToken",
         "summary": "Get an access token",
         "description": "OAuth 2.0 client-credentials grant (RFC 6749 section 4.4). Send your client_id and client_secret as HTTP Basic authentication (preferred) or as form fields. Tokens last 15 minutes; request a new one when it expires. Failed attempts are limited per IP address.",
-        "security": [ {}, { "clientBasic": [] } ],
+        "security": [
+          {},
+          {
+            "clientBasic": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
-            "application/x-www-form-urlencoded": { "schema": { "$ref": "#/components/schemas/TokenRequest" } },
-            "application/json": { "schema": { "$ref": "#/components/schemas/TokenRequest" } }
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenRequest"
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenRequest"
+              }
+            }
           }
         },
         "responses": {
           "200": {
             "description": "Token issued.",
-            "headers": { "X-Request-Id": { "$ref": "#/components/headers/X-Request-Id" } },
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenResponse" } } }
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
           },
-          "400": { "description": "unsupported_grant_type, invalid_request, invalid_scope or unknown_parameter.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/OAuthProblem" } } } },
-          "401": { "description": "invalid_client: unknown client, wrong secret or revoked key.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/OAuthProblem" } } } },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "413": { "$ref": "#/components/responses/BodyTooLarge" },
-          "429": { "$ref": "#/components/responses/TooManyRequests" }
+          "400": {
+            "description": "unsupported_grant_type, invalid_request, invalid_scope or unknown_parameter.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "invalid_client: unknown client, wrong secret or revoked key.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "413": {
+            "$ref": "#/components/responses/BodyTooLarge"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
         }
       }
     },
     "/me": {
       "get": {
-        "tags": ["Authentication"],
+        "tags": [
+          "Authentication"
+        ],
         "operationId": "getMe",
         "summary": "Check your token",
         "description": "Returns the partner and key the token belongs to, its scopes and your contracted limits. Use it to confirm your integration is connected.",
         "responses": {
           "200": {
             "description": "Token details.",
-            "headers": { "X-Request-Id": { "$ref": "#/components/headers/X-Request-Id" } },
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Me" } } }
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
           },
-          "400": { "$ref": "#/components/responses/UnknownParameter" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "$ref": "#/components/responses/Forbidden" }
+          "400": {
+            "$ref": "#/components/responses/UnknownParameter"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/vehicles": {
+      "get": {
+        "tags": [
+          "Stock"
+        ],
+        "operationId": "listVehicles",
+        "summary": "List vehicles",
+        "description": "Without updated_since: every vehicle in your scope that is available or reserved (a full sync). With updated_since: every vehicle that changed after that time, oldest change first, including sold ones and tombstones for vehicles that left your scope (a change sync). Page through with next_cursor until it is null.",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "oauth": [
+              "stock:read"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size, 1 to 100 (default 50).",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "next_cursor from the previous page, exactly as returned.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "updated_since",
+            "in": "query",
+            "required": false,
+            "description": "ISO 8601 time. Returns only changes after it. At most 30 days back.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "example": "2026-10-10T04:00:00Z"
+          },
+          {
+            "name": "make",
+            "in": "query",
+            "required": false,
+            "description": "Make slug from GET /catalog/makes.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "toyota"
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "required": false,
+            "description": "Model slug from GET /catalog/models.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "body_type",
+            "in": "query",
+            "required": false,
+            "description": "Body type slug from GET /catalog/body-types.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year_min",
+            "in": "query",
+            "required": false,
+            "description": "Earliest year.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "year_max",
+            "in": "query",
+            "required": false,
+            "description": "Latest year.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "price_min",
+            "in": "query",
+            "required": false,
+            "description": "Lowest price, in your prices.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "price_max",
+            "in": "query",
+            "required": false,
+            "description": "Highest price, in your prices.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Only available or only reserved vehicles.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "available",
+                "reserved"
+              ]
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IfNoneMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of vehicles.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleList"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not modified since the ETag you sent. Does not count against your daily limit."
+          },
+          "400": {
+            "description": "unknown_parameter, invalid_cursor, sync_window_exceeded or price_filter_unavailable.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          }
+        }
+      }
+    },
+    "/vehicles/{stock_no}": {
+      "get": {
+        "tags": [
+          "Stock"
+        ],
+        "operationId": "getVehicle",
+        "summary": "Get one vehicle",
+        "description": "One vehicle by stock number. Sold vehicles stay readable for 30 days. A vehicle outside your scope answers 404, the same as one that does not exist.",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "oauth": [
+              "stock:read"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "stock_no",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "E02060"
+          },
+          {
+            "$ref": "#/components/parameters/IfNoneMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The vehicle.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Vehicle"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not modified."
+          },
+          "400": {
+            "$ref": "#/components/responses/UnknownParameter"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/catalog/makes": {
+      "get": {
+        "tags": [
+          "Catalogue"
+        ],
+        "operationId": "listMakes",
+        "summary": "Makes",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "oauth": [
+              "stock:read"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IfNoneMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Makes.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CatalogItem"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not modified."
+          },
+          "400": {
+            "$ref": "#/components/responses/UnknownParameter"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    },
+    "/catalog/models": {
+      "get": {
+        "tags": [
+          "Catalogue"
+        ],
+        "operationId": "listModels",
+        "summary": "Models",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "oauth": [
+              "stock:read"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "make",
+            "in": "query",
+            "required": false,
+            "description": "Only models of this make (slug).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IfNoneMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Models.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CatalogModel"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not modified."
+          },
+          "400": {
+            "$ref": "#/components/responses/UnknownParameter"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          }
+        }
+      }
+    },
+    "/catalog/body-types": {
+      "get": {
+        "tags": [
+          "Catalogue"
+        ],
+        "operationId": "listBodyTypes",
+        "summary": "Body types",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "oauth": [
+              "stock:read"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IfNoneMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Body types.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CatalogItem"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not modified."
+          },
+          "400": {
+            "$ref": "#/components/responses/UnknownParameter"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    },
+    "/catalog/countries": {
+      "get": {
+        "tags": [
+          "Catalogue"
+        ],
+        "operationId": "listCountries",
+        "summary": "Destination countries",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "oauth": [
+              "stock:read"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IfNoneMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Destination countries.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Country"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not modified."
+          },
+          "400": {
+            "$ref": "#/components/responses/UnknownParameter"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    },
+    "/catalog/ports": {
+      "get": {
+        "tags": [
+          "Catalogue"
+        ],
+        "operationId": "listPorts",
+        "summary": "Destination ports",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "oauth": [
+              "stock:read"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "country",
+            "in": "query",
+            "required": false,
+            "description": "Only ports in this country (ISO 3166-1 alpha-2).",
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IfNoneMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Destination ports.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Port"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not modified."
+          },
+          "400": {
+            "$ref": "#/components/responses/UnknownParameter"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          }
+        }
+      }
+    },
+    "/cif": {
+      "post": {
+        "tags": [
+          "CIF"
+        ],
+        "operationId": "estimateCif",
+        "summary": "Estimate CIF",
+        "description": "Cost, insurance and freight to a destination port, on your own price for the vehicle. Estimate only: inspection fees and import duties are not included.",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "oauth": [
+              "cif:read"
+            ]
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "stock_no",
+                  "port_id"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "stock_no": {
+                    "type": "string",
+                    "examples": [
+                      "E02060"
+                    ]
+                  },
+                  "port_id": {
+                    "type": "integer",
+                    "description": "id from GET /catalog/ports."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The estimate.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CifEstimate"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/UnknownParameter"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "413": {
+            "$ref": "#/components/responses/BodyTooLarge"
+          },
+          "422": {
+            "description": "validation_failed, unknown_port or cif_unavailable (price on request or shipping volume unknown).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -93,132 +920,864 @@
     "headers": {
       "X-Request-Id": {
         "description": "Unique id for this request. Quote it when contacting Toco about a problem.",
-        "schema": { "type": "string", "examples": ["req_01k7a3m9x2d5q8r4t6v0w1y3z5"] }
+        "schema": {
+          "type": "string",
+          "examples": [
+            "req_01k7a3m9x2d5q8r4t6v0w1y3z5"
+          ]
+        }
       },
       "Retry-After": {
         "description": "Seconds to wait before retrying.",
-        "schema": { "type": "integer" }
+        "schema": {
+          "type": "integer"
+        }
+      },
+      "ETag": {
+        "description": "Version of this response. Send it back as If-None-Match to get 304 when nothing changed.",
+        "schema": {
+          "type": "string"
+        }
       }
     },
     "responses": {
       "Unauthorized": {
         "description": "invalid_token: missing, invalid or expired access token. Get a new token.",
-        "headers": { "WWW-Authenticate": { "schema": { "type": "string" } } },
-        "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/Problem" } } }
+        "headers": {
+          "WWW-Authenticate": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
       },
       "Forbidden": {
         "description": "partner_suspended, partner_revoked, contract_not_started, contract_ended, ip_not_allowed or insufficient_scope.",
-        "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/Problem" } } }
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
       },
       "UnknownParameter": {
         "description": "unknown_parameter: the request has a parameter this endpoint does not accept.",
-        "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/Problem" } } }
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
       },
       "BodyTooLarge": {
         "description": "body_too_large: request bodies are limited to 64 KB.",
-        "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/Problem" } } }
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
       },
       "TooManyRequests": {
         "description": "too_many_requests: slow down and retry after the given number of seconds.",
-        "headers": { "Retry-After": { "$ref": "#/components/headers/Retry-After" } },
-        "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/Problem" } } }
+        "headers": {
+          "Retry-After": {
+            "$ref": "#/components/headers/Retry-After"
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "not_found: no such vehicle, or outside your scope.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
+      },
+      "ValidationFailed": {
+        "description": "validation_failed: invalid values; errors lists them per field.",
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            }
+          }
+        }
       }
     },
     "schemas": {
       "Problem": {
         "type": "object",
         "description": "RFC 9457 problem details. Branch on code, not on title or detail.",
-        "required": ["type", "title", "status", "code", "request_id"],
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code",
+          "request_id"
+        ],
         "properties": {
-          "type": { "type": "string", "format": "uri", "description": "Link to this error in the partner guide." },
-          "title": { "type": "string" },
-          "status": { "type": "integer" },
-          "code": { "type": "string", "description": "Stable machine-readable error code." },
-          "detail": { "type": "string" },
-          "request_id": { "type": "string" },
-          "errors": { "type": "object", "additionalProperties": { "type": "array", "items": { "type": "string" } }, "description": "Per-field messages (validation_failed only)." },
-          "unknown": { "type": "array", "items": { "type": "string" }, "description": "Rejected parameter names (unknown_parameter only)." },
-          "required_scope": { "type": "string", "description": "Missing scope (insufficient_scope only)." }
+          "type": {
+            "type": "string",
+            "format": "uri",
+            "description": "Link to this error in the partner guide."
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "code": {
+            "type": "string",
+            "description": "Stable machine-readable error code."
+          },
+          "detail": {
+            "type": "string"
+          },
+          "request_id": {
+            "type": "string"
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "Per-field messages (validation_failed only)."
+          },
+          "unknown": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Rejected parameter names (unknown_parameter only)."
+          },
+          "required_scope": {
+            "type": "string",
+            "description": "Missing scope (insufficient_scope only)."
+          }
         },
-        "examples": [{
-          "type": "https://tocojapan.com/partner/docs#error-partner-suspended",
-          "title": "This partner account is suspended.",
-          "status": 403,
-          "code": "partner_suspended",
-          "detail": "Contact Toco to resolve this.",
-          "request_id": "req_01k7a3m9x2d5q8r4t6v0w1y3z5"
-        }]
+        "examples": [
+          {
+            "type": "https://tocojapan.com/partner/docs#error-partner-suspended",
+            "title": "This partner account is suspended.",
+            "status": 403,
+            "code": "partner_suspended",
+            "detail": "Contact Toco to resolve this.",
+            "request_id": "req_01k7a3m9x2d5q8r4t6v0w1y3z5"
+          }
+        ]
       },
       "OAuthProblem": {
         "allOf": [
-          { "$ref": "#/components/schemas/Problem" },
+          {
+            "$ref": "#/components/schemas/Problem"
+          },
           {
             "type": "object",
-            "required": ["error"],
-            "properties": { "error": { "type": "string", "description": "RFC 6749 error code, same value as code." } }
+            "required": [
+              "error"
+            ],
+            "properties": {
+              "error": {
+                "type": "string",
+                "description": "RFC 6749 error code, same value as code."
+              }
+            }
           }
         ]
       },
       "TokenRequest": {
         "type": "object",
-        "required": ["grant_type"],
+        "required": [
+          "grant_type"
+        ],
         "properties": {
-          "grant_type": { "type": "string", "const": "client_credentials" },
-          "client_id": { "type": "string", "description": "Only when not using HTTP Basic.", "examples": ["tcc_4f1c2a9e0b7d3e5f6a8c"] },
-          "client_secret": { "type": "string", "description": "Only when not using HTTP Basic." },
-          "scope": { "type": "string", "description": "Space-separated subset of your scopes. Omit to get all of them." }
+          "grant_type": {
+            "type": "string",
+            "const": "client_credentials"
+          },
+          "client_id": {
+            "type": "string",
+            "description": "Only when not using HTTP Basic.",
+            "examples": [
+              "tcc_4f1c2a9e0b7d3e5f6a8c"
+            ]
+          },
+          "client_secret": {
+            "type": "string",
+            "description": "Only when not using HTTP Basic."
+          },
+          "scope": {
+            "type": "string",
+            "description": "Space-separated subset of your scopes. Omit to get all of them."
+          }
         },
         "additionalProperties": false
       },
       "TokenResponse": {
         "type": "object",
-        "required": ["access_token", "token_type", "expires_in", "scope"],
+        "required": [
+          "access_token",
+          "token_type",
+          "expires_in",
+          "scope"
+        ],
         "properties": {
-          "access_token": { "type": "string" },
-          "token_type": { "type": "string", "const": "Bearer" },
-          "expires_in": { "type": "integer", "description": "Seconds until the token expires (900)." },
-          "scope": { "type": "string", "examples": ["stock:read cif:read usage:read"] }
+          "access_token": {
+            "type": "string"
+          },
+          "token_type": {
+            "type": "string",
+            "const": "Bearer"
+          },
+          "expires_in": {
+            "type": "integer",
+            "description": "Seconds until the token expires (900)."
+          },
+          "scope": {
+            "type": "string",
+            "examples": [
+              "stock:read cif:read usage:read"
+            ]
+          }
         }
       },
       "Me": {
         "type": "object",
-        "required": ["partner", "client", "token", "limits"],
+        "required": [
+          "partner",
+          "client",
+          "token",
+          "limits"
+        ],
         "properties": {
           "partner": {
             "type": "object",
             "properties": {
-              "name": { "type": "string" },
-              "type": { "type": "string", "enum": ["listing", "selling"], "description": "Listing partners send buyers to Toco. Selling partners may hold cars." },
-              "attribution_code": { "type": "string", "examples": ["P-7KQ2MX"], "description": "Added as ?ref= to detail links so inquiries are credited to you." },
-              "contract_ends_on": { "type": ["string", "null"], "format": "date" }
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "listing",
+                  "selling"
+                ],
+                "description": "Listing partners send buyers to Toco. Selling partners may hold cars."
+              },
+              "attribution_code": {
+                "type": "string",
+                "examples": [
+                  "P-7KQ2MX"
+                ],
+                "description": "Added as ?ref= to detail links so inquiries are credited to you."
+              },
+              "contract_ends_on": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date"
+              }
             }
           },
           "client": {
             "type": "object",
             "properties": {
-              "client_id": { "type": "string" },
-              "label": { "type": "string" },
-              "environment": { "type": "string", "enum": ["live", "test"] }
+              "client_id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "environment": {
+                "type": "string",
+                "enum": [
+                  "live",
+                  "test"
+                ]
+              }
             }
           },
           "token": {
             "type": "object",
             "properties": {
-              "scopes": { "type": "array", "items": { "type": "string" } },
-              "expires_at": { "type": "string", "format": "date-time" }
+              "scopes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "expires_at": {
+                "type": "string",
+                "format": "date-time"
+              }
             }
           },
           "limits": {
             "type": "object",
             "properties": {
-              "requests_per_minute": { "type": "integer" },
-              "requests_per_day": { "type": "integer" },
-              "images_per_day": { "type": "integer" },
-              "max_image_width": { "type": "integer" },
-              "max_active_holds": { "type": "integer", "description": "Selling partners only." },
-              "hold_hours": { "type": "integer", "description": "Selling partners only." }
+              "requests_per_minute": {
+                "type": "integer"
+              },
+              "requests_per_day": {
+                "type": "integer"
+              },
+              "images_per_day": {
+                "type": "integer"
+              },
+              "max_image_width": {
+                "type": "integer"
+              },
+              "max_active_holds": {
+                "type": "integer",
+                "description": "Selling partners only."
+              },
+              "hold_hours": {
+                "type": "integer",
+                "description": "Selling partners only."
+              }
             }
           }
+        }
+      },
+      "Price": {
+        "type": "object",
+        "required": [
+          "amount",
+          "currency",
+          "basis",
+          "on_request",
+          "reason"
+        ],
+        "properties": {
+          "amount": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Your price for the buyer. Null when on request."
+          },
+          "currency": {
+            "type": "string",
+            "examples": [
+              "USD"
+            ]
+          },
+          "basis": {
+            "type": "string",
+            "const": "FOB"
+          },
+          "on_request": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              null,
+              "price_on_request",
+              "partner_price_on_request"
+            ],
+            "description": "price_on_request: Toco has no public price for this car. partner_price_on_request: your contract shows all prices on request."
+          }
+        }
+      },
+      "Photo": {
+        "type": "object",
+        "required": [
+          "id",
+          "url",
+          "width"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable photo id. If you already have this id, you already have the file."
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Signed link. Valid for 1 hour (re-host) or 24 hours (Toco-hosted). Never store it as a permanent link."
+          },
+          "width": {
+            "type": "integer",
+            "description": "Width in pixels, at most your contracted maximum."
+          }
+        }
+      },
+      "Vehicle": {
+        "type": "object",
+        "description": "Standard field set. Partners on the extended field set also get chassis_number, model_code, dimensions_cm, interior_color, features and description.",
+        "required": [
+          "stock_no",
+          "title",
+          "status",
+          "price",
+          "photos",
+          "detail_url",
+          "updated_at"
+        ],
+        "properties": {
+          "stock_no": {
+            "type": "string",
+            "examples": [
+              "E02060"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "examples": [
+              "2019 Toyota Hiace Van"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "available",
+              "reserved",
+              "sold"
+            ],
+            "description": "reserved: under offer to another buyer; show it as \"Under offer\" and take no money. sold: remove it from your site within 15 minutes."
+          },
+          "make": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "slug": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          "model": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "slug": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          "body_type": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "slug": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          "year": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "registration": {
+            "type": "object",
+            "properties": {
+              "year": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "month": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            }
+          },
+          "manufacture": {
+            "type": "object",
+            "properties": {
+              "year": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "month": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            }
+          },
+          "mileage_km": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "engine_cc": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "fuel": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "transmission": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "drive": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "steering": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "exterior_color": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "doors": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "seats": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "grade": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "m3": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Shipping volume in cubic metres."
+          },
+          "price": {
+            "$ref": "#/components/schemas/Price"
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Photo"
+            }
+          },
+          "image_mode_applied": {
+            "type": "string",
+            "enum": [
+              "watermarked"
+            ],
+            "description": "Photos carry the Toco watermark."
+          },
+          "detail_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "The vehicle on tocojapan.com with your attribution code. Link buyers here so inquiries are credited to you."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "chassis_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "model_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dimensions_cm": {
+            "type": "object",
+            "properties": {
+              "length": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "width": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "height": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            }
+          },
+          "interior_color": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "Tombstone": {
+        "type": "object",
+        "required": [
+          "stock_no",
+          "status",
+          "updated_at"
+        ],
+        "description": "In change syncs only: the vehicle left your scope, was withdrawn or deleted. Remove it from your site.",
+        "properties": {
+          "stock_no": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "const": "removed"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "VehicleList": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/Vehicle"
+                },
+                {
+                  "$ref": "#/components/schemas/Tombstone"
+                }
+              ]
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer"
+              },
+              "next_cursor": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "scope_version": {
+                "type": "integer",
+                "description": "Changes when Toco changes what you see (scope, prices, photo settings). When it changes, run a full sync."
+              },
+              "sync": {
+                "type": "string",
+                "enum": [
+                  "full",
+                  "changes"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "CatalogItem": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "vehicle_count": {
+            "type": "integer",
+            "description": "Vehicles in your scope now."
+          }
+        }
+      },
+      "CatalogModel": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "make": {
+            "type": "string"
+          },
+          "vehicle_count": {
+            "type": "integer"
+          }
+        }
+      },
+      "Country": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "examples": [
+              "KE"
+            ]
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "Port": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "unlocode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "CifEstimate": {
+        "type": "object",
+        "properties": {
+          "stock_no": {
+            "type": "string"
+          },
+          "port": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              },
+              "country": {
+                "type": "string"
+              }
+            }
+          },
+          "fob": {
+            "type": "number"
+          },
+          "freight": {
+            "type": "number"
+          },
+          "insurance": {
+            "type": "number"
+          },
+          "cif": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "parameters": {
+      "IfNoneMatch": {
+        "name": "If-None-Match",
+        "in": "header",
+        "required": false,
+        "description": "ETag from an earlier response. A 304 does not count against your daily limit.",
+        "schema": {
+          "type": "string"
         }
       }
     }
