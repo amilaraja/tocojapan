@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Mailer\Domain\Brevo\BrevoClient;
+use App\Modules\Mailer\Domain\Brevo\BrevoDirectory;
 use App\Modules\Mailer\Domain\Brevo\BrevoNotConfigured;
 use App\Modules\Mailer\Domain\Brevo\BrevoUnavailable;
 use Illuminate\Http\Client\Request;
@@ -81,4 +82,18 @@ it('says the key was not accepted for other 401s', function () {
 
     expect(fn () => app(BrevoClient::class)->get('account'))
         ->toThrow(\App\Modules\Mailer\Domain\Brevo\BrevoRejected::class, 'Brevo did not accept the key.');
+});
+
+it('shows real contact counts in the list picker although Brevo sends totalSubscribers as 0 (TOC-BRV-007)', function () {
+    Http::fake(['api.brevo.com/v3/contacts/lists*' => Http::response(['lists' => [
+        ['id' => 168, 'name' => 'Buyers – Zimbabwe (ZW)', 'uniqueSubscribers' => 1293, 'totalBlacklisted' => 0, 'totalSubscribers' => 0],
+        ['id' => 9, 'name' => 'Newsletter', 'uniqueSubscribers' => 50, 'totalSubscribers' => 48],
+        ['id' => 3, 'name' => 'Old list'],
+    ]])]);
+
+    expect(app(BrevoDirectory::class)->lists())->toBe([
+        168 => 'Buyers – Zimbabwe (ZW) (1,293 contacts)',
+        9 => 'Newsletter (48 contacts)',
+        3 => 'Old list',
+    ]);
 });

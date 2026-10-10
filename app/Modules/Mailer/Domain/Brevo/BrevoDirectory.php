@@ -24,13 +24,30 @@ class BrevoDirectory
             do {
                 $page = $this->client->withBudget(20)->get('contacts/lists', ['limit' => 50, 'offset' => $offset])->throw()->json();
                 foreach ($page['lists'] ?? [] as $list) {
-                    $out[(int) $list['id']] = $list['name'].(isset($list['totalSubscribers']) ? ' ('.number_format((int) $list['totalSubscribers']).')' : '');
+                    $count = self::contactCount($list);
+                    $out[(int) $list['id']] = $list['name'].($count !== null ? ' ('.number_format($count).' contacts)' : '');
                 }
                 $offset += 50;
             } while (count($page['lists'] ?? []) === 50);
 
             return $out;
         });
+    }
+
+    /**
+     * Contacts on a list. Brevo's list index (GET contacts/lists) returns
+     * totalSubscribers as 0 and only fills uniqueSubscribers; the single-list
+     * endpoint fills both. Prefer totalSubscribers when Brevo sends it.
+     *
+     * @param  array<string, mixed>  $list
+     */
+    public static function contactCount(array $list): ?int
+    {
+        if (! empty($list['totalSubscribers'])) {
+            return (int) $list['totalSubscribers'];
+        }
+
+        return isset($list['uniqueSubscribers']) ? (int) $list['uniqueSubscribers'] : null;
     }
 
     /** @return array<int, string> sender id => "Name <email>" (active senders only) */

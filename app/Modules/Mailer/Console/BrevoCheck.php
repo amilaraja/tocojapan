@@ -3,6 +3,7 @@
 namespace App\Modules\Mailer\Console;
 
 use App\Modules\Mailer\Domain\Brevo\BrevoClient;
+use App\Modules\Mailer\Domain\Brevo\BrevoDirectory;
 use Illuminate\Console\Command;
 use Throwable;
 
@@ -29,7 +30,7 @@ class BrevoCheck extends Command
 
             $this->info('Lists:');
             foreach ($client->get('contacts/lists', ['limit' => 50])->throw()->json('lists') ?? [] as $l) {
-                $this->line(sprintf('  #%d %s (%d contacts)', $l['id'], $l['name'], $l['totalSubscribers'] ?? 0));
+                $this->line(sprintf('  #%d %s (%d contacts)', $l['id'], $l['name'], BrevoDirectory::contactCount($l) ?? 0));
             }
 
             $attrs = collect($client->get('contacts/attributes')->throw()->json('attributes') ?? [])->pluck('name')->all();
