@@ -41,6 +41,14 @@
     {
       "name": "CIF",
       "description": "Shipping cost estimates on your own prices."
+    },
+    {
+      "name": "Photos",
+      "description": "Signed photo downloads."
+    },
+    {
+      "name": "Usage",
+      "description": "Your own usage figures."
     }
   ],
   "paths": {
@@ -135,6 +143,21 @@
             "headers": {
               "X-Request-Id": {
                 "$ref": "#/components/headers/X-Request-Id"
+              },
+              "RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimit-Limit"
+              },
+              "RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimit-Remaining"
+              },
+              "RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimit-Reset"
+              },
+              "X-Daily-Limit": {
+                "$ref": "#/components/headers/X-Daily-Limit"
+              },
+              "X-Daily-Remaining": {
+                "$ref": "#/components/headers/X-Daily-Remaining"
               }
             },
             "content": {
@@ -153,6 +176,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -298,6 +324,21 @@
               },
               "ETag": {
                 "$ref": "#/components/headers/ETag"
+              },
+              "RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimit-Limit"
+              },
+              "RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimit-Remaining"
+              },
+              "RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimit-Reset"
+              },
+              "X-Daily-Limit": {
+                "$ref": "#/components/headers/X-Daily-Limit"
+              },
+              "X-Daily-Remaining": {
+                "$ref": "#/components/headers/X-Daily-Remaining"
               }
             },
             "content": {
@@ -377,6 +418,21 @@
               },
               "ETag": {
                 "$ref": "#/components/headers/ETag"
+              },
+              "RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimit-Limit"
+              },
+              "RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimit-Remaining"
+              },
+              "RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimit-Reset"
+              },
+              "X-Daily-Limit": {
+                "$ref": "#/components/headers/X-Daily-Limit"
+              },
+              "X-Daily-Remaining": {
+                "$ref": "#/components/headers/X-Daily-Remaining"
               }
             },
             "content": {
@@ -447,6 +503,21 @@
               },
               "ETag": {
                 "$ref": "#/components/headers/ETag"
+              },
+              "RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimit-Limit"
+              },
+              "RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimit-Remaining"
+              },
+              "RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimit-Reset"
+              },
+              "X-Daily-Limit": {
+                "$ref": "#/components/headers/X-Daily-Limit"
+              },
+              "X-Daily-Remaining": {
+                "$ref": "#/components/headers/X-Daily-Remaining"
               }
             },
             "content": {
@@ -526,6 +597,21 @@
               },
               "ETag": {
                 "$ref": "#/components/headers/ETag"
+              },
+              "RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimit-Limit"
+              },
+              "RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimit-Remaining"
+              },
+              "RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimit-Reset"
+              },
+              "X-Daily-Limit": {
+                "$ref": "#/components/headers/X-Daily-Limit"
+              },
+              "X-Daily-Remaining": {
+                "$ref": "#/components/headers/X-Daily-Remaining"
               }
             },
             "content": {
@@ -599,6 +685,21 @@
               },
               "ETag": {
                 "$ref": "#/components/headers/ETag"
+              },
+              "RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimit-Limit"
+              },
+              "RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimit-Remaining"
+              },
+              "RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimit-Reset"
+              },
+              "X-Daily-Limit": {
+                "$ref": "#/components/headers/X-Daily-Limit"
+              },
+              "X-Daily-Remaining": {
+                "$ref": "#/components/headers/X-Daily-Remaining"
               }
             },
             "content": {
@@ -669,6 +770,21 @@
               },
               "ETag": {
                 "$ref": "#/components/headers/ETag"
+              },
+              "RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimit-Limit"
+              },
+              "RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimit-Remaining"
+              },
+              "RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimit-Reset"
+              },
+              "X-Daily-Limit": {
+                "$ref": "#/components/headers/X-Daily-Limit"
+              },
+              "X-Daily-Remaining": {
+                "$ref": "#/components/headers/X-Daily-Remaining"
               }
             },
             "content": {
@@ -750,6 +866,21 @@
               },
               "ETag": {
                 "$ref": "#/components/headers/ETag"
+              },
+              "RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimit-Limit"
+              },
+              "RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimit-Remaining"
+              },
+              "RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimit-Reset"
+              },
+              "X-Daily-Limit": {
+                "$ref": "#/components/headers/X-Daily-Limit"
+              },
+              "X-Daily-Remaining": {
+                "$ref": "#/components/headers/X-Daily-Remaining"
               }
             },
             "content": {
@@ -843,6 +974,21 @@
             "headers": {
               "X-Request-Id": {
                 "$ref": "#/components/headers/X-Request-Id"
+              },
+              "RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimit-Limit"
+              },
+              "RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimit-Remaining"
+              },
+              "RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimit-Reset"
+              },
+              "X-Daily-Limit": {
+                "$ref": "#/components/headers/X-Daily-Limit"
+              },
+              "X-Daily-Remaining": {
+                "$ref": "#/components/headers/X-Daily-Remaining"
               }
             },
             "content": {
@@ -885,6 +1031,135 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/img/{token}": {
+      "get": {
+        "tags": [
+          "Photos"
+        ],
+        "operationId": "getPhoto",
+        "summary": "Download a photo",
+        "description": "Use the url from a vehicle's photos list exactly as given. The link is the credential: no Authorization header. Links expire (1 hour for re-host, 24 hours for Toco-hosted) and stop working at once if your access is suspended or your photo settings change. Any problem with the link answers 404 without detail. Each successful download counts against your daily photo allowance.",
+        "security": [
+          {}
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The photo (WebP).",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "Cache-Control": {
+                "description": "private, no-store for re-host; public with max-age until expiry for Toco-hosted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found: invalid, expired or withdrawn link.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    },
+    "/usage": {
+      "get": {
+        "tags": [
+          "Usage"
+        ],
+        "operationId": "getUsage",
+        "summary": "Your usage",
+        "description": "Today's calls and photo downloads against your allowances, errors, your last successful sync, and the last 30 days. Days run on Japan time.",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "oauth": [
+              "usage:read"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usage figures.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimit-Limit"
+              },
+              "RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimit-Remaining"
+              },
+              "RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimit-Reset"
+              },
+              "X-Daily-Limit": {
+                "$ref": "#/components/headers/X-Daily-Limit"
+              },
+              "X-Daily-Remaining": {
+                "$ref": "#/components/headers/X-Daily-Remaining"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Usage"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/UnknownParameter"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -938,6 +1213,36 @@
         "schema": {
           "type": "string"
         }
+      },
+      "RateLimit-Limit": {
+        "description": "Requests allowed per minute for this key.",
+        "schema": {
+          "type": "integer"
+        }
+      },
+      "RateLimit-Remaining": {
+        "description": "Requests left in the current minute.",
+        "schema": {
+          "type": "integer"
+        }
+      },
+      "RateLimit-Reset": {
+        "description": "Seconds until the minute window resets.",
+        "schema": {
+          "type": "integer"
+        }
+      },
+      "X-Daily-Limit": {
+        "description": "Requests allowed per day (Japan time) for your partner account.",
+        "schema": {
+          "type": "integer"
+        }
+      },
+      "X-Daily-Remaining": {
+        "description": "Requests left today.",
+        "schema": {
+          "type": "integer"
+        }
       }
     },
     "responses": {
@@ -989,7 +1294,7 @@
         }
       },
       "TooManyRequests": {
-        "description": "too_many_requests: slow down and retry after the given number of seconds.",
+        "description": "too_many_requests (per-minute limit), daily_limit_reached or image_limit_reached (daily allowances, reset at midnight Japan time). Wait Retry-After seconds.",
         "headers": {
           "Retry-After": {
             "$ref": "#/components/headers/Retry-After"
@@ -1766,6 +2071,64 @@
           },
           "note": {
             "type": "string"
+          }
+        }
+      },
+      "Usage": {
+        "type": "object",
+        "properties": {
+          "today": {
+            "type": "object",
+            "properties": {
+              "requests": {
+                "type": "integer"
+              },
+              "requests_limit": {
+                "type": "integer"
+              },
+              "images": {
+                "type": "integer"
+              },
+              "images_limit": {
+                "type": "integer"
+              },
+              "errors": {
+                "type": "integer"
+              },
+              "resets_in_seconds": {
+                "type": "integer"
+              }
+            }
+          },
+          "last_sync_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Your last successful GET /vehicles."
+          },
+          "days": {
+            "type": "array",
+            "description": "Last 30 days, oldest first.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "requests": {
+                  "type": "integer"
+                },
+                "images": {
+                  "type": "integer"
+                },
+                "errors": {
+                  "type": "integer"
+                }
+              }
+            }
           }
         }
       }

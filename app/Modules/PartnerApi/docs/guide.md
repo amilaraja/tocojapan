@@ -153,6 +153,9 @@ Each photo has a stable `id` and a signed `url`:
 - **Download each photo once and serve it from your own storage** (the default, "re-host" mode). If you already have a photo `id`, you already have the file: skip it. The `url` changes over time; the `id` does not.
 - Signed links expire after 1 hour, so never put them in your pages. Partners Toco has set to "Toco-hosted" may embed them; those links last 24 hours and must be refreshed on every sync.
 - When a vehicle is sold or removed, delete its photos too.
+- Download with `GET` on the `url` as given, with no `Authorization` header: the link itself is the credential. Photos are WebP, at most your contracted width.
+- A link that is expired, altered, or belongs to a vehicle that left your scope answers `404` with no detail. A new sync gives you fresh links.
+- Each successful download counts against your daily photo allowance. Downloading each photo once keeps you far below it.
 
 ## 10. Catalogue and CIF estimates
 
@@ -168,14 +171,28 @@ Reference lists, each with the number of vehicles in your scope where it applies
 
 `POST /cif` with `{"stock_no": "E02060", "port_id": 12}` estimates cost, insurance and freight to that port, on your price. It needs the `cif:read` scope. It is an estimate: inspection fees and import duties are not included.
 
-## 11. Conventions
+## 11. Limits and usage
+
+| Limit | Default | When you go over |
+|---|---|---|
+| Requests per minute, per key | 120 | `429 too_many_requests` |
+| Requests per day, per partner | 20,000 | `429 daily_limit_reached` |
+| Photo downloads per day, per partner | 50,000 | `429 image_limit_reached` |
+
+Your contract may set other numbers; `GET /me` shows yours. Days run on Japan time and reset at midnight there. A `429` carries `Retry-After` (seconds): wait that long. Every API response carries `RateLimit-Limit`, `RateLimit-Remaining` and `RateLimit-Reset` for the minute window, and `X-Daily-Limit` and `X-Daily-Remaining` for the day. Answers of `304 Not Modified` do not count against the daily limit.
+
+`GET /usage` (scope `usage:read`) shows today's requests and photo downloads against your limits, today's errors, your last successful sync, and the last 30 days.
+
+Toco sees the same figures, and is alerted about unusual patterns, such as a sudden jump in volume or a key used to walk through every stock number.
+
+## 12. Conventions
 
 - **Request IDs.** Every response has an `X-Request-Id` header. Quote it when you contact Toco about a problem.
 - **Unknown parameters are rejected** with `400 unknown_parameter`, not ignored. A typo in a filter name will not silently return the wrong stock.
 - **Request bodies** are limited to 64 KB.
 - **Times** are UTC, in ISO 8601 format (`2026-10-10T04:12:09Z`).
 
-## 12. Errors
+## 13. Errors
 
 Errors use [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem details, with content type `application/problem+json`:
 
@@ -216,11 +233,14 @@ Branch on `code`. `title` and `detail` are for people and may change. Errors fro
 | <a id="error-unknown-port"></a>`unknown_port` | 422 | The port id is not an active destination. Use `GET /catalog/ports`. |
 | <a id="error-cif-unavailable"></a>`cif_unavailable` | 422 | No CIF estimate for this vehicle: its price is on request or its shipping volume is not known yet. |
 | <a id="error-too-many-requests"></a>`too_many_requests` | 429 | Slow down. Retry after `Retry-After` seconds. |
+| <a id="error-daily-limit-reached"></a>`daily_limit_reached` | 429 | Your daily request limit is used up. It resets at midnight Japan time (`Retry-After`). |
+| <a id="error-image-limit-reached"></a>`image_limit_reached` | 429 | Your daily photo allowance is used up. It resets at midnight Japan time. |
 | <a id="error-server-error"></a>`server_error` | 500 | Our fault. Retry later, and send us the `request_id` if it continues. |
 
-## 13. Changelog
+## 14. Changelog
 
 | Date | Change |
 |---|---|
+| 2026-10-10 | Photos: `GET /img/{token}`. Limits and `GET /usage`; rate-limit headers on every response. |
 | 2026-10-10 | Stock: `GET /vehicles` (full and change sync, tombstones, ETags), `GET /vehicles/{stock_no}`, catalogue lists, `POST /cif`. |
 | 2026-10-10 | Draft: authentication, `GET /me`, conventions and errors. |

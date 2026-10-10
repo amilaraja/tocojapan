@@ -2,8 +2,10 @@
 
 use App\Modules\PartnerApi\Http\Controllers\CatalogController;
 use App\Modules\PartnerApi\Http\Controllers\CifController;
+use App\Modules\PartnerApi\Http\Controllers\ImageController;
 use App\Modules\PartnerApi\Http\Controllers\MeController;
 use App\Modules\PartnerApi\Http\Controllers\TokenController;
+use App\Modules\PartnerApi\Http\Controllers\UsageController;
 use App\Modules\PartnerApi\Http\Controllers\VehicleController;
 use Illuminate\Support\Facades\Route;
 
@@ -13,7 +15,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('oauth/token', TokenController::class)->name('token');
 
-Route::middleware('partner.auth')->group(function () {
+// The signed token is the credential (§9.2); no bearer token here.
+Route::get('img/{token}', ImageController::class)->where('token', '[A-Za-z0-9_\-.]+')->name('image');
+
+Route::middleware(['partner.auth', 'partner.limits'])->group(function () {
     Route::get('me', MeController::class)->name('me');
 
     Route::middleware('partner.scope:stock:read')->group(function () {
@@ -28,4 +33,5 @@ Route::middleware('partner.auth')->group(function () {
     });
 
     Route::post('cif', CifController::class)->middleware('partner.scope:cif:read')->name('cif');
+    Route::get('usage', UsageController::class)->middleware('partner.scope:usage:read')->name('usage');
 });

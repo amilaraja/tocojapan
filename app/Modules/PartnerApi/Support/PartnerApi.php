@@ -13,6 +13,12 @@ class PartnerApi
 {
     public const REQUEST_ID = 'partner_api.request_id';
 
+    /** The PartnerClient behind this request, once known (for usage logging). */
+    public const CLIENT = 'partner_api.client';
+
+    /** api | image */
+    public const KIND = 'partner_api.kind';
+
     public static function isPartnerRequest(Request $request): bool
     {
         $host = config('partner_api.host');

@@ -3,10 +3,13 @@
 namespace App\Modules\PartnerApi;
 
 use App\Models\Vehicle;
+use App\Modules\PartnerApi\Domain\Images\ImageVariants;
 use App\Modules\PartnerApi\Http\Middleware\AuthenticatePartner;
+use App\Modules\PartnerApi\Http\Middleware\EnforceLimits;
 use App\Modules\PartnerApi\Http\Middleware\PartnerBoundary;
 use App\Modules\PartnerApi\Http\Middleware\RequireScope;
 use App\Modules\PartnerApi\Models\PartnerAccessToken;
+use App\Modules\PartnerApi\Models\PartnerRequestLog;
 use App\Modules\PartnerApi\Support\PartnerApi;
 use App\Modules\PartnerApi\Support\Problem;
 use Illuminate\Console\Scheduling\Schedule;
@@ -37,6 +40,7 @@ class PartnerApiServiceProvider extends ServiceProvider
         $router = $this->app->make(Router::class);
         $router->aliasMiddleware('partner.auth', AuthenticatePartner::class);
         $router->aliasMiddleware('partner.scope', RequireScope::class);
+        $router->aliasMiddleware('partner.limits', EnforceLimits::class);
 
         $this->registerRoutes();
 
@@ -57,10 +61,14 @@ class PartnerApiServiceProvider extends ServiceProvider
         };
         Media::saved($touchVehicle);
         Media::deleted($touchVehicle);
+        Media::deleted(fn (Media $media) => ImageVariants::forget($media->id));
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->call(fn () => PartnerAccessToken::where('expires_at', '<', now()->subDay())->delete())
                 ->daily()->name('partner-api:prune-tokens');
+            // §8.6: request logs kept 12 months.
+            $schedule->call(fn () => PartnerRequestLog::where('created_at', '<', now()->subMonths(12))->delete())
+                ->dailyAt('04:20')->name('partner-api:prune-request-logs');
         });
     }
 

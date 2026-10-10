@@ -3,6 +3,7 @@
 namespace App\Modules\PartnerApi\Http\Middleware;
 
 use App\Modules\PartnerApi\Models\PartnerAccessToken;
+use App\Modules\PartnerApi\Support\PartnerApi;
 use App\Modules\PartnerApi\Support\PartnerApiException;
 use Closure;
 use Illuminate\Http\Request;
@@ -28,6 +29,7 @@ class AuthenticatePartner
         }
 
         $partner = $token->client->partner;
+        $request->attributes->set(PartnerApi::CLIENT, $token->client);
 
         if ($code = $partner->accessDenialCode()) {
             throw self::denied($code);

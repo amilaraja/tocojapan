@@ -6,6 +6,7 @@ use App\Modules\PartnerApi\Domain\Auth\ClientSecret;
 use App\Modules\PartnerApi\Domain\Auth\Scopes;
 use App\Modules\PartnerApi\Http\Middleware\AuthenticatePartner;
 use App\Modules\PartnerApi\Models\PartnerClient;
+use App\Modules\PartnerApi\Support\PartnerApi;
 use App\Modules\PartnerApi\Support\PartnerApiException;
 use App\Modules\PartnerApi\Support\StrictInput;
 use Illuminate\Http\JsonResponse;
@@ -50,6 +51,7 @@ class TokenController
         }
 
         $partner = $client->partner;
+        $request->attributes->set(PartnerApi::CLIENT, $client);
         if ($code = $partner->accessDenialCode()) {
             throw AuthenticatePartner::denied($code);
         }
