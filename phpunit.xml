@@ -14,6 +14,9 @@
         <testsuite name="Mailer">
             <directory>tests/Mailer</directory>
         </testsuite>
+        <testsuite name="PartnerApi">
+            <directory>tests/PartnerApi</directory>
+        </testsuite>
     </testsuites>
     <source>
         <include>

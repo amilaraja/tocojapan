@@ -1,0 +1,226 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Toco Partner Stock API",
+    "version": "1.0.0-draft",
+    "summary": "Show Toco International's live vehicle stock on your own website.",
+    "description": "Server-to-server API for approved Toco partners. Read the partner guide first: it explains authentication, syncing, photos and errors. Browser calls are not supported.",
+    "contact": { "name": "Toco International", "url": "https://tocojapan.com/contact" }
+  },
+  "servers": [
+    { "url": "https://api.tocojapan.com/partner/v1", "description": "Production (once the API host is live)" },
+    { "url": "https://tocojapan.com/partner/v1", "description": "Production (current host)" }
+  ],
+  "security": [ { "bearer": [] } ],
+  "tags": [
+    { "name": "Authentication", "description": "Exchange your client credentials for a 15-minute access token." }
+  ],
+  "paths": {
+    "/oauth/token": {
+      "post": {
+        "tags": ["Authentication"],
+        "operationId": "createToken",
+        "summary": "Get an access token",
+        "description": "OAuth 2.0 client-credentials grant (RFC 6749 section 4.4). Send your client_id and client_secret as HTTP Basic authentication (preferred) or as form fields. Tokens last 15 minutes; request a new one when it expires. Failed attempts are limited per IP address.",
+        "security": [ {}, { "clientBasic": [] } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": { "schema": { "$ref": "#/components/schemas/TokenRequest" } },
+            "application/json": { "schema": { "$ref": "#/components/schemas/TokenRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token issued.",
+            "headers": { "X-Request-Id": { "$ref": "#/components/headers/X-Request-Id" } },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenResponse" } } }
+          },
+          "400": { "description": "unsupported_grant_type, invalid_request, invalid_scope or unknown_parameter.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/OAuthProblem" } } } },
+          "401": { "description": "invalid_client: unknown client, wrong secret or revoked key.", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/OAuthProblem" } } } },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "413": { "$ref": "#/components/responses/BodyTooLarge" },
+          "429": { "$ref": "#/components/responses/TooManyRequests" }
+        }
+      }
+    },
+    "/me": {
+      "get": {
+        "tags": ["Authentication"],
+        "operationId": "getMe",
+        "summary": "Check your token",
+        "description": "Returns the partner and key the token belongs to, its scopes and your contracted limits. Use it to confirm your integration is connected.",
+        "responses": {
+          "200": {
+            "description": "Token details.",
+            "headers": { "X-Request-Id": { "$ref": "#/components/headers/X-Request-Id" } },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Me" } } }
+          },
+          "400": { "$ref": "#/components/responses/UnknownParameter" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Access token from POST /oauth/token, sent as Authorization: Bearer <token>."
+      },
+      "clientBasic": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "client_id as the user name and client_secret as the password, each URL-encoded."
+      },
+      "oauth": {
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "/oauth/token",
+            "scopes": {
+              "stock:read": "Read vehicles and reference lists.",
+              "cif:read": "CIF estimates.",
+              "usage:read": "Your own usage figures.",
+              "stock:hold": "Place and release holds (selling partners only)."
+            }
+          }
+        }
+      }
+    },
+    "headers": {
+      "X-Request-Id": {
+        "description": "Unique id for this request. Quote it when contacting Toco about a problem.",
+        "schema": { "type": "string", "examples": ["req_01k7a3m9x2d5q8r4t6v0w1y3z5"] }
+      },
+      "Retry-After": {
+        "description": "Seconds to wait before retrying.",
+        "schema": { "type": "integer" }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "invalid_token: missing, invalid or expired access token. Get a new token.",
+        "headers": { "WWW-Authenticate": { "schema": { "type": "string" } } },
+        "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/Problem" } } }
+      },
+      "Forbidden": {
+        "description": "partner_suspended, partner_revoked, contract_not_started, contract_ended, ip_not_allowed or insufficient_scope.",
+        "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/Problem" } } }
+      },
+      "UnknownParameter": {
+        "description": "unknown_parameter: the request has a parameter this endpoint does not accept.",
+        "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/Problem" } } }
+      },
+      "BodyTooLarge": {
+        "description": "body_too_large: request bodies are limited to 64 KB.",
+        "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/Problem" } } }
+      },
+      "TooManyRequests": {
+        "description": "too_many_requests: slow down and retry after the given number of seconds.",
+        "headers": { "Retry-After": { "$ref": "#/components/headers/Retry-After" } },
+        "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/Problem" } } }
+      }
+    },
+    "schemas": {
+      "Problem": {
+        "type": "object",
+        "description": "RFC 9457 problem details. Branch on code, not on title or detail.",
+        "required": ["type", "title", "status", "code", "request_id"],
+        "properties": {
+          "type": { "type": "string", "format": "uri", "description": "Link to this error in the partner guide." },
+          "title": { "type": "string" },
+          "status": { "type": "integer" },
+          "code": { "type": "string", "description": "Stable machine-readable error code." },
+          "detail": { "type": "string" },
+          "request_id": { "type": "string" },
+          "errors": { "type": "object", "additionalProperties": { "type": "array", "items": { "type": "string" } }, "description": "Per-field messages (validation_failed only)." },
+          "unknown": { "type": "array", "items": { "type": "string" }, "description": "Rejected parameter names (unknown_parameter only)." },
+          "required_scope": { "type": "string", "description": "Missing scope (insufficient_scope only)." }
+        },
+        "examples": [{
+          "type": "https://tocojapan.com/partner/docs#error-partner-suspended",
+          "title": "This partner account is suspended.",
+          "status": 403,
+          "code": "partner_suspended",
+          "detail": "Contact Toco to resolve this.",
+          "request_id": "req_01k7a3m9x2d5q8r4t6v0w1y3z5"
+        }]
+      },
+      "OAuthProblem": {
+        "allOf": [
+          { "$ref": "#/components/schemas/Problem" },
+          {
+            "type": "object",
+            "required": ["error"],
+            "properties": { "error": { "type": "string", "description": "RFC 6749 error code, same value as code." } }
+          }
+        ]
+      },
+      "TokenRequest": {
+        "type": "object",
+        "required": ["grant_type"],
+        "properties": {
+          "grant_type": { "type": "string", "const": "client_credentials" },
+          "client_id": { "type": "string", "description": "Only when not using HTTP Basic.", "examples": ["tcc_4f1c2a9e0b7d3e5f6a8c"] },
+          "client_secret": { "type": "string", "description": "Only when not using HTTP Basic." },
+          "scope": { "type": "string", "description": "Space-separated subset of your scopes. Omit to get all of them." }
+        },
+        "additionalProperties": false
+      },
+      "TokenResponse": {
+        "type": "object",
+        "required": ["access_token", "token_type", "expires_in", "scope"],
+        "properties": {
+          "access_token": { "type": "string" },
+          "token_type": { "type": "string", "const": "Bearer" },
+          "expires_in": { "type": "integer", "description": "Seconds until the token expires (900)." },
+          "scope": { "type": "string", "examples": ["stock:read cif:read usage:read"] }
+        }
+      },
+      "Me": {
+        "type": "object",
+        "required": ["partner", "client", "token", "limits"],
+        "properties": {
+          "partner": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "type": { "type": "string", "enum": ["listing", "selling"], "description": "Listing partners send buyers to Toco. Selling partners may hold cars." },
+              "attribution_code": { "type": "string", "examples": ["P-7KQ2MX"], "description": "Added as ?ref= to detail links so inquiries are credited to you." },
+              "contract_ends_on": { "type": ["string", "null"], "format": "date" }
+            }
+          },
+          "client": {
+            "type": "object",
+            "properties": {
+              "client_id": { "type": "string" },
+              "label": { "type": "string" },
+              "environment": { "type": "string", "enum": ["live", "test"] }
+            }
+          },
+          "token": {
+            "type": "object",
+            "properties": {
+              "scopes": { "type": "array", "items": { "type": "string" } },
+              "expires_at": { "type": "string", "format": "date-time" }
+            }
+          },
+          "limits": {
+            "type": "object",
+            "properties": {
+              "requests_per_minute": { "type": "integer" },
+              "requests_per_day": { "type": "integer" },
+              "images_per_day": { "type": "integer" },
+              "max_image_width": { "type": "integer" },
+              "max_active_holds": { "type": "integer", "description": "Selling partners only." },
+              "hold_hours": { "type": "integer", "description": "Selling partners only." }
+            }
+          }
+        }
+      }
+    }
+  }
+}

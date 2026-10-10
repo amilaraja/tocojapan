@@ -28,6 +28,12 @@ class HandleNotFound
             return $response;
         }
 
+        // Partner API 404s are deliberate (out-of-scope vehicles, dead image
+        // links): never redirect or log them (docs/partner-api/integration-notes.md).
+        if ($request->is('partner', 'partner/*')) {
+            return $response;
+        }
+
         $path = Redirect::normalizePath($request->path());
 
         // 1. A managed redirect takes the visitor to the right place.

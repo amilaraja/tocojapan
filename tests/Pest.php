@@ -16,7 +16,7 @@ use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
-    ->in('Feature', 'Mailer');
+    ->in('Feature', 'Mailer', 'PartnerApi');
 
 /*
 |--------------------------------------------------------------------------

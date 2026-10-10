@@ -57,6 +57,15 @@ Access: MailerAccess::canUse() (mailer.admin or mailer.marketer) and MailerAcces
 - php artisan mailer:backfill --pause | --resume | --status
 - php artisan mailer:buyers:backfill [--brevo] [--status]   # buyer database from past messages (read-only), then fill Brevo (addendum A1, TOC-BUY)
 
+## Partner Stock API module (app/Modules/PartnerApi)
+Spec: /home/tocojapan.com/docs/partner-api/ (SRS-TOC-PAPI + Amendment 01 + UI brief TOC-PAPI-UI-01 + build plan TOC-PAPI-DEV-01). IDs: TOC-PAPI-<ID>.
+Notes, shared-code register and progress: docs/partner-api/integration-notes.md (list every edit outside the module there).
+- Dark until `PARTNER_API_ENABLED=true`; routes under /partner/v1 (or `PARTNER_API_HOST`). Every error is problem+json with a stable `code`.
+- Build the partner docs with the code: every route goes in app/Modules/PartnerApi/docs/openapi.json and every error code in guide.md
+  (tests/PartnerApi/Feature/DocsCoverageTest fails otherwise). Add a guide changelog line per change.
+- Partner responses use a whitelist resource only; never expose supplier cost/ids. Tables prefixed partner_ (vehicle_holds is shared).
+- Tests: `--testsuite=PartnerApi`, helpers in Tests\PartnerApi\Support\Partners.
+
 ## Supplier stock (OnePrice, JWT …)
 Supplier-feed vehicles live in the same `vehicles` table, linked by `supplier_id` (+ `supplier_ref` = the supplier's id).
 `suppliers` row with `is_own_stock` = Toco's yard; feed settings (pricing, publishing, delist guard) are JSON on the supplier (Admin → Catalogue → Suppliers).
