@@ -129,6 +129,64 @@ class Vehicle extends Model implements HasMedia
     }
 
     /**
+     * Two-column "Vehicle Details" spec table shared by the detail page and
+     * the listing quick-view modal, so both always show the same rows.
+     *
+     * @return array{left: list<array{0: string, 1: mixed}>, right: list<array{0: string, 1: mixed}>}
+     */
+    public function specDetails(): array
+    {
+        $dash = '—';
+        $em = fn ($v) => ($v === null || $v === '' || $v === 0 || $v === '0') ? $dash : $v;
+        // Dimensions: stored in cm (decimal:2) but displayed in metres for
+        // public consumption — "426.00 cm" → "4.26 m". Strips trailing zeros
+        // so a clean "4.5" doesn't render as "4.50".
+        $fmtDim = function ($v) {
+            if ($v === null || $v === '' || (float) $v <= 0) {
+                return null;
+            }
+
+            return rtrim(rtrim(number_format((float) $v / 100, 2, '.', ''), '0'), '.');
+        };
+        $dimParts = [$fmtDim($this->length_cm), $fmtDim($this->width_cm), $fmtDim($this->height_cm)];
+        $dimension = array_filter($dimParts) !== []
+            ? implode(' × ', array_map(fn ($p) => $p ?? '?', $dimParts)).' m'
+            : $dash;
+        $steering = $this->steering_side
+            ? ($this->steering_side === 'right' ? 'Right hand drive' : 'Left hand drive')
+            : $dash;
+
+        return [
+            'left' => [
+                ['Stock no.', $em($this->stock_no)],
+                ['Make', $em($this->make?->name)],
+                ['Model', $em($this->vehicleModel?->name)],
+                ['Grade', $em($this->grade)],
+                ['VIN / Chassis no.', $em($this->chassis_number)],
+                ['Model code', $em($this->model_code)],
+                ['Engine', $this->engine_cc ? number_format((int) $this->engine_cc).' cc' : $dash],
+                ['Drive', $em(strtoupper((string) $this->drive))],
+                ['Transmission', $em(ucfirst((string) $this->transmission))],
+                ['Body type', $em($this->bodyType?->name)],
+                ['Location', $em($this->location ?: 'Tochigi, Japan')],
+            ],
+            'right' => [
+                ['Registration Y/M', $em($this->registrationYmDisplay())],
+                ['Manufacture Y/M', $em($this->manufactureYmDisplay())],
+                ['Mileage', $this->mileage_km ? number_format((int) $this->mileage_km).' km' : $dash],
+                ['Fuel', $em(ucfirst((string) $this->fuel))],
+                ['Steering', $steering],
+                ['Doors', $em($this->doors)],
+                ['Seats', $em($this->seats)],
+                ['Exterior colour', $em($this->exterior_color)],
+                ['Interior colour', $em($this->interior_color)],
+                ['Dimension', $dimension],
+                ['M3', $this->m3 ? number_format((float) $this->m3, 3) : $dash],
+            ],
+        ];
+    }
+
+    /**
      * Public-facing chassis number with the bulk of the digits masked.
      * Pattern: keep the first 4 characters, mask the rest with asterisks
      * preserving any dashes. Returns null when no chassis is recorded.

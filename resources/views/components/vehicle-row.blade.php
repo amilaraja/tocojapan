@@ -69,7 +69,31 @@
                 @endif
             </div>
 
-            {{-- Feature tags (inline, sourced from features JSON; capped at 3) --}}
+            {{-- Key details grid — fills the middle column with the identifying specs buyers scan for --}}
+            @php
+                $fmtDim = fn ($v) => ($v !== null && (float) $v > 0) ? rtrim(rtrim(number_format((float) $v / 100, 2, '.', ''), '0'), '.') : null;
+                $dimParts = [$fmtDim($vehicle->length_cm), $fmtDim($vehicle->width_cm), $fmtDim($vehicle->height_cm)];
+                $details = array_filter([
+                    ['Model code', $vehicle->model_code],
+                    ['Chassis no.', $vehicle->chassis_number],
+                    ['Colour', $vehicle->exterior_color ? ucfirst($vehicle->exterior_color) : null],
+                    ['Dimension', array_filter($dimParts) ? implode(' × ', array_map(fn ($p) => $p ?? '?', $dimParts)).' m' : null],
+                    ['M3', $vehicle->m3 > 0 ? number_format((float) $vehicle->m3, 2) : null],
+                    ['Location', $vehicle->location],
+                ], fn ($d) => filled($d[1]));
+            @endphp
+            @if (! empty($details))
+                <dl class="mt-3 grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1.5 text-[12px]">
+                    @foreach ($details as [$label, $value])
+                        <div class="min-w-0">
+                            <dt class="font-mono text-[9px] uppercase tracking-widest text-ink-soft">{{ $label }}</dt>
+                            <dd class="font-semibold text-ink truncate" title="{{ $value }}">{{ $value }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+            @endif
+
+            {{-- Feature tags (inline, sourced from features JSON; capped at 5) --}}
             @php
                 $tags = [];
                 if (is_array($vehicle->features)) {
@@ -78,11 +102,11 @@
                             continue;
                         }
                         foreach ($items as $label) {
-                            if ($label && count($tags) < 3) {
+                            if ($label && count($tags) < 5) {
                                 $tags[] = $label;
                             }
                         }
-                        if (count($tags) >= 3) {
+                        if (count($tags) >= 5) {
                             break;
                         }
                     }
@@ -119,6 +143,13 @@
                     <div class="hidden md:block text-[10px] text-ink-soft -mt-0.5 text-right">{{ $sub }}</div>
                 @endif
             @endforeach
+            <button type="button" x-data
+                    data-quick-view="{{ route('vehicles.quick-view', $vehicle->slug) }}" data-href="{{ route('vehicles.show', $vehicle->slug) }}"
+                    @click="$dispatch('quick-view', { url: $el.dataset.quickView })"
+                    class="col-span-3 md:col-span-1 mt-1 md:mt-3 inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-toco-navy text-toco-navy font-bold text-[11px] uppercase tracking-widest hover:bg-toco-navy hover:text-white transition">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                Quick view
+            </button>
         </div>
     </div>
 

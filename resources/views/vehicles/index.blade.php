@@ -369,4 +369,97 @@
             </div>
         </div>
     </section>
+
+    {{-- cifCalc() for the quick view's CIF calculator --}}
+    @push('scripts')
+        @include('partials.cif-calc-script')
+    @endpush
+
+    {{-- Quick view modal: one shared instance. Each row's button carries
+         data-quick-view (fragment URL) + data-href (detail page); the modal
+         reads them in DOM order so Prev/Next (buttons or ←/→ keys) step
+         through this page's vehicles and wrap around at either end.
+         Fetched bodies are cached per URL; the next vehicle is prefetched. --}}
+    <div x-data="{
+            open: false, loading: false, failed: false, html: '', items: [], idx: 0, cache: {}, req: 0,
+            get href() { return this.items[this.idx]?.href ?? '#'; },
+            collect() {
+                this.items = [...document.querySelectorAll('[data-quick-view]')]
+                    .map(el => ({ url: el.dataset.quickView, href: el.dataset.href }));
+            },
+            async fetchBody(url) {
+                if (this.cache[url]) return this.cache[url];
+                const r = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                if (!r.ok) throw new Error(r.status);
+                return this.cache[url] = await r.text();
+            },
+            async load(i) {
+                const n = this.items.length;
+                if (!n) return;
+                this.idx = ((i % n) + n) % n;
+                const url = this.items[this.idx].url, token = ++this.req;
+                this.failed = false;
+                this.$refs.panel.scrollTop = 0;
+                if (!this.cache[url]) { this.html = ''; this.loading = true; }
+                try {
+                    const body = await this.fetchBody(url);
+                    if (token === this.req) this.html = body;
+                } catch (e) {
+                    if (token === this.req) this.failed = true;
+                } finally {
+                    if (token === this.req) this.loading = false;
+                }
+                // Warm the next vehicle so stepping forward is instant.
+                if (n > 1) this.fetchBody(this.items[(this.idx + 1) % n].url).catch(() => {});
+            },
+            show(d) {
+                this.collect();
+                this.open = true;
+                document.documentElement.classList.add('overflow-hidden');
+                this.load(Math.max(0, this.items.findIndex(it => it.url === d.url)));
+            },
+            close() { this.open = false; document.documentElement.classList.remove('overflow-hidden'); }
+         }"
+         @quick-view.window="show($event.detail)"
+         @keydown.escape.window="open && close()"
+         @keydown.arrow-left.window="open && items.length > 1 && load(idx - 1)"
+         @keydown.arrow-right.window="open && items.length > 1 && load(idx + 1)"
+         x-show="open" x-cloak
+         class="fixed inset-0 z-[60] flex items-start sm:items-center justify-center p-0 sm:p-4"
+         role="dialog" aria-modal="true" aria-labelledby="quick-view-title">
+        <div class="absolute inset-0 bg-black/60" @click="close()" x-show="open" x-transition.opacity></div>
+        <div x-ref="panel" class="relative bg-white w-full max-w-5xl h-full sm:h-auto sm:max-h-[92vh] overflow-y-auto shadow-2xl"
+             x-show="open" x-transition>
+            {{-- Sticky bar: vehicle-to-vehicle navigation + close --}}
+            <div class="sticky top-0 z-10 bg-white border-b border-line flex items-center gap-2 px-3 sm:px-4 py-2">
+                <template x-if="items.length > 1">
+                    <div class="flex items-center gap-1">
+                        <button type="button" @click="load(idx - 1)" aria-label="Previous vehicle"
+                                class="inline-flex items-center gap-1 h-9 px-2.5 border border-line text-toco-navy font-bold text-[11px] uppercase tracking-widest hover:border-toco-navy hover:bg-toco-navy hover:text-white transition">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M15 18 9 12l6-6"/></svg>
+                            <span class="hidden sm:inline">Prev</span>
+                        </button>
+                        <span class="font-mono text-[11px] text-ink-soft tabular-nums px-2" aria-live="polite" x-text="(idx + 1) + ' of ' + items.length"></span>
+                        <button type="button" @click="load(idx + 1)" aria-label="Next vehicle"
+                                class="inline-flex items-center gap-1 h-9 px-2.5 border border-line text-toco-navy font-bold text-[11px] uppercase tracking-widest hover:border-toco-navy hover:bg-toco-navy hover:text-white transition">
+                            <span class="hidden sm:inline">Next</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                        </button>
+                    </div>
+                </template>
+                <span class="hidden md:inline font-mono text-[10px] uppercase tracking-widest text-ink-soft ml-2" x-show="items.length > 1">Use ← → keys</span>
+                <button type="button" @click="close()" aria-label="Close quick view"
+                        class="ml-auto w-9 h-9 grid place-items-center text-toco-navy hover:text-toco-red">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="p-4 sm:p-6">
+                <div x-show="loading" class="py-24 text-center font-mono text-[11px] uppercase tracking-widest text-ink-soft">Loading…</div>
+                <div x-show="failed" class="py-20 text-center text-sm text-ink-soft">
+                    Couldn't load this vehicle. <a :href="href" class="text-toco-red font-semibold underline">Open the full page</a>
+                </div>
+                <div x-show="!loading && !failed" x-html="html"></div>
+            </div>
+        </div>
+    </div>
 </x-layouts.site>

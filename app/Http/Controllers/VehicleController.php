@@ -12,6 +12,7 @@ use App\Models\Supplier;
 use App\Models\Testimonial;
 use App\Models\Vehicle;
 use App\Models\VehicleModel;
+use App\Support\CifDestinations;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -203,21 +204,28 @@ class VehicleController extends Controller
             return $this->redirectGoneVehicle($slug);
         }
 
-        $countries = Country::query()
-            ->where('is_active', true)
-            ->with([
-                'ports' => fn ($q) => $q->where('is_active', true)->orderBy('name'),
-                'importRegulations' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order'),
-                'importRegulations.ports',
-            ])
-            ->orderBy('name')
-            ->get();
+        $countries = CifDestinations::countries();
 
         return view('vehicles.show', [
             'vehicle' => $vehicle,
             'countries' => $countries,
             'relatedVehicles' => $vehicle->relatedVehicles(8),
         ]);
+    }
+
+    /**
+     * Listing "Quick view" modal body: an HTML fragment (no layout) with the
+     * gallery, price and spec table, fetched on demand by the listing page.
+     */
+    public function quickView(string $slug): View
+    {
+        $vehicle = Vehicle::query()
+            ->published()
+            ->where('slug', $slug)
+            ->with(['make', 'vehicleModel', 'bodyType', 'media', 'supplier'])
+            ->firstOrFail();
+
+        return view('vehicles.quick-view', ['vehicle' => $vehicle]);
     }
 
     /**

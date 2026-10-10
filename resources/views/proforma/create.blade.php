@@ -5,12 +5,12 @@
     $photo = $vehicle->cardPhotoUrl();
     $address = old('consignee_address', trim(($user->address ?? '').($user->country ? "\n".$user->country->name : '')));
 @endphp
-<x-layouts.site :title="'LC proforma invoice — '.$vehicle->title">
+<x-layouts.site :title="'Get a proforma invoice — '.$vehicle->title">
     <section class="max-w-[1100px] mx-auto px-6 py-10">
         <div class="text-xs uppercase tracking-widest mb-2">
             <a href="{{ route('vehicles.show', $vehicle->slug) }}" class="text-ink-soft hover:text-toco-red">← Back to vehicle</a>
         </div>
-        <h1 class="text-2xl font-extrabold text-toco-navy">LC proforma invoice</h1>
+        <h1 class="text-2xl font-extrabold text-toco-navy">Get a proforma invoice</h1>
         <p class="text-sm text-ink-soft mt-1 mb-6">For buyers paying by Letter of Credit. Check the consignee details — they are printed on the invoice exactly as entered.</p>
 
         <div

@@ -26,11 +26,13 @@ Route::get('/', [VehicleController::class, 'home'])->name('home');
 Route::get('/vehicles', [VehicleController::class, 'index'])->name('vehicles.index');
 Route::get('/vehicles/recently-viewed', [VehicleController::class, 'recentlyViewed'])->name('vehicles.recently-viewed');
 Route::get('/vehicles/{slug}', [VehicleController::class, 'show'])->name('vehicles.show');
+Route::get('/vehicles/{slug}/quick-view', [VehicleController::class, 'quickView'])->name('vehicles.quick-view');
 // Old WordPress OnePrice plugin detail pages.
 Route::get('/vehicle/{id}', [VehicleController::class, 'legacyOnePrice'])->whereNumber('id')->name('vehicles.legacy-oneprice');
 Route::get('/one-price', [VehicleController::class, 'legacyOnePriceIndex'])->name('vehicles.legacy-oneprice-index');
 
 Route::get('/cif', [CifController::class, 'index'])->name('cif.index');
+Route::get('/cif/destinations.json', [CifController::class, 'destinations'])->name('cif.destinations');
 
 Route::get('/news', [NewsController::class, 'index'])->name('news.index');
 Route::get('/news/{slug}', [NewsController::class, 'show'])->name('news.show');

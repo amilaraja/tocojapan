@@ -54,12 +54,12 @@ it('works out the invoice figures like checkout does', function () {
 
 it('shows the LC option on the vehicle page only for LC ports', function () {
     $html = $this->actingAs($this->user)->get('/vehicles/'.$this->vehicle->slug)->assertOk()->getContent();
-    expect($html)->toContain('LC payment accepted')->toContain('LC proforma invoice');
+    expect($html)->toContain('LC payment accepted')->toContain('>Get a proforma invoice</a>');
 });
 
 it('only lists LC destinations on the form', function () {
     $this->actingAs($this->user)->get(route('proforma.create', [$this->vehicle->slug, 'port_id' => $this->brisbane->id]))
-        ->assertOk()->assertSee('Dane Walsh')
+        ->assertOk()->assertSee('Dane Walsh')->assertSee('>Get a proforma invoice</h1>', false)
         ->assertViewHas('destinations', fn ($d) => $d->pluck('ports')->flatten(1)->pluck('name')->all() === ['Brisbane'])
         ->assertViewHas('selectedPortId', $this->brisbane->id);
 });
@@ -119,11 +119,11 @@ it('lists proforma invoices in the admin', function () {
         ->get('/admin/import-regulations')->assertOk()->assertSee('Payment');
 });
 
-it('shows the "Paying by LC?" prompt by the price only when some destination accepts LC', function () {
-    $this->get('/vehicles/'.$this->vehicle->slug)->assertOk()->assertSee('Paying by LC?')
+it('shows the "Get a Proforma Invoice" prompt by the price only when some destination accepts LC', function () {
+    $this->get('/vehicles/'.$this->vehicle->slug)->assertOk()->assertSee('Get a Proforma Invoice')
         ->assertSee(route('proforma.create', $this->vehicle->slug), false);
 
     ImportRegulation::query()->update(['payment_modes' => json_encode(['other'])]);
     Cache::forget('import_regulations.any_lc');
-    $this->get('/vehicles/'.$this->vehicle->slug)->assertOk()->assertDontSee('Paying by LC?');
+    $this->get('/vehicles/'.$this->vehicle->slug)->assertOk()->assertDontSee('Get a Proforma Invoice');
 });

@@ -5,49 +5,16 @@
     $isPartnerStock = $vehicle->isSupplierStock();
     // LC proforma: same eligibility as online checkout (priced, has M3, not quote-only partner stock).
     $proformaEligible = app(\App\Services\ProformaInvoiceService::class)->vehicleError($vehicle) === null;
-    $showLcPrompt = $proformaEligible && \App\Models\ImportRegulation::anyLcDestination();
     $supplierMeta = $vehicle->supplier_meta ?? [];
     if ($photoUrls->isEmpty()) {
         $photoUrls = $thumbUrls = $fullUrls = collect(['/img/v5/car-'.((($vehicle->id % 4) + 1)).'.jpg']);
     }
     $videoUrl = $vehicle->videoUrl();
 
-    // Countries + ports for the CIF forms, with the import regulation that
-    // applies to each port (a port-specific rule wins over a country-wide one).
-    $countriesData = $countries->map(fn ($c) => [
-        'id' => $c->id,
-        'name' => $c->name,
-        'iso2' => $c->iso2,
-        'pre_inspection_required' => (bool) $c->pre_inspection_required,
-        'ports' => $c->ports->map(function ($p) use ($c) {
-            $reg = $c->importRegulations->first(fn ($r) => $r->ports->contains('id', $p->id))
-                ?: $c->importRegulations->first(fn ($r) => $r->ports->isEmpty());
+    // Countries + ports (+ per-port import rules) for the CIF forms.
+    $countriesData = \App\Support\CifDestinations::payload($countries);
 
-            return [
-                'id' => $p->id,
-                'name' => $p->name,
-                'rate_per_m3' => (float) $p->rate_per_m3,
-                'regulation' => $reg ? [
-                    'description' => $reg->short_description,
-                    'age_limit' => $reg->year_restriction,
-                    'shipment_time' => $reg->time_of_shipment,
-                    'notes' => $reg->comments,
-                    'lc' => $reg->allowsLc(),
-                ] : null,
-            ];
-        })->all(),
-    ])->all();
-
-    // Buy-now state — hoisted to top so it's in scope regardless of any
-    // x-component closures further down in the view.
-    $payment = app(\App\Settings\PaymentSettings::class);
-    $paypalMode = config('paypal.mode', 'sandbox');
-    $paypalReady = $payment->paypal_enabled
-        && ! empty(config("paypal.{$paypalMode}.client_id"))
-        && ! empty(config("paypal.{$paypalMode}.client_secret"));
-    $bankReady = $payment->bank_transfer_enabled;
     $isSold = $vehicle->status === 'sold';
-    $buyable = ! $isSold && ! $vehicle->price_on_request && $vehicle->effectivePriceFob() > 0 && $vehicle->canCheckoutOnline();
 
     // --- SEO meta ---
     // Title format: "{Year} {Make} {Model} for sale — Toco Japan"
@@ -78,79 +45,10 @@
     $title = $seoTitle;
 
     // ---- Vehicle Details block (two-column spec table per the v6 design) ----
-    $dash = '—';
-    $em = function ($v) use ($dash) { return ($v === null || $v === '' || $v === 0 || $v === '0') ? $dash : $v; };
-    // Dimensions: stored in cm (decimal:2) but displayed in metres for
-    // public consumption — "426.00 cm" → "4.26 m". Strips trailing zeros
-    // so a clean "4.5" doesn't render as "4.50".
-    $fmtDim = function ($v) {
-        if ($v === null || $v === '' || (float) $v <= 0) {
-            return null;
-        }
-        $m = (float) $v / 100;
+    ['left' => $detailsLeft, 'right' => $detailsRight] = $vehicle->specDetails();
 
-        return rtrim(rtrim(number_format($m, 2, '.', ''), '0'), '.');
-    };
-    $dimParts = [$fmtDim($vehicle->length_cm), $fmtDim($vehicle->width_cm), $fmtDim($vehicle->height_cm)];
-    $dimension = array_filter($dimParts) !== []
-        ? implode(' × ', array_map(fn ($p) => $p ?? '?', $dimParts)) . ' m'
-        : $dash;
-    $steeringDisplay = $vehicle->steering_side
-        ? ($vehicle->steering_side === 'right' ? 'Right hand drive' : 'Left hand drive')
-        : $dash;
-    $detailsLeft = [
-        ['Stock no.', $em($vehicle->stock_no)],
-        ['Make', $em(optional($vehicle->make)->name)],
-        ['Model', $em(optional($vehicle->vehicleModel)->name)],
-        ['Grade', $em($vehicle->grade)],
-        ['VIN / Chassis no.', $em($vehicle->chassis_number)],
-        ['Model code', $em($vehicle->model_code)],
-        ['Engine', $vehicle->engine_cc ? number_format((int) $vehicle->engine_cc) . ' cc' : $dash],
-        ['Drive', $em(strtoupper((string) $vehicle->drive))],
-        ['Transmission', $em(ucfirst((string) $vehicle->transmission))],
-        ['Body type', $em(optional($vehicle->bodyType)->name)],
-        ['Location', $em($vehicle->location ?: 'Tochigi, Japan')],
-    ];
-    $detailsRight = [
-        ['Registration Y/M', $em($vehicle->registrationYmDisplay())],
-        ['Manufacture Y/M', $em($vehicle->manufactureYmDisplay())],
-        ['Mileage', $vehicle->mileage_km ? number_format((int) $vehicle->mileage_km) . ' km' : $dash],
-        ['Fuel', $em(ucfirst((string) $vehicle->fuel))],
-        ['Steering', $steeringDisplay],
-        ['Doors', $em($vehicle->doors)],
-        ['Seats', $em($vehicle->seats)],
-        ['Exterior colour', $em($vehicle->exterior_color)],
-        ['Interior colour', $em($vehicle->interior_color)],
-        ['Dimension', $dimension],
-        ['M3', $vehicle->m3 ? number_format((float) $vehicle->m3, 3) : $dash],
-    ];
-
-    // CIF add-ons + global options list (CR-2026-05-28). Loaded here to
-    // avoid opening a second @php block further down — see
-    // feedback_blade_php_shortform memory.
-    $cifSettings = app(\App\Settings\CifSettings::class);
-    $vehicleOptions = \App\Models\VehicleOption::query()
-        ->where('is_active', true)
-        ->orderBy('sort_order')->orderBy('id')
-        ->get(['id', 'name', 'price', 'tooltip']);
-
-    // Initial CIF total shown in the top buy card. Computed server-side for
-    // the visitor's saved destination port; once they recalculate via the
-    // sidebar calculator, Alpine swaps to the live grandTotal so both
-    // numbers always tally. Includes the Pre-inspection Fee when the
-    // saved destination country mandates it (e.g. Sri Lanka).
-    $initialCif = 0.0;
-    $initialCifPortName = $destPort?->name;
-    if (! $vehicle->price_on_request && $destPort && $vehicle->m3 > 0 && (float) $vehicle->effectivePriceFob() > 0) {
-        $initialCif = (float) app(\App\Services\CifCalculator::class)->calculate(
-            priceFob: (float) $vehicle->effectivePriceFob(),
-            m3: (float) $vehicle->m3,
-            port: $destPort,
-        )['cif_total'];
-        if ($destPort->country?->pre_inspection_required) {
-            $initialCif += (float) $cifSettings->pre_inspection_fee_usd;
-        }
-    }
+    // cifCalc() config: add-on fees, options list and the saved-port CIF.
+    $cifConfig = \App\Support\CifDestinations::calcConfig($vehicle, $destPort);
 @endphp
 
 <x-layouts.site :title="$title" :description="$seoDescription" :ogImage="$photoUrls->first()">
@@ -232,118 +130,8 @@
                 localStorage.setItem(KEY, JSON.stringify(list));
             } catch (e) { /* localStorage blocked — ignore */ }
         })();
-
-        // CIF estimator with add-ons + options. Lives in a window-scoped factory
-        // so the Alpine x-data on the calculator card stays a one-liner.
-        window.cifCalc = function (cfg) {
-            return {
-                countries: cfg.countries,
-                options: cfg.options,
-                marineInsuranceFee: cfg.marineInsuranceFee,
-                maintenanceFee: cfg.maintenanceFee,
-                preInspectionFee: cfg.preInspectionFee,
-                initialCif: Number(cfg.initialCif ?? 0),
-                initialPortName: cfg.initialPortName || '',
-                countryId: '', portId: '', ports: [],
-                result: null, error: null, loading: false,
-                // True once the visitor has changed port/country from the
-                // preset. While true and `result` is null, the top-card CIF
-                // strip hides itself rather than show a stale number.
-                touched: false,
-                marine: true,                  // marine insurance opt-in default ON
-                maintenance: false,            // maintenance package default OFF
-                preInspection: false,          // pre-inspection fee default OFF
-                selectedOptions: [],           // array of vehicle_option ids
-                init() {
-                    if (cfg.preCountryId) {
-                        const c = this.countries.find(c => c.id == cfg.preCountryId);
-                        if (c) {
-                            this.ports = c.ports;
-                            // Programmatic x-model assignment doesn't fire
-                            // @change, so apply the mandatory pre-inspection
-                            // rule (e.g. Sri Lanka) manually during prefill.
-                            if (c.pre_inspection_required) {
-                                this.preInspection = true;
-                            }
-                            this.$nextTick(() => {
-                                this.countryId = cfg.preCountryId;
-                                this.$nextTick(() => {
-                                    this.portId = cfg.prePortId;
-                                    this.$nextTick(() => { this.touched = false; this.result = null; });
-                                });
-                            });
-                        }
-                    }
-                },
-                onCountry() {
-                    this.portId = '';
-                    this.result = null;
-                    this.touched = true;
-                    const c = this.countries.find(c => c.id == this.countryId);
-                    this.ports = c ? c.ports : [];
-                    // Some countries mandate pre-inspection (e.g. Sri Lanka).
-                    // Force-tick the checkbox so the total reflects the
-                    // mandatory line; the checkbox is also disabled below.
-                    if (c && c.pre_inspection_required) {
-                        this.preInspection = true;
-                    }
-                },
-                onPort() {
-                    // Stale result from the previous port would leave the top
-                    // CIF strip showing a number that doesn't match the picker.
-                    this.result = null;
-                    this.touched = true;
-                },
-                preInspectionMandatory() {
-                    const c = this.countries.find(c => c.id == this.countryId);
-                    return !!(c && c.pre_inspection_required);
-                },
-                regulation() {
-                    const p = this.ports.find(p => p.id == this.portId);
-                    return p && p.regulation ? p.regulation : null;
-                },
-                async submit() {
-                    this.error = null; this.result = null;
-                    if (!this.portId) { this.error = 'Pick a port.'; return; }
-                    this.loading = true;
-                    try {
-                        const r = await fetch('/api/v1/cif/calculate', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                            body: JSON.stringify({ port_id: this.portId, vehicle_slug: cfg.slug })
-                        });
-                        const j = await r.json();
-                        if (!r.ok) { this.error = j.errors?.message || j.message || 'Calculation failed.'; }
-                        else { this.result = j.data; }
-                    } finally { this.loading = false; }
-                },
-                marineFee() { return this.marine ? Number(this.marineInsuranceFee ?? 0) : 0; },
-                isSelected(optId) {
-                    // Checkbox :value pushes strings to the array; option ids are
-                    // numbers. Compare loosely so the totals actually update.
-                    return this.selectedOptions.some(s => Number(s) === Number(optId));
-                },
-                pricedOptionsTotal() {
-                    return this.options
-                        .filter(o => this.isSelected(o.id) && o.price !== null)
-                        .reduce((sum, o) => sum + Number(o.price), 0);
-                },
-                hasAskSelected() {
-                    return this.options.some(o => this.isSelected(o.id) && o.price === null);
-                },
-                grandTotal() {
-                    if (!this.result) return 0;
-                    const base = Number(this.result.price_fob ?? 0) + Number(this.result.freight ?? 0);
-                    const extras = this.marineFee()
-                        + (this.maintenance ? this.maintenanceFee : 0)
-                        + (this.preInspection ? this.preInspectionFee : 0)
-                        + this.pricedOptionsTotal();
-                    return base + extras;
-                },
-                fmt(n) { return '$' + Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 0 }); }
-            };
-        };
     </script>
+    @include('partials.cif-calc-script')
     @endpush
 
     {{-- Breadcrumb --}}
@@ -378,8 +166,11 @@
     </section>
 
     <section class="max-w-[1600px] mx-auto px-6 2xl:px-8 pb-8">
-        <div class="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-6">
-            <div class="space-y-4">
+        {{-- minmax(0,…) + min-w-0: let the columns shrink below their content's
+             width so the thumbnail strip scrolls inside the left column instead
+             of stretching it across the page. --}}
+        <div class="grid grid-cols-1 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-6">
+            <div class="space-y-4 min-w-0">
                 @if ($isSold)
                     <div class="bg-toco-red text-white text-center font-mono uppercase tracking-[0.3em] text-sm font-bold py-3 rounded-sm">
                         SOLD · this vehicle is no longer available
@@ -469,13 +260,19 @@
                     </div>
 
                     @if (count($photoUrls) > 1)
-                        <div class="grid grid-cols-6 gap-1 p-1 border-t border-line">
+                        {{-- Single scrolling row of small thumbs (was a 6-col grid that
+                             wrapped to many rows on 50-photo listings and pushed the
+                             details down). The active thumb is kept in view by scrolling
+                             the strip itself — never the page. --}}
+                        <div class="relative flex gap-1 p-1 border-t border-line overflow-x-auto overscroll-x-contain">
                             @foreach ($thumbUrls as $i => $url)
                                 <button
                                     type="button"
                                     @click="goTo({{ $i }})"
+                                    x-effect="if (index === {{ $i }}) { const s = $el.parentElement; s.scrollTo({ left: $el.offsetLeft - (s.clientWidth - $el.offsetWidth) / 2, behavior: 'smooth' }) }"
+                                    aria-label="Show photo {{ $i + 1 }}"
                                     :class="index === {{ $i }} ? 'border-toco-red' : 'border-transparent hover:border-toco-red'"
-                                    class="relative aspect-[4/3] bg-toco-silver-2 overflow-hidden border-2 transition"
+                                    class="relative shrink-0 w-16 h-12 sm:w-20 sm:h-[60px] bg-toco-silver-2 overflow-hidden border-2 transition"
                                 >
                                     <img src="{{ $url }}" alt="" width="300" height="225" loading="lazy" class="w-full h-full object-cover">
                                     @if ($i === 0 && $videoUrl)
@@ -485,8 +282,8 @@
                                             aria-label="Play walkaround video"
                                             class="absolute inset-0 grid place-items-center bg-black/15 hover:bg-black/30 cursor-pointer transition"
                                         >
-                                            <span class="w-7 h-7 rounded-full bg-toco-red/90 text-white grid place-items-center shadow">
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                                            <span class="w-6 h-6 rounded-full bg-toco-red/90 text-white grid place-items-center shadow">
+                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                                             </span>
                                         </span>
                                     @endif
@@ -665,20 +462,9 @@
                  cifCalc Alpine scope is hoisted here so the top "CIF to X"
                  strip and the calculator below share state: changing port or
                  ticking add-ons updates both numbers in lockstep. --}}
-            <aside class="space-y-4 md:sticky md:top-20 self-start"
+            <aside class="space-y-4 md:sticky md:top-20 self-start min-w-0"
                 @if (! $vehicle->price_on_request && $vehicle->m3 !== null && (float) $vehicle->m3 > 0)
-                    x-data="cifCalc({
-                        countries: {{ collect($countriesData)->toJson() }},
-                        preCountryId: '{{ $destPort?->country_id }}',
-                        prePortId: '{{ $destPort?->id }}',
-                        slug: '{{ $vehicle->slug }}',
-                        options: {{ $vehicleOptions->map(fn ($o) => ['id' => (int) $o->id, 'name' => $o->name, 'price' => $o->price === null ? null : (float) $o->price, 'tooltip' => $o->tooltip])->toJson() }},
-                        marineInsuranceFee: {{ (float) $cifSettings->marine_insurance_usd }},
-                        maintenanceFee: {{ (float) $cifSettings->maintenance_package_usd }},
-                        preInspectionFee: {{ (float) $cifSettings->pre_inspection_fee_usd }},
-                        initialCif: {{ (float) $initialCif }},
-                        initialPortName: '{{ $initialCifPortName }}',
-                    })"
+                    x-data="cifCalc({{ \Illuminate\Support\Js::from($cifConfig + ['countries' => $countriesData]) }})"
                 @endif>
 
                 <div class="bg-white border border-line rounded-sm">
@@ -726,57 +512,9 @@
                                 <span class="font-bold text-toco-navy" x-text="fmt(result ? grandTotal() : initialCif)"></span>
                             </p>
                         @endif
-                        @if ($showLcPrompt)
-                            {{-- Guests are sent to sign in, then straight back to the proforma form. --}}
-                            <a href="{{ route('proforma.create', array_filter(['slug' => $vehicle->slug, 'port_id' => $destPort?->id])) }}"
-                               class="mt-3 flex items-center justify-between gap-2 border border-toco-navy/25 bg-toco-silver-2/60 hover:border-toco-navy rounded-sm px-3 py-2 text-[12px] leading-tight group">
-                                <span><span class="font-bold text-toco-navy">Paying by LC?</span> <span class="text-ink-soft">Generate a proforma invoice</span></span>
-                                <svg class="shrink-0 text-toco-red group-hover:translate-x-0.5 transition" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-                            </a>
-                        @endif
                     </div>
                     <div class="p-5 space-y-2">
-                        @if ($isSold)
-                            <div class="w-full text-center bg-toco-red text-white border border-toco-red font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">
-                                Sold — view our available stock <a href="{{ route('vehicles.index') }}" class="underline">here</a>
-                            </div>
-                        @else
-                        @auth
-                            @if ($buyable && $paypalReady)
-                                <form method="GET" action="{{ route('checkout.paypal.show', $vehicle->slug) }}">
-                                    <button type="submit" class="w-full text-center bg-toco-navy hover:bg-toco-navy-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm inline-flex items-center justify-center gap-2">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3zm0 2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H7z"/></svg>
-                                        Buy with PayPal — @money($vehicle->effectivePriceFob() ?? $vehicle->price_fob)
-                                    </button>
-                                </form>
-                            @endif
-                            @if ($buyable && $bankReady)
-                                <a href="{{ route('checkout.bank.show', $vehicle->slug) }}" class="block w-full text-center bg-toco-navy hover:bg-toco-navy-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">
-                                    <span class="inline-flex items-center justify-center gap-2">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
-                                        Buy with bank transfer
-                                    </span>
-                                </a>
-                            @endif
-                            @if ($buyable && ! $paypalReady && ! $bankReady)
-                                <div class="w-full text-center bg-toco-silver-2 text-ink-soft border border-dashed border-line font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">
-                                    Buy now — coming soon
-                                </div>
-                            @endif
-                            @error('paypal')
-                                <div class="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">{{ $message }}</div>
-                            @enderror
-                            @error('payment')
-                                <div class="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">{{ $message }}</div>
-                            @enderror
-                            @error('vehicle')
-                                <div class="text-xs text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">{{ $message }}</div>
-                            @enderror
-                            <a href="#quote-form" class="block text-center bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">Request a quote</a>
-                        @else
-                            <a href="{{ route('login') }}" class="block text-center bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">Sign in to buy or quote</a>
-                        @endauth
-                        @endif
+                        @include('partials.vehicle-buy-actions', ['vehicle' => $vehicle, 'quoteHref' => '#quote-form', 'portExpr' => \App\Support\CifDestinations::calculable($vehicle) ? 'portId' : null])
                     </div>
                 </div>
 
@@ -785,120 +523,7 @@
                      CIF label can read the same state. --}}
                 @unless ($vehicle->price_on_request || $vehicle->m3 === null || (float) $vehicle->m3 === 0.0)
                     <div class="bg-white border border-line rounded-sm p-5">
-                        <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">Calculate Your Total Price</p>
-                        <h3 class="font-bold text-toco-navy text-base mb-3">Estimate landed cost</h3>
-
-                        <div class="space-y-2 text-sm">
-                            <select x-model="countryId" @change="onCountry()" class="w-full border-line rounded-sm">
-                                <option value="">— Country —</option>
-                                <template x-for="c in countries" :key="c.id">
-                                    <option :value="c.id" x-text="c.name + ' (' + c.iso2 + ')'"></option>
-                                </template>
-                            </select>
-                            <select x-model="portId" @change="onPort()" :disabled="!ports.length" class="w-full border-line rounded-sm disabled:bg-toco-silver-2">
-                                <option value="">— Port —</option>
-                                <template x-for="p in ports" :key="p.id">
-                                    <option :value="p.id" x-text="p.name"></option>
-                                </template>
-                            </select>
-                            <button type="button" @click="submit()" :disabled="loading || !portId" class="w-full bg-toco-navy hover:bg-toco-navy-deep disabled:opacity-50 text-white font-bold uppercase tracking-widest text-xs px-4 py-2.5 rounded-sm">
-                                <span x-show="!loading">Calculate</span>
-                                <span x-show="loading" x-cloak>Calculating…</span>
-                            </button>
-                        </div>
-
-                        {{-- Import regulations for the chosen port --}}
-                        <div x-show="regulation()" x-cloak class="mt-3 border border-line rounded-sm bg-toco-silver-2/60 p-3 text-[12px] leading-snug">
-                            <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold mb-1.5">Import rules — your port</p>
-                            <p x-show="regulation()?.description" x-text="regulation()?.description" class="text-ink mb-2"></p>
-                            <dl class="space-y-1">
-                                <div x-show="regulation()?.age_limit" class="flex gap-2"><dt class="text-ink-soft w-28 shrink-0">Age limit</dt><dd class="font-semibold text-toco-navy" x-text="regulation()?.age_limit"></dd></div>
-                                <div x-show="regulation()?.shipment_time" class="flex gap-2"><dt class="text-ink-soft w-28 shrink-0">Shipment time</dt><dd class="font-semibold text-toco-navy" x-text="regulation()?.shipment_time"></dd></div>
-                                <div x-show="regulation()?.notes" class="flex gap-2"><dt class="text-ink-soft w-28 shrink-0">Notes</dt><dd class="text-ink whitespace-pre-line" x-text="regulation()?.notes"></dd></div>
-                            </dl>
-                        </div>
-
-                        @if ($proformaEligible)
-                            {{-- LC destinations (Import regulations → Payment modes) get a proforma invoice. --}}
-                            <div x-show="regulation()?.lc" x-cloak class="mt-3 border border-toco-navy/30 rounded-sm p-3 text-[12px] leading-snug">
-                                <p class="font-mono text-[10px] uppercase tracking-widest text-toco-navy font-bold mb-1">LC payment accepted</p>
-                                <p class="text-ink-soft mb-2">Paying by Letter of Credit? Download a proforma invoice for this vehicle to open your LC.</p>
-                                @auth
-                                    <a :href="'{{ route('proforma.create', $vehicle->slug) }}?port_id=' + portId" class="block text-center bg-toco-navy hover:bg-toco-navy-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-2.5 rounded-sm">LC proforma invoice</a>
-                                @else
-                                    <a href="{{ route('login') }}" class="block text-center bg-toco-navy hover:bg-toco-navy-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-2.5 rounded-sm">Sign in for an LC proforma invoice</a>
-                                @endauth
-                            </div>
-                        @endif
-
-                        <div x-show="error" x-cloak class="text-toco-red text-[12px] mt-3" x-text="error"></div>
-
-                        {{-- Add-on rows + total — visible once CIF result is in --}}
-                        <template x-if="result">
-                            <div class="mt-4 pt-4 border-t border-line space-y-2 text-sm">
-                                <label class="flex items-center justify-between gap-2 cursor-pointer">
-                                    <span class="inline-flex items-center gap-2">
-                                        <input type="checkbox" x-model="marine" class="text-toco-red">
-                                        <span class="font-semibold text-ink">Marine Insurance</span>
-                                        <span class="text-ink-soft text-[11px]" title="Flat per-shipment marine insurance fee.">?</span>
-                                    </span>
-                                    <span class="font-semibold tabular-nums" x-text="fmt(marineInsuranceFee)"></span>
-                                </label>
-                                <label class="flex items-center justify-between gap-2 cursor-pointer">
-                                    <span class="inline-flex items-center gap-2">
-                                        <input type="checkbox" x-model="maintenance" class="text-toco-red">
-                                        <span class="font-semibold text-ink">Maintenance Package</span>
-                                    </span>
-                                    <span class="font-semibold tabular-nums" x-text="fmt(maintenanceFee)"></span>
-                                </label>
-                                <label class="flex items-center justify-between gap-2"
-                                    :class="preInspectionMandatory() ? 'cursor-not-allowed' : 'cursor-pointer'">
-                                    <span class="inline-flex items-center gap-2">
-                                        <input type="checkbox" x-model="preInspection"
-                                            :disabled="preInspectionMandatory()"
-                                            class="text-toco-red disabled:opacity-60 disabled:cursor-not-allowed">
-                                        <span class="font-semibold text-ink">Pre-inspection Fee</span>
-                                        <span x-show="preInspectionMandatory()" x-cloak
-                                            class="text-[10px] text-toco-red uppercase tracking-widest font-bold ml-1">required</span>
-                                    </span>
-                                    <span class="font-semibold tabular-nums" x-text="fmt(preInspectionFee)"></span>
-                                </label>
-
-                                {{-- Options accordion --}}
-                                <div x-data="{ open: false }" class="border border-line rounded-sm mt-2">
-                                    <button type="button" @click="open = !open" class="w-full px-3 py-2.5 flex items-center justify-between bg-toco-silver-2 text-toco-navy font-bold text-[12px] uppercase tracking-widest">
-                                        <span>Option (Enhance your drive)</span>
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" :class="open ? 'rotate-180' : ''" class="transition-transform"><path d="m6 9 6 6 6-6"/></svg>
-                                    </button>
-                                    <ul x-show="open" x-cloak class="divide-y divide-line">
-                                        <template x-for="opt in options" :key="opt.id">
-                                            <li>
-                                                <label class="flex items-center justify-between gap-2 px-3 py-2 cursor-pointer hover:bg-toco-silver-2/50">
-                                                    <span class="inline-flex items-center gap-2 text-[13px]">
-                                                        <input type="checkbox" :value="opt.id" x-model="selectedOptions" class="text-toco-red">
-                                                        <span class="font-semibold text-ink" x-text="opt.name"></span>
-                                                        <span x-show="opt.tooltip" :title="opt.tooltip" class="text-ink-soft text-[11px]">?</span>
-                                                    </span>
-                                                    <span class="font-semibold tabular-nums text-[13px]"
-                                                          :class="opt.price === null ? 'text-toco-red uppercase tracking-widest text-[11px]' : ''"
-                                                          x-text="opt.price === null ? 'ASK' : fmt(opt.price)"></span>
-                                                </label>
-                                            </li>
-                                        </template>
-                                    </ul>
-                                    <p x-show="open && hasAskSelected()" x-cloak class="px-3 py-2 text-[11px] text-ink-soft italic border-t border-line">
-                                        * ASK options will be quoted separately by our sales team — they don't affect the total below.
-                                    </p>
-                                </div>
-
-                                <dl class="border-t border-line pt-2 mt-2 space-y-1">
-                                    <div class="flex justify-between"><dt class="text-ink-soft text-[12px]">Car Price (FOB)</dt><dd class="tabular-nums" x-text="fmt(result.price_fob)"></dd></div>
-                                    <div class="flex justify-between"><dt class="text-ink-soft text-[12px]">Freight to <span x-text="result.port?.name"></span></dt><dd class="tabular-nums" x-text="fmt(result.freight)"></dd></div>
-                                    <div class="flex justify-between text-base font-bold border-t border-line pt-2 mt-1"><dt class="text-toco-navy">Total Price</dt><dd class="font-extrabold text-toco-red tabular-nums" x-text="fmt(grandTotal())"></dd></div>
-                                </dl>
-                                <p class="text-[10px] text-ink-soft leading-snug">Total = Car + Shipping + the add-ons you ticked + priced options. Land charges in destination country not included.</p>
-                            </div>
-                        </template>
+                        @include('partials.cif-calculator', ['vehicle' => $vehicle, 'proformaEligible' => $proformaEligible])
                     </div>
                 @endunless
 
@@ -930,8 +555,28 @@
 
         @auth
         @if (! $isSold)
-            {{-- Request-a-quote form --}}
-            <div id="quote-form" class="bg-white border border-line border-t-4 border-t-toco-red rounded-sm p-6 mt-8 max-w-3xl"
+            {{-- Request-a-quote form, in a modal. Opened by the "Request a quote"
+                 button (open-quote event), by arriving on #quote-form (e.g. from
+                 the listing quick view), or automatically when a submission
+                 bounced back with validation errors. --}}
+            <div x-data="{
+                    open: @js($errors->hasAny(['contact_name', 'contact_email', 'contact_phone', 'country_id', 'port_id', 'message'])),
+                    show() { this.open = true; },
+                    close() {
+                        this.open = false;
+                        if (location.hash === '#quote-form') history.replaceState(null, '', location.pathname + location.search);
+                    },
+                 }"
+                 x-init="if (location.hash === '#quote-form') show()"
+                 x-effect="document.documentElement.classList.toggle('overflow-hidden', open)"
+                 @open-quote.window="show()"
+                 @hashchange.window="if (location.hash === '#quote-form') show()"
+                 @keydown.escape.window="open && close()"
+                 x-show="open" x-cloak
+                 class="fixed inset-0 z-[60] flex items-start sm:items-center justify-center p-0 sm:p-4"
+                 role="dialog" aria-modal="true" aria-labelledby="quote-form-title">
+            <div class="absolute inset-0 bg-black/60" @click="close()"></div>
+            <div id="quote-form" class="relative w-full max-w-3xl h-full sm:h-auto sm:max-h-[92vh] overflow-y-auto bg-white border-t-4 border-t-toco-red sm:rounded-sm p-6 shadow-2xl"
                 x-data="{
                     countryId: '', portId: '', ports: [],
                     countries: @js($countriesData),
@@ -958,8 +603,12 @@
                         return p && p.regulation ? p.regulation : null;
                     }
                 }">
+                <button type="button" @click="close()" aria-label="Close"
+                        class="absolute top-3 right-3 w-9 h-9 grid place-items-center text-toco-navy hover:text-toco-red">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
                 <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">Request a quote</p>
-                <h2 class="font-extrabold text-toco-navy text-xl mt-1">Get a CIF estimate for {{ $vehicle->title }}</h2>
+                <h2 id="quote-form-title" class="font-extrabold text-toco-navy text-xl mt-1 pr-10">Get a CIF estimate for {{ $vehicle->title }}</h2>
                 <p class="text-sm text-ink-soft mt-1">Tell us where you'd like it delivered. We'll come back with a final figure within one business day.</p>
 
                 <form method="POST" action="{{ route('quotes.store', $vehicle->slug) }}" class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-5 text-sm">
@@ -1028,6 +677,7 @@
                         <button type="submit" class="bg-toco-red hover:bg-toco-red-deep text-white font-bold uppercase tracking-widest text-xs px-5 py-3 rounded-sm">Submit quote request</button>
                     </div>
                 </form>
+            </div>
             </div>
         @endif
         @endauth
