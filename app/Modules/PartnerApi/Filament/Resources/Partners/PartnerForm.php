@@ -86,6 +86,13 @@ class PartnerForm
             TextInput::make('stock_scope.price_max')->label('Highest price (USD, your price)')->numeric()->minValue(0)->live(debounce: 600)
                 ->helperText('For example 20000 shares only cars up to USD 20,000 before any markup.'),
             Text::make(fn (Get $get) => self::scopePreview($get)),
+            Radio::make('field_set')->label('Vehicle details shared')
+                ->options([
+                    'standard' => 'Standard: make, model, year, mileage, engine, price, photos and similar',
+                    'extended' => 'Extended: also chassis number, model code, dimensions, features and description',
+                ])
+                ->default('standard')->required()
+                ->helperText('Share the extended details only with partners who need them, for example for import paperwork.'),
         ];
     }
 

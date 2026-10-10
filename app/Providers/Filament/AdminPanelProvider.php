@@ -49,6 +49,9 @@ class AdminPanelProvider extends PanelProvider
             ->login(Login::class)
             ->brandName('Toco Japan Admin')
             ->maxContentWidth(Width::Full)
+            // Bell for partner network alerts (UI brief 6.1).
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('60s')
             ->navigationGroups(['Catalogue', 'Content', 'Enquiries', 'Mailer', 'Partner Network', 'Shipping', 'System'])
             ->renderHook(PanelsRenderHook::HEAD_END, fn (): string => Blade::render('@include("filament.admin.auth.head")'))
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn (): string => Blade::render('@include("filament.admin.auth.turnstile")'))
@@ -74,6 +77,7 @@ class AdminPanelProvider extends PanelProvider
                 StatsOverview::class,
                 SearchConsoleChart::class,
                 QuotesAndOrders::class,
+                ...PartnerApiServiceProvider::filamentWidgets(),
             ])
             ->middleware([
                 EncryptCookies::class,

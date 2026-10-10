@@ -4,10 +4,14 @@ namespace App\Modules\PartnerApi;
 
 use App\Models\Vehicle;
 use App\Models\VehicleHold;
+use App\Modules\PartnerApi\Console\MonitorPartners;
 use App\Modules\PartnerApi\Console\SendWebhooks;
+use App\Modules\PartnerApi\Domain\Monitoring\AdminAlerts;
 use App\Modules\PartnerApi\Domain\Webhooks\WebhookOutbox;
 use App\Modules\PartnerApi\Domain\Images\ImageVariants;
 use App\Modules\PartnerApi\Filament\Pages\PartnerUsage;
+use App\Modules\PartnerApi\Filament\Widgets\NeedsAttention;
+use App\Modules\PartnerApi\Filament\Widgets\PartnerNetworkStats;
 use App\Modules\PartnerApi\Filament\Resources\Holds\VehicleHoldResource;
 use App\Modules\PartnerApi\Filament\Resources\Partners\PartnerResource;
 use App\Modules\PartnerApi\Http\Controllers\DocsController;
@@ -93,12 +97,22 @@ class PartnerApiServiceProvider extends ServiceProvider
             }
         }));
 
+        // Admin bell (UI brief 6.1): a channel claimed a car. Staff holds are not
+        // announced back to the staff who placed them.
+        VehicleHold::created(fn (VehicleHold $hold) => $notify(function () use ($hold) {
+            if ($hold->created_by === null) {
+                AdminAlerts::holdPlaced($hold);
+            }
+        }));
+
         if ($this->app->runningInConsole()) {
-            $this->commands([SendWebhooks::class]);
+            $this->commands([SendWebhooks::class, MonitorPartners::class]);
         }
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             $schedule->command('partners:webhooks')->everyMinute()->withoutOverlapping(5);
+            $schedule->command('partners:monitor')->everyTenMinutes()->withoutOverlapping(10);
+            $schedule->command('partners:monitor --daily')->dailyAt('00:05')->timezone(config('partner_api.timezone'));
             $schedule->call(fn () => PartnerAccessToken::where('expires_at', '<', now()->subDay())->delete())
                 ->daily()->name('partner-api:prune-tokens');
             // §8.6: request logs kept 12 months.
@@ -116,6 +130,12 @@ class PartnerApiServiceProvider extends ServiceProvider
     public static function filamentPages(): array
     {
         return [PartnerUsage::class];
+    }
+
+    /** Dashboard widgets (UI brief 6.2), each gated with canView(). @return list<class-string> */
+    public static function filamentWidgets(): array
+    {
+        return [PartnerNetworkStats::class, NeedsAttention::class];
     }
 
     /** @return list<class-string> */

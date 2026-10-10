@@ -45,7 +45,20 @@ class Quota
 
     public static function countDaily(Partner $partner, string $kind): int
     {
-        return RateLimiter::hit(self::dayKey($partner, $kind), self::secondsToReset());
+        $used = RateLimiter::hit(self::dayKey($partner, $kind), self::secondsToReset());
+
+        // UI brief 6.1: tell the admins once a day when a partner passes 80%.
+        $limit = self::dailyLimit($partner, $kind);
+        $threshold = (int) ceil($limit * 0.8);
+        if ($limit > 0 && $used >= $threshold && ($used === $threshold || $used % 100 === 0)) {
+            try {
+                \App\Modules\PartnerApi\Domain\Monitoring\AdminAlerts::quotaNearlyUsed($partner, $kind, $used, $limit);
+            } catch (\Throwable $e) {
+                report($e); // an alert must never fail the partner's request
+            }
+        }
+
+        return $used;
     }
 
     public static function usedToday(Partner $partner, string $kind): int

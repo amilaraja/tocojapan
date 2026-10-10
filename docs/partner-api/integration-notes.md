@@ -54,7 +54,9 @@ Every edit outside `app/Modules/PartnerApi` is listed here.
 | 2026-10-10 | app/Services/ProformaInvoiceService.php, app/Http/Controllers/ProformaInvoiceController.php | Proforma claims a hold; rivals refused | FR-HLD-03 |
 | 2026-10-10 | app/Filament/Admin/Resources/Vehicles/* (HoldActions new, VehiclesTable, EditVehicle, VehicleForm) | Hold for buyer, Extend, Release, hold-aware Mark sold; Under offer subheading; manual "Reserved" option disabled | UI brief 5, Amendment 01 |
 | 2026-10-10 | app/Listeners/ConvertVehiclePhotoOnUpload.php | Copies the clean original to storage/app/private/media-masters/{media id}/ before watermarking (first pass only) | FR-IMG-01 |
-| 2026-10-10 | app/Providers/Filament/AdminPanelProvider.php | "Partner Network" navigation group; registers PartnerApiServiceProvider::filamentPages()/filamentResources() | Menu registration |
+| 2026-10-10 | app/Providers/Filament/AdminPanelProvider.php | "Partner Network" navigation group; registers PartnerApiServiceProvider::filamentPages()/filamentResources()/filamentWidgets(); `databaseNotifications()` with 60 s polling | Menu registration; UI brief 6.1 bell |
+| 2026-10-10 | database/migrations/2026_10_10_600000_create_notifications_table.php | Laravel's standard notifications table | Filament database notifications |
+| 2026-10-10 | .env | `PARTNER_API_ENABLED=true`, `HOLDS_ENFORCED=true` | Go-live |
 | 2026-10-10 | database/seeders/DatabaseSeeder.php | Calls PartnerPermissionSeeder | Permission seeding |
 | 2026-10-10 | resources/views/components/vehicle-card, vehicle-row, vehicles/show, vehicles/quick-view, partials/vehicle-buy-actions | "Under offer" badge and banner, buy buttons off, race message | UI brief 7 |
 
@@ -68,6 +70,28 @@ Every edit outside `app/Modules/PartnerApi` is listed here.
 | P4 Images, limits, usage | Done 2026-10-10 | `GET /img/{token}` (signed, partner-bound, bare 404s, variants cached privately), per-minute/per-day/photo limits with RateLimit headers (304 free), request log + `GET /usage`, clean masters kept for new uploads. |
 | P5 Admin + docs page | Done 2026-10-10 | Partner Network group (partners.admin, seeded for super_admin + admin): Partners (wizard/tabs, suspend/reactivate/revoke with typed name), connection keys (one-time reveal, rotate, revoke), Holds (tabs, 30 s countdown, extend/release/mark sold). Docs at /partner/docs (+ openapi.json), admins only until go-live. Live smoke test in a rolled-back transaction: token, 71 vehicles, photo 1280 px WebP, catalogue, usage; no supplier data leaked. First real partner waits on the JWT pull/push answer. |
 | P6 Webhooks, partner holds, usage page | Done 2026-10-10 | Signed change notifications (outbox, coalescing, backoff 24 h, HTTPS + public-IP pinning, `partners:webhooks` every minute), hold.expiring/expired/released; holds API for selling partners (idempotent, limits, listing/test-key refusals); admin Usage page, View usage, Send test event, notification secret. 85 partner tests on SQLite and MariaDB. |
-| P7 Notifications, dashboard, hardening, go-live | Next | |
+| P7 Notifications, dashboard, hardening, go-live | Done 2026-10-10 | Panel bell (database notifications): hold placed, ending in 6 h, ran out unused (daily), 80% of allowance, notifications failing over 1 h, contract ending in 14 days, unusual traffic (stock-number walking, 5x volume). Dashboard widgets: Partner network stats, Needs attention (incl. FR-HLD-07). Field set added to the partner form. Runbook: docs/partner-api/runbook.md. **Go-live 2026-10-10: PARTNER_API_ENABLED=true and HOLDS_ENFORCED=true** (.env backup /root/migration/env-before-partner-golive-20261010); live rolled-back checkout dry run: first buyer holds, rival refused. |
+
+## 5. Acceptance checklist (UI brief section 10)
+
+| Item | Result |
+|---|---|
+| Every SRS section 4 setting reachable in the partner form, plain words, helper text | Yes. Not shown by phase 1 scope: image mode (watermarked only), supplier stock, allowed origins (only for browser-side image use, not built). |
+| Listing partner: no hold settings, keys cannot hold, Holds page never lists it | Yes (403 `holds_not_available_for_partner`; staff holds credited to a listing partner show as "Admin, for <partner>"). |
+| Secret shown once, never retrievable | Yes (only the hash is stored; reveal modal needs "I have copied the key"). |
+| Revoke needs typed name; suspend effective within a minute | Yes (on the next request). |
+| Holds countdown updates without refresh; expiring holds stand out | Yes (30 s poll, amber under 6 h, red under 1 h). |
+| Mark sold impossible against another channel's hold without release; can credit a listing partner | Yes. |
+| Reserved visible on admin table, vehicle page, public card and page, partner surfaces | Yes (API status `reserved`, guide tells partners to show "Under offer"). |
+| All partner-network actions in the audit log with actor, before and after | Partner and key changes: `partner_audit_logs`. Holds: `vehicle_holds` + activity log (log name `holds`). |
+| No trace of the Partner Network without `partners.admin` | Yes (pages 403, menu group and widgets hidden). |
+
+## 6. Open items
+
+- JWT Japan: pull (this API, nothing to build) or push (separate connector quote)? Needed before connecting JWT.
+- `api.tocojapan.com`: DNS, SSL and a LiteSpeed alias, then `PARTNER_API_HOST` (runbook).
+- Set `PARTNER_API_IMAGE_KEYS` to a dedicated key (today derived from APP_KEY).
+- Pre-existing bug, not fixed: the photo upload listener runs twice (double processing). One-line fix offered.
+- Mailer "include reserved" option can now map to `reserved` (Mailer contract).
 
 Known unrelated failures in the full suite (they fail without this module too): Auth AuthenticationTest, PasswordResetTest x3, RegistrationTest, CmsTest sitemap.
