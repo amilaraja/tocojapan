@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\Vehicle;
 use App\Services\CheckoutFlow;
+use App\Services\Holds\HoldService;
+use App\Services\Holds\VehicleUnavailable;
 use App\Settings\PaymentSettings;
 use App\Support\PayPalGateway;
 use Illuminate\Contracts\View\View;
@@ -24,7 +26,10 @@ class CheckoutController extends Controller
      */
     public function show(string $slug): View|RedirectResponse
     {
-        $vehicle = Vehicle::query()->where('slug', $slug)->where('status', 'published')->firstOrFail();
+        $vehicle = $this->flow->checkoutVehicle($slug);
+        if (! $vehicle) {
+            return CheckoutFlow::raceLostRedirect(Vehicle::where('slug', $slug)->firstOrFail());
+        }
 
         if ($error = $this->flow->eligibilityError($vehicle)) {
             return redirect()->route('vehicles.show', $vehicle->slug)->withErrors(['vehicle' => $error]);
@@ -51,7 +56,10 @@ class CheckoutController extends Controller
      */
     public function place(Request $request, string $slug): RedirectResponse
     {
-        $vehicle = Vehicle::query()->where('slug', $slug)->where('status', 'published')->firstOrFail();
+        $vehicle = $this->flow->checkoutVehicle($slug);
+        if (! $vehicle) {
+            return CheckoutFlow::raceLostRedirect(Vehicle::where('slug', $slug)->firstOrFail());
+        }
 
         if (! app(PaymentSettings::class)->paypal_enabled || ! $this->paypalConfigured()) {
             return back()->withErrors(['paypal' => 'Online checkout is not yet enabled. Please contact us.']);
@@ -67,7 +75,11 @@ class CheckoutController extends Controller
             return back()->withErrors(['port_id' => 'The selected port does not belong to the chosen country.']);
         }
 
-        $order = $this->flow->createOrder($data, $vehicle, $port, 'paypal');
+        try {
+            $order = $this->flow->createOrder($data, $vehicle, $port, 'paypal');
+        } catch (VehicleUnavailable) {
+            return CheckoutFlow::raceLostRedirect($vehicle);
+        }
 
         return $this->handOffToPayPal($order, $vehicle)
             ->withCookie(cookie('toco_port', (string) $port->id, 60 * 24 * 365));
@@ -152,6 +164,14 @@ class CheckoutController extends Controller
         // order is settled there is nothing left to do here.
         if ($order->isPaid() || ! $order->paypal_order_id) {
             return redirect()->route('orders.show', $order);
+        }
+
+        // The hold may have lapsed while the buyer sat on PayPal's page: only
+        // take the money if the car is still (or again) theirs (FR-HLD-03).
+        if (! app(HoldService::class)->ensureForOrder($order)) {
+            $order->transitionTo('cancelled');
+
+            return CheckoutFlow::raceLostRedirect($order->vehicle);
         }
 
         try {

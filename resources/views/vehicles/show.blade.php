@@ -97,7 +97,7 @@
                         '@type' => 'Offer',
                         'price' => (float) $vehicle->effectivePriceFob(),
                         'priceCurrency' => 'USD',
-                        'availability' => $isSold ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
+                        'availability' => $isSold ? 'https://schema.org/SoldOut' : ($vehicle->isReserved() ? 'https://schema.org/LimitedAvailability' : 'https://schema.org/InStock'),
                         'itemCondition' => 'https://schema.org/UsedCondition',
                         'seller' => [
                             '@type' => 'AutoDealer',
@@ -174,6 +174,10 @@
                 @if ($isSold)
                     <div class="bg-toco-red text-white text-center font-mono uppercase tracking-[0.3em] text-sm font-bold py-3 rounded-sm">
                         SOLD · this vehicle is no longer available
+                    </div>
+                @elseif ($vehicle->isReserved())
+                    <div class="text-white text-center font-mono uppercase tracking-[0.3em] text-sm font-bold py-3 rounded-sm" style="background:#B45309">
+                        Under offer · reserved for another buyer
                     </div>
                 @endif
 

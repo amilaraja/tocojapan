@@ -82,9 +82,12 @@ class VehicleForm
                                 'draft' => 'Draft',
                                 'published' => 'Published',
                                 'sold' => 'Sold',
-                                'reserved' => 'Reserved',
+                                'reserved' => 'Reserved (on hold)',
                                 'delisted' => 'Delisted (no longer in supplier stock)',
                             ])
+                            // Holds are placed with "Hold for buyer" so they get a buyer and an end time.
+                            ->disableOptionWhen(fn (string $value, $record) => $value === 'reserved' && $record?->status !== 'reserved')
+                            ->helperText('To reserve a car, use "Hold for buyer" at the top of the page.')
                             ->default('draft')
                             ->required(),
                         DateTimePicker::make('published_at'),

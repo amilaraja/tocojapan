@@ -6,8 +6,12 @@ use App\Models\Country;
 use App\Models\Order;
 use App\Models\Port;
 use App\Models\Vehicle;
+use App\Services\Holds\HoldClaim;
+use App\Services\Holds\HoldService;
+use App\Services\Holds\VehicleUnavailable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 /**
  * The shared "collect destination + shipping details, confirm the CIF
@@ -17,7 +21,29 @@ use Illuminate\Support\Facades\Auth;
  */
 class CheckoutFlow
 {
-    public function __construct(private CifCalculator $calculator) {}
+    public function __construct(private CifCalculator $calculator, private HoldService $holds) {}
+
+    /**
+     * Find a vehicle for checkout: published, or reserved by this buyer
+     * (they may switch payment method). Null when someone else holds it.
+     */
+    public function checkoutVehicle(string $slug): ?Vehicle
+    {
+        $vehicle = Vehicle::query()->where('slug', $slug)->whereIn('status', ['published', 'reserved'])->firstOrFail();
+
+        if ($vehicle->isReserved() && ! $this->heldByCurrentBuyer($vehicle)) {
+            return null;
+        }
+
+        return $vehicle;
+    }
+
+    public function heldByCurrentBuyer(Vehicle $vehicle): bool
+    {
+        $hold = $this->holds->activeHold($vehicle);
+
+        return $hold !== null && Auth::id() !== null && $hold->isWeb() && $hold->user_id === Auth::id();
+    }
 
     /** Null when the vehicle can be checked out, otherwise the reason it cannot. */
     public function eligibilityError(Vehicle $vehicle): ?string
@@ -82,7 +108,7 @@ class CheckoutFlow
             port: $port,
         );
 
-        return Order::create([
+        $attributes = [
             'user_id' => Auth::id(),
             'vehicle_id' => $vehicle->id,
             'dest_country_id' => $data['country_id'],
@@ -101,6 +127,24 @@ class CheckoutFlow
             'currency' => 'USD',
             'status' => 'pending',
             'payment_provider' => $provider,
-        ]);
+        ];
+
+        if (! HoldService::enforced()) {
+            return Order::create($attributes);
+        }
+
+        // FR-HLD-03: no hold, no payment. The order and its hold stand or fall together.
+        return DB::transaction(function () use ($attributes, $vehicle) {
+            $order = Order::create($attributes);
+            $this->holds->claim($vehicle, HoldClaim::forOrder($order));
+
+            return $order;
+        });
+    }
+
+    /** Where a buyer who lost the race for a car is sent (UI brief section 7.2). */
+    public static function raceLostRedirect(Vehicle $vehicle): \Illuminate\Http\RedirectResponse
+    {
+        return redirect()->route('vehicles.show', $vehicle->slug)->with('vehicle_reserved', true);
     }
 }

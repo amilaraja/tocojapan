@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\Vehicles\Pages;
 
+use App\Filament\Admin\Resources\Vehicles\HoldActions;
 use App\Filament\Admin\Resources\Vehicles\VehicleResource;
 use App\Services\Social\FacebookPosterService;
 use App\Settings\SocialSettings;
@@ -21,6 +22,7 @@ class EditVehicle extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            ...HoldActions::all(),
             $this->shareToFacebookAction(),
             DeleteAction::make()
                 ->label('Move to trash')
@@ -30,6 +32,14 @@ class EditVehicle extends EditRecord
             ForceDeleteAction::make(),
             RestoreAction::make(),
         ];
+    }
+
+    /** Under offer banner (UI brief 5.2): who holds the car and for how long. */
+    public function getSubheading(): ?string
+    {
+        $summary = HoldActions::holdSummary($this->record);
+
+        return $summary !== '' ? 'Under offer. '.$summary : null;
     }
 
     /** Detect a transition into published BEFORE the record is overwritten. */

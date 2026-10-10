@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\Vehicles\Tables;
 
+use App\Filament\Admin\Resources\Vehicles\HoldActions;
 use App\Models\BodyType;
 use App\Models\Make;
 use App\Models\Supplier;
@@ -28,7 +29,7 @@ class VehiclesTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->with(['supplier', 'make', 'vehicleModel']))
+            ->modifyQueryUsing(fn ($query) => $query->with(['supplier', 'make', 'vehicleModel', 'activeHold.partner', 'activeHold.referralPartner']))
             ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('stock_no')->label('Stock ID')->searchable()->sortable()->weight('bold'),
@@ -160,18 +161,7 @@ class VehiclesTable
                                 ->send();
                         }
                     }),
-                Action::make('markSold')
-                    ->label('Mark as sold')
-                    ->icon('heroicon-o-banknotes')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->modalHeading('Mark this vehicle as sold?')
-                    ->modalDescription('It will show a SOLD badge on the public site for 90 days and then auto-hide. Buy and quote actions are removed immediately.')
-                    ->visible(fn (Vehicle $r) => $r->status !== 'sold')
-                    ->action(function (Vehicle $r) {
-                        $r->forceFill(['status' => 'sold', 'sold_at' => now()])->save();
-                        Notification::make()->title('Marked as sold.')->success()->send();
-                    }),
+                ...HoldActions::all(),
                 Action::make('unmarkSold')
                     ->label('Restore')
                     ->icon('heroicon-o-arrow-uturn-left')

@@ -13,19 +13,36 @@
         && ! empty(config("paypal.{$paypalMode}.client_secret"));
     $bankReady = $payment->bank_transfer_enabled;
     $isSold = $vehicle->status === 'sold';
-    $buyable = ! $isSold && ! $vehicle->price_on_request && $vehicle->effectivePriceFob() > 0 && $vehicle->canCheckoutOnline();
+    // Reserved: on hold for a buyer. Only that buyer may continue (UI brief 7.1).
+    $isReserved = $vehicle->isReserved();
+    $heldByMe = $isReserved && app(\App\Services\CheckoutFlow::class)->heldByCurrentBuyer($vehicle);
+    $buyable = ! $isSold && (! $isReserved || $heldByMe) && ! $vehicle->price_on_request && $vehicle->effectivePriceFob() > 0 && $vehicle->canCheckoutOnline();
     // LC proforma: priced, has M3, not quote-only partner stock, and some destination accepts LC.
-    $showProforma = ! $isSold
+    $showProforma = ! $isSold && (! $isReserved || $heldByMe)
         && app(\App\Services\ProformaInvoiceService::class)->vehicleError($vehicle) === null
         && \App\Models\ImportRegulation::anyLcDestination();
     $proformaUrl = route('proforma.create', array_filter(['slug' => $vehicle->slug, 'port_id' => ($destPort ?? null)?->id]));
     $portExpr = $portExpr ?? null;
     $btn = 'w-full inline-flex items-center justify-center gap-2 font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm transition';
 @endphp
+@if (session('vehicle_reserved'))
+    {{-- Checkout race lost (UI brief 7.2): a friendly message, not an error. --}}
+    <div class="w-full text-sm border rounded-sm px-4 py-3 mb-2" style="background:#FFFBEB;border-color:#F59E0B;color:#78350F" role="status">
+        Someone else just reserved this vehicle. You can keep browsing; if their payment does not arrive, it will come back on sale.
+    </div>
+@endif
 @if ($isSold)
     <div class="w-full text-center bg-toco-red text-white border border-toco-red font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm">
         Sold — view our available stock <a href="{{ route('vehicles.index') }}" class="underline">here</a>
     </div>
+@elseif ($isReserved && ! $heldByMe)
+    <div class="w-full text-center text-white font-bold uppercase tracking-widest text-xs px-4 py-3 rounded-sm" style="background:#B45309">
+        Under offer
+    </div>
+    <p class="text-xs text-ink-soft text-center">Reserved for another buyer. If the reservation lapses, it returns to sale automatically.</p>
+    <a href="{{ $quoteHref }}" @if (str_starts_with($quoteHref, '#')) x-data @click.prevent="$dispatch('open-quote')" @endif class="{{ $btn }} bg-white border-2 border-toco-navy text-toco-navy hover:bg-toco-navy hover:text-white">
+        Ask about similar cars
+    </a>
 @else
 @auth
     @if ($buyable && $paypalReady)

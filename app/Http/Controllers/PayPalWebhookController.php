@@ -147,6 +147,14 @@ class PayPalWebhookController extends Controller
             return $order;
         }
 
+        // Do not take money for a car that is now held by someone else (FR-HLD-03).
+        if (! app(\App\Services\Holds\HoldService::class)->ensureForOrder($order)) {
+            $order->transitionTo('cancelled');
+            $event->note = 'Not captured: the vehicle is held by another buyer. Order cancelled.';
+
+            return $order;
+        }
+
         $capture = $this->client()->capturePaymentOrder($paypalOrderId);
         $detail = $this->captureDetail($capture);
 

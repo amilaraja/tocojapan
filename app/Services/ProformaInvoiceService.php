@@ -7,6 +7,9 @@ use App\Models\Port;
 use App\Models\ProformaInvoice;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Models\VehicleHold;
+use App\Services\Holds\HoldClaim;
+use App\Services\Holds\HoldService;
 use App\Settings\ProformaSettings;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Collection;
@@ -22,11 +25,19 @@ class ProformaInvoiceService
     public function __construct(
         private CifCalculator $calculator,
         private CheckoutFlow $checkout,
+        private HoldService $holds,
     ) {}
 
     /** Null when the vehicle can get a proforma; otherwise why not. */
     public function vehicleError(Vehicle $vehicle): ?string
     {
+        // A reserved car stays open only to the buyer holding it (SRS-TOC-PAPI 7).
+        if ($vehicle->isReserved() && $this->checkout->heldByCurrentBuyer($vehicle)) {
+            return $this->checkout->eligibilityError($vehicle);
+        }
+        if ($vehicle->isReserved()) {
+            return 'This vehicle is reserved for another buyer.';
+        }
         if ($vehicle->status !== 'published') {
             return 'This vehicle is no longer available.';
         }
@@ -105,7 +116,7 @@ class ProformaInvoiceService
                 $invoiceNo = $base.'-'.(++$n + 1);
             }
 
-            return ProformaInvoice::query()->create($consignee + $figures + [
+            $invoice = ProformaInvoice::query()->create($consignee + $figures + [
                 'invoice_no' => $invoiceNo,
                 'user_id' => $user->id,
                 'vehicle_id' => $vehicle->id,
@@ -114,6 +125,20 @@ class ProformaInvoiceService
                 'expires_on' => today()->addDays(max(1, $settings->validity_days)),
                 'snapshot' => $this->snapshot($vehicle, $port),
             ]);
+
+            // FR-HLD-03: a proforma reserves the car for this buyer; a lost race
+            // rolls the invoice back (VehicleUnavailable reaches the controller).
+            if (HoldService::enforced()) {
+                $this->holds->claim($vehicle, new HoldClaim(
+                    channel: VehicleHold::CHANNEL_PROFORMA,
+                    buyerRef: $invoiceNo,
+                    buyer: $user,
+                    proforma: $invoice,
+                    destinationCountry: $port->country?->iso2,
+                ));
+            }
+
+            return $invoice;
         });
     }
 

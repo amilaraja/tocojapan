@@ -51,6 +51,11 @@ class Vehicle extends Model implements HasMedia
             if ($vehicle->status === 'published' && $vehicle->published_at === null) {
                 $vehicle->published_at = now();
             }
+            // Sold from any path (table action, edit form, hold service) keeps
+            // the 90-day SOLD badge window; without sold_at the car vanished.
+            if ($vehicle->isDirty('status') && $vehicle->status === 'sold' && $vehicle->sold_at === null) {
+                $vehicle->sold_at = now();
+            }
         });
     }
 
@@ -275,7 +280,8 @@ class Vehicle extends Model implements HasMedia
         // bumping its timestamp). A future-dated value used to silently hide
         // the row, which surprised us with stock E02020.
         $query->where(function ($q) {
-            $q->where('status', 'published')
+            // 'reserved' = on hold for a buyer: still listed, shown "Under offer".
+            $q->whereIn('status', ['published', 'reserved'])
                 ->orWhere(function ($qq) {
                     $qq->where('status', 'sold')
                         ->where('sold_at', '>=', now()->subDays(90));
@@ -322,6 +328,22 @@ class Vehicle extends Model implements HasMedia
     public function isSold(): bool
     {
         return $this->status === 'sold';
+    }
+
+    /** On hold for a buyer (SRS-TOC-PAPI section 7): listed as "Under offer", not buyable. */
+    public function isReserved(): bool
+    {
+        return $this->status === 'reserved';
+    }
+
+    public function holds(): HasMany
+    {
+        return $this->hasMany(VehicleHold::class);
+    }
+
+    public function activeHold(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(VehicleHold::class)->where('state', VehicleHold::STATE_ACTIVE);
     }
 
     /**

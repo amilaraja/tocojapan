@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Vehicle;
 use App\Services\CheckoutFlow;
+use App\Services\Holds\VehicleUnavailable;
 use App\Settings\PaymentSettings;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -18,7 +19,10 @@ class BankTransferController extends Controller
      */
     public function show(string $slug): View|RedirectResponse
     {
-        $vehicle = Vehicle::query()->where('slug', $slug)->where('status', 'published')->firstOrFail();
+        $vehicle = $this->flow->checkoutVehicle($slug);
+        if (! $vehicle) {
+            return CheckoutFlow::raceLostRedirect(Vehicle::where('slug', $slug)->firstOrFail());
+        }
 
         if ($error = $this->flow->eligibilityError($vehicle)) {
             return redirect()->route('vehicles.show', $vehicle->slug)->withErrors(['vehicle' => $error]);
@@ -44,7 +48,10 @@ class BankTransferController extends Controller
      */
     public function store(Request $request, string $slug): RedirectResponse
     {
-        $vehicle = Vehicle::query()->where('slug', $slug)->where('status', 'published')->firstOrFail();
+        $vehicle = $this->flow->checkoutVehicle($slug);
+        if (! $vehicle) {
+            return CheckoutFlow::raceLostRedirect(Vehicle::where('slug', $slug)->firstOrFail());
+        }
 
         if (! app(PaymentSettings::class)->bank_transfer_enabled) {
             return back()->withErrors(['payment' => 'Bank transfer checkout is not enabled.']);
@@ -60,7 +67,11 @@ class BankTransferController extends Controller
             return back()->withErrors(['port_id' => 'The selected port does not belong to the chosen country.']);
         }
 
-        $order = $this->flow->createOrder($data, $vehicle, $port, 'bank_transfer');
+        try {
+            $order = $this->flow->createOrder($data, $vehicle, $port, 'bank_transfer');
+        } catch (VehicleUnavailable) {
+            return CheckoutFlow::raceLostRedirect($vehicle);
+        }
 
         return redirect()->route('orders.show', $order)
             ->with('status', 'Order created. Please use the bank details below to complete payment.')

@@ -64,6 +64,11 @@ class AppServiceProvider extends ServiceProvider
 
         Event::listen(MediaHasBeenAddedEvent::class, ConvertVehiclePhotoOnUpload::class);
 
+        // Vehicle holds (SRS-TOC-PAPI section 7): order and vehicle status
+        // changes keep the hold table in step (docs/partner-api/integration-notes.md).
+        \App\Models\Order::updated(fn (\App\Models\Order $order) => app(\App\Services\Holds\HoldService::class)->syncOrder($order));
+        \App\Models\Vehicle::updated(fn (\App\Models\Vehicle $vehicle) => app(\App\Services\Holds\HoldService::class)->syncVehicleStatus($vehicle));
+
         Mail::extend('gmail-api', function () {
             return new GmailApiTransport(
                 clientId: (string) config('services.gmail_oauth.client_id'),

@@ -64,12 +64,16 @@ class ProformaInvoiceController extends Controller
             return back()->withInput()->withErrors(['port_id' => $error]);
         }
 
-        $invoice = $this->service->create($request->user(), $vehicle, $port, [
-            'consignee_name' => $data['consignee_name'],
-            'consignee_address' => $data['consignee_address'],
-            'consignee_phone' => $data['consignee_phone'],
-            'consignee_email' => $data['consignee_email'],
-        ]);
+        try {
+            $invoice = $this->service->create($request->user(), $vehicle, $port, [
+                'consignee_name' => $data['consignee_name'],
+                'consignee_address' => $data['consignee_address'],
+                'consignee_phone' => $data['consignee_phone'],
+                'consignee_email' => $data['consignee_email'],
+            ]);
+        } catch (\App\Services\Holds\VehicleUnavailable) {
+            return \App\Services\CheckoutFlow::raceLostRedirect($vehicle);
+        }
 
         StaffMail::send(new NewProformaInvoice($invoice), "proforma {$invoice->invoice_no}");
 

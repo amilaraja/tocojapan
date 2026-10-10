@@ -127,3 +127,26 @@ it('shows the "Get a Proforma Invoice" prompt by the price only when some destin
     Cache::forget('import_regulations.any_lc');
     $this->get('/vehicles/'.$this->vehicle->slug)->assertOk()->assertDontSee('Get a Proforma Invoice');
 });
+
+it('reserves the car for the buyer who takes a proforma and refuses rivals (TOC-PAPI-FR-HLD-03)', function () {
+    config(['holds.enforced' => true]);
+    $details = fn (string $name) => [
+        'port_id' => $this->brisbane->id, 'consignee_name' => $name, 'consignee_address' => '9 Merivale Ave',
+        'consignee_phone' => '+61 1', 'consignee_email' => 'buyer@example.com',
+    ];
+
+    $this->actingAs($this->user)->post(route('proforma.store', $this->vehicle->slug), $details('Dane Walsh'))
+        ->assertRedirect(route('proforma.index'));
+    $hold = \App\Models\VehicleHold::sole();
+    expect($hold->channel)->toBe('proforma')->and($hold->buyer_ref)->toBe('E01948')
+        ->and($this->vehicle->fresh()->status)->toBe('reserved');
+
+    // The same buyer may issue a revised proforma on the car they hold.
+    $this->actingAs($this->user)->post(route('proforma.store', $this->vehicle->slug), $details('Dane Walsh'))
+        ->assertRedirect(route('proforma.index'));
+
+    $rival = User::factory()->create();
+    $this->actingAs($rival)->post(route('proforma.store', $this->vehicle->slug), $details('Rival'))
+        ->assertSessionHasErrors('port_id');
+    expect(ProformaInvoice::query()->count())->toBe(2)->and(\App\Models\VehicleHold::count())->toBe(1);
+});
