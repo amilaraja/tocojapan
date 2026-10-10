@@ -4,6 +4,7 @@ namespace App\Modules\PartnerApi\Filament\Resources\Partners;
 
 use App\Models\VehicleHold;
 use App\Modules\PartnerApi\Domain\Stock\PartnerPricing;
+use App\Modules\PartnerApi\Filament\Pages\PartnerUsage;
 use App\Modules\PartnerApi\Filament\Resources\Partners\Pages\CreatePartner;
 use App\Modules\PartnerApi\Filament\Resources\Partners\Pages\EditPartner;
 use App\Modules\PartnerApi\Filament\Resources\Partners\Pages\ListPartners;
@@ -110,6 +111,8 @@ class PartnerResource extends Resource
             ])
             ->recordActions([
                 EditAction::make(),
+                Action::make('usage')->label('View usage')->icon('heroicon-o-chart-bar')->color('gray')
+                    ->url(fn (Partner $record) => PartnerUsage::getUrl(['partner' => $record->id])),
                 self::suspendAction(),
                 self::reactivateAction(),
                 self::revokeAction(),

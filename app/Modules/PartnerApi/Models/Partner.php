@@ -80,6 +80,12 @@ class Partner extends Model
             }
         });
 
+        static::saving(function (Partner $partner): void {
+            if ($partner->webhook_url && ! $partner->webhook_secret) {
+                $partner->webhook_secret = 'whsec_'.rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+            }
+        });
+
         static::created(function (Partner $partner): void {
             PartnerAuditLog::record($partner, 'partner.created', after: $partner->auditable());
         });
@@ -100,6 +106,23 @@ class Partner extends Model
 
             PartnerAuditLog::record($partner, 'partner.updated', $before, $after);
         });
+    }
+
+    /** The signing secret for change notifications, created on first need (§8.5). */
+    public function ensureWebhookSecret(): string
+    {
+        if (! $this->webhook_secret) {
+            $this->forceFill(['webhook_secret' => 'whsec_'.rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=')])->save();
+        }
+
+        return $this->webhook_secret;
+    }
+
+    public function rotateWebhookSecret(): string
+    {
+        $this->forceFill(['webhook_secret' => null]);
+
+        return $this->ensureWebhookSecret();
     }
 
     public function clients(): HasMany

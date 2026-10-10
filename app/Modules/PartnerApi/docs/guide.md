@@ -171,7 +171,97 @@ Reference lists, each with the number of vehicles in your scope where it applies
 
 `POST /cif` with `{"stock_no": "E02060", "port_id": 12}` estimates cost, insurance and freight to that port, on your price. It needs the `cif:read` scope. It is an estimate: inspection fees and import duties are not included.
 
-## 11. Limits and usage
+## 11. Change notifications (webhooks)
+
+Instead of waiting for your next scheduled sync, you can get a message the moment something changes. Give Toco an **https** address; Toco gives you a **notification secret** (`whsec_…`) to check the messages.
+
+Each message is a `POST` with a small JSON body:
+
+```json
+{ "id": "whd_01k7…", "type": "vehicle.sold", "created_at": "2026-10-10T05:12:44Z",
+  "data": { "stock_no": "E02060", "status": "sold", "updated_at": "2026-10-10T05:12:44Z" } }
+```
+
+| Type | Meaning | What to do |
+|---|---|---|
+| `vehicle.created` | A car entered your scope. | Fetch it with `GET /vehicles/{stock_no}`. |
+| `vehicle.updated` | Details, price or photos changed. | Fetch it again. |
+| `vehicle.status_changed` | Now `available` or `reserved`. | Update the status ("Under offer" for reserved). |
+| `vehicle.sold` | Sold. | Remove it or mark it sold within 15 minutes. |
+| `vehicle.removed` | Withdrawn or left your scope. | Remove it within 15 minutes. |
+| `hold.expiring` | One of your holds ends within 6 hours. | Finish the sale through Toco, or release it. |
+| `hold.expired` / `hold.released` | Your hold ended (time ran out, or Toco released it). | Take no payment for that car. |
+| `ping` | A test message from Toco. | Nothing. |
+
+Messages carry no vehicle details: always fetch the vehicle through the API. Keep your scheduled sync running anyway as a safety net.
+
+**Answer quickly.** Reply with any `2xx` status within 10 seconds, then do the work. Failed messages are retried with growing gaps (1, 2, 5, 10, 30 minutes, then hourly and longer) for 24 hours. A message can arrive twice: ignore an `id` you have already handled.
+
+**Check every message.** Each one has these headers:
+
+| Header | Value |
+|---|---|
+| `X-Toco-Event` | The event type |
+| `X-Toco-Delivery` | The message `id` |
+| `X-Toco-Timestamp` | Unix time it was signed |
+| `X-Toco-Signature` | `t=<timestamp>,v1=<signature>` |
+
+The signature is HMAC-SHA256 of `<timestamp>.<raw body>` with your notification secret, in hex. Reject the message if the signature does not match or the timestamp is more than 5 minutes old.
+
+```php
+// PHP
+$body = file_get_contents('php://input');
+preg_match('/t=(\d+),v1=([0-9a-f]+)/', $_SERVER['HTTP_X_TOCO_SIGNATURE'] ?? '', $m);
+$expected = hash_hmac('sha256', $m[1].'.'.$body, getenv('TOCO_WEBHOOK_SECRET'));
+if (! $m || ! hash_equals($expected, $m[2]) || abs(time() - (int) $m[1]) > 300) {
+    http_response_code(400); exit;
+}
+http_response_code(204);
+// … then handle json_decode($body, true)
+```
+
+```js
+// Node.js (Express: use express.raw({ type: 'application/json' }) for this route)
+const crypto = require('crypto');
+function verify(req) {
+  const m = /t=(\d+),v1=([0-9a-f]+)/.exec(req.get('X-Toco-Signature') || '');
+  if (!m || Math.abs(Date.now() / 1000 - Number(m[1])) > 300) return false;
+  const expected = crypto.createHmac('sha256', process.env.TOCO_WEBHOOK_SECRET)
+    .update(m[1] + '.' + req.body).digest('hex');
+  if (expected.length !== m[2].length) return false;
+  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(m[2]));
+}
+```
+
+## 12. Holds (selling partners only)
+
+A **selling partner** takes a buyer's money itself, so it must first reserve the car in Toco's system. **Never take payment, or sign a sale, before you receive `201` for a hold.** A sale made without a hold, or after it ended, is at your own risk. Listing partners never hold cars: they get `403 holds_not_available_for_partner`.
+
+```bash
+curl -s https://tocojapan.com/partner/v1/vehicles/E02060/holds \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Idempotency-Key: order-7781" \
+  -H "Content-Type: application/json" \
+  -d '{"buyer_ref": "order-7781", "destination_country": "KE"}'
+```
+
+```json
+{ "data": { "hold_id": "hld_01k7…", "stock_no": "E02060", "state": "active", "buyer_ref": "order-7781",
+            "destination_country": "KE", "price": { "amount": 18450, "currency": "USD", "basis": "FOB" },
+            "created_at": "2026-10-10T05:00:00Z", "expires_at": "2026-10-12T05:00:00Z", "ended_at": null } }
+```
+
+- **First request wins.** Everyone else gets `409 vehicle_unavailable`, and the car shows as `reserved` everywhere at once.
+- **Retry safely.** Send an `Idempotency-Key` (your order number works). Repeating the request returns the same hold, not a second one. Asking again for a car you already hold returns your hold with `200`.
+- **The price is locked** for the life of the hold, at your price when you placed it.
+- **Holds end on their own** after your contracted hold length (shown in `GET /me`). You get `hold.expiring` 6 hours before and `hold.expired` when it ends. Once Toco has your buyer's payment, `expires_at` becomes `null` while Toco confirms the sale.
+- **Release early** with `DELETE /holds/{hold_id}` when your buyer walks away, so the car goes back on sale.
+- **Only Toco marks a car sold**, after the payment reaches Toco. You then see `vehicle.sold`, and your hold's state becomes `converted`.
+- `GET /holds` lists your active holds and those from the last 30 days.
+- You can hold only as many cars at once as your contract allows (`hold_limit_reached`).
+- Test keys (`tcp_test_…`) cannot place holds, because a hold reserves a real car.
+
+## 13. Limits and usage
 
 | Limit | Default | When you go over |
 |---|---|---|
@@ -185,14 +275,14 @@ Your contract may set other numbers; `GET /me` shows yours. Days run on Japan ti
 
 Toco sees the same figures, and is alerted about unusual patterns, such as a sudden jump in volume or a key used to walk through every stock number.
 
-## 12. Conventions
+## 14. Conventions
 
 - **Request IDs.** Every response has an `X-Request-Id` header. Quote it when you contact Toco about a problem.
 - **Unknown parameters are rejected** with `400 unknown_parameter`, not ignored. A typo in a filter name will not silently return the wrong stock.
 - **Request bodies** are limited to 64 KB.
 - **Times** are UTC, in ISO 8601 format (`2026-10-10T04:12:09Z`).
 
-## 13. Errors
+## 15. Errors
 
 Errors use [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem details, with content type `application/problem+json`:
 
@@ -218,6 +308,7 @@ Branch on `code`. `title` and `detail` are for people and may change. Errors fro
 | <a id="error-invalid-cursor"></a>`invalid_cursor` | 400 | The cursor was changed or truncated. Pass `next_cursor` back exactly, or start again without it. |
 | <a id="error-sync-window-exceeded"></a>`sync_window_exceeded` | 400 | `updated_since` is more than 30 days back. Do a full sync. |
 | <a id="error-price-filter-unavailable"></a>`price_filter_unavailable` | 400 | Your prices are on request, so price filters cannot apply. |
+| <a id="error-invalid-idempotency-key"></a>`invalid_idempotency_key` | 400 | `Idempotency-Key` must be 1 to 120 characters. |
 | <a id="error-invalid-client"></a>`invalid_client` | 401 | Wrong client ID or secret, or the key was revoked. |
 | <a id="error-invalid-token"></a>`invalid_token` | 401 | Missing, invalid or expired access token. Get a new token. |
 | <a id="error-partner-suspended"></a>`partner_suspended` | 403 | Toco has paused your access. Contact Toco. |
@@ -226,8 +317,13 @@ Branch on `code`. `title` and `detail` are for people and may change. Errors fro
 | <a id="error-contract-ended"></a>`contract_ended` | 403 | Your contract end date has passed. |
 | <a id="error-ip-not-allowed"></a>`ip_not_allowed` | 403 | Your account only accepts calls from listed server IP addresses, and this one is not listed. |
 | <a id="error-insufficient-scope"></a>`insufficient_scope` | 403 | The token lacks the scope this endpoint needs (`required_scope`). |
+| <a id="error-holds-not-available-for-partner"></a>`holds_not_available_for_partner` | 403 | Your account is a listing partner. Send buyers to Toco through `detail_url`. |
+| <a id="error-holds-not-available-for-test-keys"></a>`holds_not_available_for_test_keys` | 403 | A hold reserves a real car. Use a live key. |
 | <a id="error-not-found"></a>`not_found` | 404 | No such endpoint or record, or it is outside your stock scope. |
 | <a id="error-method-not-allowed"></a>`method_not_allowed` | 405 | Wrong HTTP method for this endpoint. |
+| <a id="error-vehicle-unavailable"></a>`vehicle_unavailable` | 409 | Someone else holds the car, or it was sold. **Take no payment.** |
+| <a id="error-hold-limit-reached"></a>`hold_limit_reached` | 409 | You hold as many cars as your contract allows. Release one you no longer need. |
+| <a id="error-hold-not-active"></a>`hold_not_active` | 409 | The hold already ended. |
 | <a id="error-body-too-large"></a>`body_too_large` | 413 | The request body is over 64 KB. |
 | <a id="error-validation-failed"></a>`validation_failed` | 422 | Invalid values. `errors` lists the problems per field. |
 | <a id="error-unknown-port"></a>`unknown_port` | 422 | The port id is not an active destination. Use `GET /catalog/ports`. |
@@ -237,10 +333,11 @@ Branch on `code`. `title` and `detail` are for people and may change. Errors fro
 | <a id="error-image-limit-reached"></a>`image_limit_reached` | 429 | Your daily photo allowance is used up. It resets at midnight Japan time. |
 | <a id="error-server-error"></a>`server_error` | 500 | Our fault. Retry later, and send us the `request_id` if it continues. |
 
-## 14. Changelog
+## 16. Changelog
 
 | Date | Change |
 |---|---|
+| 2026-10-10 | Change notifications (signed webhooks) and holds for selling partners (`POST /vehicles/{stock_no}/holds`, `GET /holds`, `DELETE /holds/{hold_id}`). |
 | 2026-10-10 | Photos: `GET /img/{token}`. Limits and `GET /usage`; rate-limit headers on every response. |
 | 2026-10-10 | Stock: `GET /vehicles` (full and change sync, tombstones, ETags), `GET /vehicles/{stock_no}`, catalogue lists, `POST /cif`. |
 | 2026-10-10 | Draft: authentication, `GET /me`, conventions and errors. |

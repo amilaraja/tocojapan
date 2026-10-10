@@ -89,6 +89,42 @@ class PartnerScope
         return ! $vehicle->trashed() && self::visible($partner)->whereKey($vehicle->id)->exists();
     }
 
+    /**
+     * The same rules as visible(), in PHP, for one vehicle in memory: used to
+     * judge a change before and after it happened (webhooks). Must agree with
+     * the SQL version (tests/PartnerApi/Unit/PartnerScopeTest).
+     */
+    public static function matches(Partner $partner, Vehicle $vehicle): bool
+    {
+        $own = Supplier::ownStockId();
+        if ($vehicle->getAttribute('deleted_at') !== null
+            || ! ($vehicle->supplier_id === null || ($own !== null && (int) $vehicle->supplier_id === (int) $own))) {
+            return false;
+        }
+
+        $status = $vehicle->status;
+        $soldAt = $vehicle->getAttribute('sold_at');
+        $visible = in_array($status, ['published', 'reserved'], true)
+            || ($status === 'sold' && $soldAt !== null && \Illuminate\Support\Carbon::parse($soldAt)->gte(now()->subDays(self::SOLD_VISIBLE_DAYS)));
+        if (! $visible) {
+            return false;
+        }
+
+        $scope = $partner->stock_scope ?? [];
+        $year = $vehicle->year_first_reg ?? $vehicle->manufacture_year;
+        $price = (float) $vehicle->price_fob_discount > 0 ? (float) $vehicle->price_fob_discount : (float) $vehicle->price_fob;
+
+        return (empty($scope['makes']) || in_array((int) $vehicle->make_id, array_map('intval', $scope['makes']), true))
+            && (empty($scope['body_types']) || in_array((int) $vehicle->body_type_id, array_map('intval', $scope['body_types']), true))
+            && (empty($scope['year_min']) || ($year !== null && (int) $year >= (int) $scope['year_min']))
+            && (empty($scope['year_max']) || ($year !== null && (int) $year <= (int) $scope['year_max']))
+            && ((empty($scope['price_min']) && empty($scope['price_max'])) || (
+                ! $vehicle->price_on_request
+                && (empty($scope['price_min']) || $price >= (float) $scope['price_min'])
+                && (empty($scope['price_max']) || $price <= (float) $scope['price_max'])
+            ));
+    }
+
     /** Partner-facing status names. */
     public static function status(Vehicle $vehicle): string
     {

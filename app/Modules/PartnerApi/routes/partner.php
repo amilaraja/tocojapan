@@ -2,6 +2,7 @@
 
 use App\Modules\PartnerApi\Http\Controllers\CatalogController;
 use App\Modules\PartnerApi\Http\Controllers\CifController;
+use App\Modules\PartnerApi\Http\Controllers\HoldController;
 use App\Modules\PartnerApi\Http\Controllers\ImageController;
 use App\Modules\PartnerApi\Http\Controllers\MeController;
 use App\Modules\PartnerApi\Http\Controllers\TokenController;
@@ -34,4 +35,9 @@ Route::middleware(['partner.auth', 'partner.limits'])->group(function () {
 
     Route::post('cif', CifController::class)->middleware('partner.scope:cif:read')->name('cif');
     Route::get('usage', UsageController::class)->middleware('partner.scope:usage:read')->name('usage');
+
+    // Selling partners only; the controller explains refusals (listing partner, test key, scope).
+    Route::post('vehicles/{stock_no}/holds', [HoldController::class, 'store'])->name('holds.store');
+    Route::get('holds', [HoldController::class, 'index'])->name('holds.index');
+    Route::delete('holds/{hold_id}', [HoldController::class, 'destroy'])->name('holds.destroy');
 });

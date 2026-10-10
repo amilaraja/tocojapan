@@ -59,6 +59,14 @@ class VehicleHold extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        // Opaque id for partners (holds API); internal ids are never exposed.
+        static::creating(function (VehicleHold $hold): void {
+            $hold->public_id ??= 'hld_'.strtolower((string) \Illuminate\Support\Str::ulid());
+        });
+    }
+
     public function vehicle(): BelongsTo
     {
         return $this->belongsTo(Vehicle::class)->withTrashed();

@@ -47,6 +47,11 @@ return [
         'master_disk_path' => 'private/media-masters', // FR-IMG-01
     ],
 
+    'webhooks' => [
+        // Tests only: host => IP, instead of DNS (WebhookSender::publicAddress).
+        'fake_resolve' => null,
+    ],
+
     'hold_hours_min' => 24,
     'hold_hours_max' => 96,
 ];

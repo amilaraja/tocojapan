@@ -49,6 +49,10 @@
     {
       "name": "Usage",
       "description": "Your own usage figures."
+    },
+    {
+      "name": "Holds",
+      "description": "Selling partners only: reserve a car before taking a buyer's money."
     }
   ],
   "paths": {
@@ -1163,6 +1167,369 @@
           }
         }
       }
+    },
+    "/vehicles/{stock_no}/holds": {
+      "post": {
+        "tags": [
+          "Holds"
+        ],
+        "operationId": "placeHold",
+        "summary": "Hold a car",
+        "description": "Reserves the car for your buyer. The first request anywhere wins; the car shows as reserved on every site at once. Never take a buyer's money before you get 201. Send an Idempotency-Key so a retried request cannot create a second hold. If you already hold the car you get your existing hold with 200.",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "oauth": [
+              "stock:hold"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "stock_no",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Your unique id for this request (up to 120 characters). Repeating it returns the original hold.",
+            "schema": {
+              "type": "string",
+              "maxLength": 120
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "buyer_ref"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "buyer_ref": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "description": "Your reference for the buyer or deal, for example your order number. No personal data needed."
+                  },
+                  "destination_country": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 2,
+                    "description": "ISO 3166-1 alpha-2 country the car will ship to."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Hold placed.",
+            "headers": {
+              "RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimit-Limit"
+              },
+              "RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimit-Remaining"
+              },
+              "RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimit-Reset"
+              },
+              "X-Daily-Limit": {
+                "$ref": "#/components/headers/X-Daily-Limit"
+              },
+              "X-Daily-Remaining": {
+                "$ref": "#/components/headers/X-Daily-Remaining"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Hold"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "You already hold this car (or this Idempotency-Key was used): the existing hold.",
+            "headers": {
+              "RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimit-Limit"
+              },
+              "RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimit-Remaining"
+              },
+              "RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimit-Reset"
+              },
+              "X-Daily-Limit": {
+                "$ref": "#/components/headers/X-Daily-Limit"
+              },
+              "X-Daily-Remaining": {
+                "$ref": "#/components/headers/X-Daily-Remaining"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Hold"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "unknown_parameter or invalid_idempotency_key.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "holds_not_available_for_partner (listing partners), holds_not_available_for_test_keys, insufficient_scope, or an account problem.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "vehicle_unavailable (held by someone else or sold: do not take payment) or hold_limit_reached.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "413": {
+            "$ref": "#/components/responses/BodyTooLarge"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    },
+    "/holds": {
+      "get": {
+        "tags": [
+          "Holds"
+        ],
+        "operationId": "listHolds",
+        "summary": "Your holds",
+        "description": "Your active holds and every hold from the last 30 days, newest first.",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "oauth": [
+              "stock:hold"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Holds.",
+            "headers": {
+              "RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimit-Limit"
+              },
+              "RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimit-Remaining"
+              },
+              "RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimit-Reset"
+              },
+              "X-Daily-Limit": {
+                "$ref": "#/components/headers/X-Daily-Limit"
+              },
+              "X-Daily-Remaining": {
+                "$ref": "#/components/headers/X-Daily-Remaining"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Hold"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/UnknownParameter"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "holds_not_available_for_partner (listing partners), holds_not_available_for_test_keys, insufficient_scope, or an account problem.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    },
+    "/holds/{hold_id}": {
+      "delete": {
+        "tags": [
+          "Holds"
+        ],
+        "operationId": "releaseHold",
+        "summary": "Release a hold",
+        "description": "Your buyer walked away: the car returns to sale everywhere within 2 minutes.",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "oauth": [
+              "stock:hold"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "hold_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "hld_01k7a3m9x2d5q8r4t6v0w1y3z5"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Released.",
+            "headers": {
+              "RateLimit-Limit": {
+                "$ref": "#/components/headers/RateLimit-Limit"
+              },
+              "RateLimit-Remaining": {
+                "$ref": "#/components/headers/RateLimit-Remaining"
+              },
+              "RateLimit-Reset": {
+                "$ref": "#/components/headers/RateLimit-Reset"
+              },
+              "X-Daily-Limit": {
+                "$ref": "#/components/headers/X-Daily-Limit"
+              },
+              "X-Daily-Remaining": {
+                "$ref": "#/components/headers/X-Daily-Remaining"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Hold"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/UnknownParameter"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "holds_not_available_for_partner (listing partners), holds_not_available_for_test_keys, insufficient_scope, or an account problem.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "hold_not_active: the hold already ended.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2131,6 +2498,111 @@
             }
           }
         }
+      },
+      "Hold": {
+        "type": "object",
+        "properties": {
+          "hold_id": {
+            "type": "string"
+          },
+          "stock_no": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "active",
+              "released",
+              "expired",
+              "converted"
+            ],
+            "description": "converted: Toco confirmed the sale."
+          },
+          "buyer_ref": {
+            "type": "string"
+          },
+          "destination_country": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "price": {
+            "type": "object",
+            "description": "Your price, locked for the life of the hold.",
+            "properties": {
+              "amount": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "currency": {
+                "type": "string"
+              },
+              "basis": {
+                "type": "string",
+                "const": "FOB"
+              }
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Null once Toco has the payment and is confirming the sale."
+          },
+          "ended_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "WebhookEvent": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "created_at",
+          "data"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Delivery id; the same as X-Toco-Delivery. Ignore an id you have already processed."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "vehicle.created",
+              "vehicle.updated",
+              "vehicle.status_changed",
+              "vehicle.sold",
+              "vehicle.removed",
+              "hold.expiring",
+              "hold.expired",
+              "hold.released",
+              "ping"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "data": {
+            "type": "object",
+            "description": "Vehicle events: stock_no, status, updated_at. Hold events: hold_id, stock_no, buyer_ref, expires_at."
+          }
+        }
       }
     },
     "parameters": {
@@ -2141,6 +2613,185 @@
         "description": "ETag from an earlier response. A 304 does not count against your daily limit.",
         "schema": {
           "type": "string"
+        }
+      }
+    }
+  },
+  "webhooks": {
+    "vehicleChange": {
+      "post": {
+        "summary": "A vehicle changed (vehicle.* events)",
+        "description": "Sent to your notification address as JSON. Answer with any 2xx within 10 seconds. Failed deliveries are retried with growing gaps for 24 hours.",
+        "parameters": [
+          {
+            "name": "X-Toco-Event",
+            "in": "header",
+            "required": true,
+            "description": "The event type.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Toco-Delivery",
+            "in": "header",
+            "required": true,
+            "description": "Unique delivery id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Toco-Timestamp",
+            "in": "header",
+            "required": true,
+            "description": "Unix time the message was signed.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Toco-Signature",
+            "in": "header",
+            "required": true,
+            "description": "t=<timestamp>,v1=<hex HMAC-SHA256 of \"<timestamp>.<raw body>\" with your notification secret>.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookEvent"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Received."
+          }
+        }
+      }
+    },
+    "holdNotice": {
+      "post": {
+        "summary": "One of your holds is ending or ended (hold.* events)",
+        "description": "Sent to your notification address as JSON. Answer with any 2xx within 10 seconds. Failed deliveries are retried with growing gaps for 24 hours.",
+        "parameters": [
+          {
+            "name": "X-Toco-Event",
+            "in": "header",
+            "required": true,
+            "description": "The event type.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Toco-Delivery",
+            "in": "header",
+            "required": true,
+            "description": "Unique delivery id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Toco-Timestamp",
+            "in": "header",
+            "required": true,
+            "description": "Unix time the message was signed.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Toco-Signature",
+            "in": "header",
+            "required": true,
+            "description": "t=<timestamp>,v1=<hex HMAC-SHA256 of \"<timestamp>.<raw body>\" with your notification secret>.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookEvent"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Received."
+          }
+        }
+      }
+    },
+    "ping": {
+      "post": {
+        "summary": "Test message from the Toco admin",
+        "description": "Sent to your notification address as JSON. Answer with any 2xx within 10 seconds. Failed deliveries are retried with growing gaps for 24 hours.",
+        "parameters": [
+          {
+            "name": "X-Toco-Event",
+            "in": "header",
+            "required": true,
+            "description": "The event type.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Toco-Delivery",
+            "in": "header",
+            "required": true,
+            "description": "Unique delivery id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Toco-Timestamp",
+            "in": "header",
+            "required": true,
+            "description": "Unix time the message was signed.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Toco-Signature",
+            "in": "header",
+            "required": true,
+            "description": "t=<timestamp>,v1=<hex HMAC-SHA256 of \"<timestamp>.<raw body>\" with your notification secret>.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookEvent"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Received."
+          }
         }
       }
     }

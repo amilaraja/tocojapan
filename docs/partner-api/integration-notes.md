@@ -32,6 +32,9 @@ Module: `app/Modules/PartnerApi`. Tests: `tests/PartnerApi` (testsuite PartnerAp
 - Limits use Laravel's RateLimiter on the database cache store (no Redis on this server).
 - Variants are rendered from the 1280 px watermarked "gallery" file (phase 1) and cached in storage/app/private/partner-variants/{media id}/; deleted with the photo. Stale variants from old profiles are left until the photo goes.
 - PRE-EXISTING BUG found 2026-10-10 (not fixed, reported to the user): ConvertVehiclePhotoOnUpload is registered twice (Laravel listener auto-discovery + Event::listen in AppServiceProvider), so every uploaded photo is resized and watermarked twice. The master capture is guarded against it.
+- Webhook payloads are thin (event, stock_no, status); partners fetch details through the API, so a notice can never carry out-of-scope data. Events are judged per partner with `PartnerScope::matches()` (PHP twin of the SQL scope; a test keeps them identical): entering scope = vehicle.created, leaving = vehicle.removed.
+- Unsent notices about the same car are coalesced into the latest. Deliveries pin the DNS answer checked as public (CURLOPT_RESOLVE) so a rebind cannot reach Toco's network; redirects are not followed.
+- Test keys cannot place holds (a hold reserves a real car). Listing partners get 403 `holds_not_available_for_partner` even with a forged scope.
 - Follow-up outside this project: the Mailer's "include reserved" option (TOC-VEH-003, docs/mailer/integration-notes.md section 4) can now map to `reserved`. Not changed here (Mailer is a separate contract).
 
 ## 3. Shared-code change register
@@ -64,6 +67,7 @@ Every edit outside `app/Modules/PartnerApi` is listed here.
 | P3 Read API | Done 2026-10-10 | `GET /vehicles` (full + change sync, tombstones, cursor, ETag/304), `GET /vehicles/{stock_no}`, `/catalog/*`, `POST /cif`. Whitelist resource with contract test. Signed photo links (endpoint in P4). Partner tests also pass on MariaDB. |
 | P4 Images, limits, usage | Done 2026-10-10 | `GET /img/{token}` (signed, partner-bound, bare 404s, variants cached privately), per-minute/per-day/photo limits with RateLimit headers (304 free), request log + `GET /usage`, clean masters kept for new uploads. |
 | P5 Admin + docs page | Done 2026-10-10 | Partner Network group (partners.admin, seeded for super_admin + admin): Partners (wizard/tabs, suspend/reactivate/revoke with typed name), connection keys (one-time reveal, rotate, revoke), Holds (tabs, 30 s countdown, extend/release/mark sold). Docs at /partner/docs (+ openapi.json), admins only until go-live. Live smoke test in a rolled-back transaction: token, 71 vehicles, photo 1280 px WebP, catalogue, usage; no supplier data leaked. First real partner waits on the JWT pull/push answer. |
-| P6 Webhooks, partner holds, usage page | Next | |
+| P6 Webhooks, partner holds, usage page | Done 2026-10-10 | Signed change notifications (outbox, coalescing, backoff 24 h, HTTPS + public-IP pinning, `partners:webhooks` every minute), hold.expiring/expired/released; holds API for selling partners (idempotent, limits, listing/test-key refusals); admin Usage page, View usage, Send test event, notification secret. 85 partner tests on SQLite and MariaDB. |
+| P7 Notifications, dashboard, hardening, go-live | Next | |
 
 Known unrelated failures in the full suite (they fail without this module too): Auth AuthenticationTest, PasswordResetTest x3, RegistrationTest, CmsTest sitemap.

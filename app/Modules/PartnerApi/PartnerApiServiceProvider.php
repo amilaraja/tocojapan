@@ -3,7 +3,11 @@
 namespace App\Modules\PartnerApi;
 
 use App\Models\Vehicle;
+use App\Models\VehicleHold;
+use App\Modules\PartnerApi\Console\SendWebhooks;
+use App\Modules\PartnerApi\Domain\Webhooks\WebhookOutbox;
 use App\Modules\PartnerApi\Domain\Images\ImageVariants;
+use App\Modules\PartnerApi\Filament\Pages\PartnerUsage;
 use App\Modules\PartnerApi\Filament\Resources\Holds\VehicleHoldResource;
 use App\Modules\PartnerApi\Filament\Resources\Partners\PartnerResource;
 use App\Modules\PartnerApi\Http\Controllers\DocsController;
@@ -67,7 +71,34 @@ class PartnerApiServiceProvider extends ServiceProvider
         Media::deleted($touchVehicle);
         Media::deleted(fn (Media $media) => ImageVariants::forget($media->id));
 
+        // Change notifications (FR-SYNC-02). Never allowed to break a save.
+        $notify = function (callable $callback): void {
+            try {
+                $callback();
+            } catch (Throwable $e) {
+                report($e);
+            }
+        };
+        Vehicle::created(fn (Vehicle $vehicle) => $notify(fn () => WebhookOutbox::vehicleChanged($vehicle, created: true)));
+        Vehicle::updated(fn (Vehicle $vehicle) => $notify(fn () => WebhookOutbox::vehicleChanged($vehicle)));
+        Vehicle::deleted(fn (Vehicle $vehicle) => $notify(fn () => WebhookOutbox::vehicleChanged($vehicle, deleted: true)));
+        VehicleHold::updated(fn (VehicleHold $hold) => $notify(function () use ($hold) {
+            if ($hold->partner_id && $hold->wasChanged('state')) {
+                match (true) {
+                    $hold->state === VehicleHold::STATE_EXPIRED => WebhookOutbox::holdEvent($hold, WebhookOutbox::HOLD_EXPIRED),
+                    $hold->state === VehicleHold::STATE_RELEASED && ! str_starts_with((string) $hold->ended_reason, 'Released by partner')
+                        => WebhookOutbox::holdEvent($hold, WebhookOutbox::HOLD_RELEASED),
+                    default => null,
+                };
+            }
+        }));
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([SendWebhooks::class]);
+        }
+
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command('partners:webhooks')->everyMinute()->withoutOverlapping(5);
             $schedule->call(fn () => PartnerAccessToken::where('expires_at', '<', now()->subDay())->delete())
                 ->daily()->name('partner-api:prune-tokens');
             // §8.6: request logs kept 12 months.
@@ -84,7 +115,7 @@ class PartnerApiServiceProvider extends ServiceProvider
      */
     public static function filamentPages(): array
     {
-        return [];
+        return [PartnerUsage::class];
     }
 
     /** @return list<class-string> */

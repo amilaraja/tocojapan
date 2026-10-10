@@ -169,3 +169,14 @@ it('serves the partner docs to admins before go-live and to everyone after (FR-D
     $this->get('/partner/docs')->assertOk()->assertSee('Syncing stock');
     $this->get('/partner/docs/openapi.json')->assertOk()->assertJsonPath('openapi', '3.1.0');
 });
+
+it('shows a partner\'s usage, webhook health and recent activity (UI brief 4)', function () {
+    config(['partner_api.enabled' => true]);
+    $partner = Partners::make(['name' => 'JWT Japan', 'webhook_url' => 'https://hooks.example/toco']);
+    [$client] = Partners::client($partner);
+    $this->withToken(Partners::token($client))->getJson(Partners::url('vehicles'))->assertOk();
+    $this->flushHeaders();
+
+    $this->actingAs(partnerAdmin())->get('/admin/partner-usage?partner='.$partner->id)->assertOk()
+        ->assertSee('Calls today')->assertSee('1 of 20,000')->assertSee('Change notifications')->assertSee('Synced stock');
+});
