@@ -56,7 +56,8 @@ Every edit outside `app/Modules/PartnerApi` is listed here.
 | 2026-10-10 | app/Listeners/ConvertVehiclePhotoOnUpload.php | Copies the clean original to storage/app/private/media-masters/{media id}/ before watermarking (first pass only) | FR-IMG-01 |
 | 2026-10-10 | app/Providers/Filament/AdminPanelProvider.php | "Partner Network" navigation group; registers PartnerApiServiceProvider::filamentPages()/filamentResources()/filamentWidgets(); `databaseNotifications()` with 60 s polling | Menu registration; UI brief 6.1 bell |
 | 2026-10-10 | database/migrations/2026_10_10_600000_create_notifications_table.php | Laravel's standard notifications table | Filament database notifications |
-| 2026-10-10 | .env | `PARTNER_API_ENABLED=true`, `HOLDS_ENFORCED=true` | Go-live |
+| 2026-10-10 | .env | `PARTNER_API_ENABLED=true`, `HOLDS_ENFORCED=true`, `PARTNER_API_HOST=api.tocojapan.com` | Go-live |
+| 2026-10-10 | Server (outside git) | Cloudflare A record api → 200.234.45.127, DNS only (by the user). LiteSpeed: `api.$VH_NAME` alias in vhosts/tocojapan.com/vhost.conf; `api.tocojapan.com` added to both tocojapan.com listener maps in httpd_config.conf (backups in /root/migration/*before-api-20261010). New Let's Encrypt cert for tocojapan.com, www, api issued and renewed by acme.sh (/root/.acme.sh/tocojapan.com, installs to /etc/letsencrypt/live/tocojapan.com, reloads LiteSpeed); the old migrated cert had no renewal. | Dedicated API host (SRS section 6) |
 | 2026-10-10 | database/seeders/DatabaseSeeder.php | Calls PartnerPermissionSeeder | Permission seeding |
 | 2026-10-10 | resources/views/components/vehicle-card, vehicle-row, vehicles/show, vehicles/quick-view, partials/vehicle-buy-actions | "Under offer" badge and banner, buy buttons off, race message | UI brief 7 |
 
@@ -89,7 +90,6 @@ Every edit outside `app/Modules/PartnerApi` is listed here.
 ## 6. Open items
 
 - JWT Japan: pull (this API, nothing to build) or push (separate connector quote)? Needed before connecting JWT.
-- `api.tocojapan.com`: DNS, SSL and a LiteSpeed alias, then `PARTNER_API_HOST` (runbook).
 - Set `PARTNER_API_IMAGE_KEYS` to a dedicated key (today derived from APP_KEY).
 - Pre-existing bug, not fixed: the photo upload listener runs twice (double processing). One-line fix offered.
 - Mailer "include reserved" option can now map to `reserved` (Mailer contract).

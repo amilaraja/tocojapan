@@ -13,11 +13,7 @@
   "servers": [
     {
       "url": "https://api.tocojapan.com/partner/v1",
-      "description": "Production (once the API host is live)"
-    },
-    {
-      "url": "https://tocojapan.com/partner/v1",
-      "description": "Production (current host)"
+      "description": "Production"
     }
   ],
   "security": [

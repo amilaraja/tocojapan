@@ -11,7 +11,7 @@ The full reference is the OpenAPI 3.1 specification ([openapi.json](openapi.json
 - Sync every 5 to 15 minutes. Sold or removed cars must leave your site within 15 minutes; this is part of your partner contract.
 - Every vehicle carries a link back to its page on tocojapan.com, with your attribution code, so inquiries are credited to you.
 
-**Base URL:** `https://tocojapan.com/partner/v1`. This moves to `https://api.tocojapan.com/partner/v1` when the dedicated API host is ready. Toco will give you notice, and both will work during the switch.
+**Base URL:** `https://api.tocojapan.com/partner/v1`. This guide stays at `https://tocojapan.com/partner/docs`.
 
 All requests and responses use JSON over HTTPS (TLS 1.2 or later).
 
@@ -40,7 +40,7 @@ If a secret leaks, tell Toco at once and it will be revoked. Toco treats a secre
 Exchange your client ID and secret for an **access token** (OAuth 2.0 client credentials). The token lasts **15 minutes**. Reuse it until it expires, then request a new one. Do not request a token for every call.
 
 ```bash
-curl -s https://tocojapan.com/partner/v1/oauth/token \
+curl -s https://api.tocojapan.com/partner/v1/oauth/token \
   -u "$TOCO_CLIENT_ID:$TOCO_CLIENT_SECRET" \
   -d grant_type=client_credentials
 ```
@@ -57,7 +57,7 @@ curl -s https://tocojapan.com/partner/v1/oauth/token \
 Send the token on every other call:
 
 ```bash
-curl -s https://tocojapan.com/partner/v1/me \
+curl -s https://api.tocojapan.com/partner/v1/me \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -94,7 +94,7 @@ Keep a copy of Toco's stock in your own database and update it on a schedule. Th
 `updated_since` can go back at most 30 days. Further back, you get `400 sync_window_exceeded`: do a full sync instead.
 
 ```bash
-curl -s "https://tocojapan.com/partner/v1/vehicles?updated_since=2026-10-10T04:00:00Z&limit=100" \
+curl -s "https://api.tocojapan.com/partner/v1/vehicles?updated_since=2026-10-10T04:00:00Z&limit=100" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -146,7 +146,7 @@ When there is no price to show, `amount` is `null`, `on_request` is `true` and `
 Each photo has a stable `id` and a signed `url`:
 
 ```json
-"photos": [ { "id": "ph_3f9c1a07b2d4e6f80a1c", "url": "https://tocojapan.com/partner/v1/img/eyJ…", "width": 1280 } ]
+"photos": [ { "id": "ph_3f9c1a07b2d4e6f80a1c", "url": "https://api.tocojapan.com/partner/v1/img/eyJ…", "width": 1280 } ]
 ```
 
 - Photos carry the Toco watermark (`image_mode_applied: "watermarked"`).
@@ -238,7 +238,7 @@ function verify(req) {
 A **selling partner** takes a buyer's money itself, so it must first reserve the car in Toco's system. **Never take payment, or sign a sale, before you receive `201` for a hold.** A sale made without a hold, or after it ended, is at your own risk. Listing partners never hold cars: they get `403 holds_not_available_for_partner`.
 
 ```bash
-curl -s https://tocojapan.com/partner/v1/vehicles/E02060/holds \
+curl -s https://api.tocojapan.com/partner/v1/vehicles/E02060/holds \
   -H "Authorization: Bearer $TOKEN" \
   -H "Idempotency-Key: order-7781" \
   -H "Content-Type: application/json" \
@@ -337,6 +337,7 @@ Branch on `code`. `title` and `detail` are for people and may change. Errors fro
 
 | Date | Change |
 |---|---|
+| 2026-10-10 | API moved to its own host, `https://api.tocojapan.com/partner/v1`. |
 | 2026-10-10 | Change notifications (signed webhooks) and holds for selling partners (`POST /vehicles/{stock_no}/holds`, `GET /holds`, `DELETE /holds/{hold_id}`). |
 | 2026-10-10 | Photos: `GET /img/{token}`. Limits and `GET /usage`; rate-limit headers on every response. |
 | 2026-10-10 | Stock: `GET /vehicles` (full and change sync, tombstones, ETags), `GET /vehicles/{stock_no}`, catalogue lists, `POST /cif`. |
