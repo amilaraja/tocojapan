@@ -80,3 +80,7 @@ Supplier-feed vehicles live in the same `vehicles` table, linked by `supplier_id
 - Run tests with the config cache bypassed (bootstrap/cache/config.php otherwise points tests at production MySQL):
   APP_CONFIG_CACHE=/tmp/x.php APP_ROUTES_CACHE=/tmp/y.php APP_EVENTS_CACHE=/tmp/z.php VIEW_COMPILED_PATH=/tmp/toco-test-views APP_ENV=testing DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test
   Never leave root-owned files in storage/ or bootstrap/cache (root-compiled views caused a 500 on 2026-10-10): `chown -R tocoj9771:tocoj9771 storage bootstrap/cache` after running artisan as root.
+
+## JCT stock feed (app/Modules/JctFeed)
+JapaneseCarTrade.com pulls Toco's own stock daily in JCT's format: /feeds/jct/stock.json and /feeds/jct/stock.xml (?token=JCT_FEED_TOKEN; 404 while unset), photos at /feeds/jct/images/{id}-{hmac}.jpg (JPEG ≤1024x800, ≤512 KB).
+Separate from the Partner API (no partner tables). Read-only on vehicles. Notes: docs/jct-feed/README.md. `php artisan jct:feed [--warm] [--write=file]`. Tests: `--testsuite=JctFeed`.

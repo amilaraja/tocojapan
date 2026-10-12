@@ -1,6 +1,7 @@
 <?php
 
 use App\Providers\AppServiceProvider;
+use App\Modules\JctFeed\JctFeedServiceProvider;
 use App\Modules\Mailer\MailerServiceProvider;
 use App\Modules\PartnerApi\PartnerApiServiceProvider;
 use App\Providers\Filament\AdminPanelProvider;
@@ -10,4 +11,5 @@ return [
     AdminPanelProvider::class,
     MailerServiceProvider::class,
     PartnerApiServiceProvider::class,
+    JctFeedServiceProvider::class,
 ];

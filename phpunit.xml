@@ -17,6 +17,9 @@
         <testsuite name="PartnerApi">
             <directory>tests/PartnerApi</directory>
         </testsuite>
+        <testsuite name="JctFeed">
+            <directory>tests/JctFeed</directory>
+        </testsuite>
     </testsuites>
     <source>
         <include>
