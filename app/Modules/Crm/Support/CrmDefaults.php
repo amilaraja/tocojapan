@@ -36,6 +36,7 @@ class CrmDefaults
             CrmAccess::ROLE_ADMIN => [CrmAccess::ADMIN],
             CrmAccess::ROLE_AGENT => [CrmAccess::AGENT],
             CrmAccess::ROLE_OPERATIONS => [CrmAccess::OPERATIONS],
+            CrmAccess::ROLE_TEAM_LEAD => [CrmAccess::AGENT, CrmAccess::TEAM_LEAD],
             'super_admin' => [CrmAccess::ADMIN],
             'admin' => [CrmAccess::ADMIN],
         ];

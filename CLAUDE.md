@@ -86,8 +86,9 @@ JapaneseCarTrade.com pulls Toco's own stock daily in JCT's format: /feeds/jct/st
 Separate from the Partner API (no partner tables). Read-only on vehicles. Notes: docs/jct-feed/README.md. `php artisan jct:feed [--warm] [--write=file]`. Tests: `--testsuite=JctFeed`.
 
 ## TOCO CRM (app/Modules/Crm)
-SRS docs/crm/SRS-TOC-02_TOCO_CRM.docx + proposal WEB-TOC-02 (fixed price). Plan docs/crm/TOC-CRM-DEV-01_Build_Plan.md; register docs/crm/integration-notes.md (list every edit outside the module); staff guide docs/crm/staff-guide.md. IDs CRM-AREA-NNN.
+SRS docs/crm/SRS-TOC-02_TOCO_CRM.docx + proposal WEB-TOC-02 (fixed price). Plan docs/crm/TOC-CRM-DEV-01_Build_Plan.md; register docs/crm/integration-notes.md (list every edit outside the module); operating guide = CRM → CRM Help, source app/Modules/Crm/docs/help.md (update it with every behaviour change). IDs CRM-AREA-NNN.
 - On with `CRM_ENABLED=true`. Intake = model events after commit, wrapped in `Intake::safely` (never break a submission). Stage logic: `Domain/StageEngine` + `StepEffects` (order sync via `OrderSync`, which sets `$writing` to stop loops).
+- Roles: crm_admin, crm_agent, crm_team_lead, crm_operations (super_admin/admin act as CRM admin).
 - Buyers see the owner's NICKNAME only (crm_agent_status.nickname), never real names. CRM emails replace OrderStatusChanged and StaffMail while on.
 - Filament screens use inline styles (theme CSS is prebuilt); buyer pages live in resources/views/crm/portal and may only use Tailwind classes already in public/build (no node_modules on the server).
 - Blade: never mix `@php(...)` with `@php … @endphp` in one file. Filament closures: name query args `$query`.

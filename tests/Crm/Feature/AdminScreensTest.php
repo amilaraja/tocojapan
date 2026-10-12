@@ -27,7 +27,7 @@ it('renders every CRM screen for an admin', function () {
 
     $this->actingAs($admin);
     foreach (['cases', 'cases/create', 'cases/'.$case->id, 'customers', 'customers/'.$case->customer_id, 'tasks', 'queues', 'steps', 'templates',
-        'my-work', 'pipeline', 'team', 'sla', 'reports', 'settings', 'profile'] as $path) {
+        'my-work', 'pipeline', 'team', 'sla', 'reports', 'settings', 'profile', 'help'] as $path) {
         $this->get('/admin/crm/'.$path)->assertOk();
     }
 });
@@ -88,4 +88,17 @@ it('shows the CRM Case link on the order screen (CRM-INT-002)', function () {
     $order = CrmData::order($buyer, CrmData::car());
 
     $this->actingAs($admin)->get('/admin/orders/'.$order->id)->assertOk()->assertSee('CRM Case '.CrmCase::sole()->reference);
+});
+
+it('shows the operating guide to every CRM user under CRM Help', function () {
+    $this->actingAs(CrmData::staff())->get('/admin/crm/help')
+        ->assertOk()->assertSee('The five TOCO steps')->assertSee('Adding a new staff member')->assertSee('id="5-the-five-toco-steps-vehicle-sales"', false);
+});
+
+it('gives team leads their own role with agent rights', function () {
+    $lead = CrmData::staff(\App\Modules\Crm\Support\CrmAccess::ROLE_TEAM_LEAD);
+
+    expect(\App\Modules\Crm\Support\CrmAccess::isTeamLead($lead))->toBeTrue()
+        ->and(\App\Modules\Crm\Support\CrmAccess::canPick($lead))->toBeTrue();
+    $this->actingAs($lead)->get('/admin/crm/team')->assertOk();
 });

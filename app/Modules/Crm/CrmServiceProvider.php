@@ -154,6 +154,7 @@ class CrmServiceProvider extends ServiceProvider
             Filament\Pages\Reports::class,
             Filament\Pages\CrmSettingsPage::class,
             Filament\Pages\MyCrmProfile::class,
+            Filament\Pages\CrmHelp::class,
         ];
     }
 

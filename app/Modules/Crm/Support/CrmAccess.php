@@ -21,7 +21,10 @@ class CrmAccess
 
     public const ROLE_OPERATIONS = 'crm_operations';
 
-    public const ROLES = [self::ROLE_ADMIN, self::ROLE_AGENT, self::ROLE_OPERATIONS];
+    /** Agent rights plus every Case of their queues (the Users screen gives roles, not permissions). */
+    public const ROLE_TEAM_LEAD = 'crm_team_lead';
+
+    public const ROLES = [self::ROLE_ADMIN, self::ROLE_AGENT, self::ROLE_OPERATIONS, self::ROLE_TEAM_LEAD];
 
     public const ADMIN = 'crm.admin';
 

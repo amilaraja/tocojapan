@@ -1,7 +1,7 @@
 # TOCO CRM: integration notes
 
 Module `app/Modules/Crm` (SRS-TOC-02, proposal WEB-TOC-02). Plan: `docs/crm/TOC-CRM-DEV-01_Build_Plan.md`.
-Staff guide: `docs/crm/staff-guide.md`.
+Operating guide: admin **CRM → CRM Help** (source `app/Modules/Crm/docs/help.md`).
 
 ## 1. How it runs
 
