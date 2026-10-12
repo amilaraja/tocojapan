@@ -6,6 +6,7 @@ use App\Filament\Admin\Auth\Pages\Login;
 use App\Filament\Admin\Widgets\QuotesAndOrders;
 use App\Filament\Admin\Widgets\SearchConsoleChart;
 use App\Filament\Admin\Widgets\StatsOverview;
+use App\Modules\Crm\CrmServiceProvider;
 use App\Modules\Mailer\MailerServiceProvider;
 use App\Modules\PartnerApi\PartnerApiServiceProvider;
 use Filament\Http\Middleware\Authenticate;
@@ -52,7 +53,7 @@ class AdminPanelProvider extends PanelProvider
             // Bell for partner network alerts (UI brief 6.1).
             ->databaseNotifications()
             ->databaseNotificationsPolling('60s')
-            ->navigationGroups(['Catalogue', 'Content', 'Enquiries', 'Mailer', 'Partner Network', 'Shipping', 'System'])
+            ->navigationGroups(['CRM', 'Catalogue', 'Content', 'Enquiries', 'Mailer', 'Partner Network', 'Shipping', 'System'])
             ->renderHook(PanelsRenderHook::HEAD_END, fn (): string => Blade::render('@include("filament.admin.auth.head")'))
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn (): string => Blade::render('@include("filament.admin.auth.turnstile")'))
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_BEFORE, fn (): string => Blade::render('@include("filament.admin.auth.brand")'))
@@ -69,8 +70,10 @@ class AdminPanelProvider extends PanelProvider
                 ...MailerServiceProvider::filamentPages(),
                 // Partner Stock API screens (gated by partners.admin).
                 ...PartnerApiServiceProvider::filamentPages(),
+                // TOCO CRM screens (each gates itself with CrmAccess).
+                ...CrmServiceProvider::filamentPages(),
             ])
-            ->resources([...MailerServiceProvider::filamentResources(), ...PartnerApiServiceProvider::filamentResources()])
+            ->resources([...MailerServiceProvider::filamentResources(), ...PartnerApiServiceProvider::filamentResources(), ...CrmServiceProvider::filamentResources()])
             ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\\Filament\\Admin\\Widgets')
             ->widgets([
                 AccountWidget::class,

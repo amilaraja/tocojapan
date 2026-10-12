@@ -85,6 +85,10 @@ class CampaignPusher
             'htmlContent' => $html,
             'recipients' => ['listIds' => array_values(array_map('intval', $campaign->list_ids))],
         ];
+        // Buyers in the middle of a purchase are skipped (TOCO CRM; docs/mailer/integration-notes.md §9).
+        if (class_exists(\App\Modules\Crm\Domain\MailerHandshake::class) && ($exclude = \App\Modules\Crm\Domain\MailerHandshake::exclusionListId())) {
+            $payload['recipients']['exclusionListIds'] = [$exclude];
+        }
 
         try {
             if ($campaign->brevo_campaign_id) {

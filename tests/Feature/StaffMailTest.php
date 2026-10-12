@@ -27,6 +27,9 @@ it('sends staff alerts to the configured list, falling back to the contact email
 });
 
 it('emails sales when a customer requests a quote and when they reply', function () {
+    // Legacy email path, used while the TOCO CRM is off (the CRM replaces it: tests/Crm).
+    config(['crm.enabled' => false]);
+
     Notification::fake();
     setStaffEmails('sales@example.com');
     $make = Make::create(['slug' => 'toyota', 'name' => 'Toyota']);

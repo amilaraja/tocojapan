@@ -1,6 +1,7 @@
 <?php
 
 use App\Providers\AppServiceProvider;
+use App\Modules\Crm\CrmServiceProvider;
 use App\Modules\JctFeed\JctFeedServiceProvider;
 use App\Modules\Mailer\MailerServiceProvider;
 use App\Modules\PartnerApi\PartnerApiServiceProvider;
@@ -12,4 +13,5 @@ return [
     MailerServiceProvider::class,
     PartnerApiServiceProvider::class,
     JctFeedServiceProvider::class,
+    CrmServiceProvider::class,
 ];

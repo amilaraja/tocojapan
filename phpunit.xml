@@ -20,6 +20,9 @@
         <testsuite name="JctFeed">
             <directory>tests/JctFeed</directory>
         </testsuite>
+        <testsuite name="Crm">
+            <directory>tests/Crm</directory>
+        </testsuite>
     </testsuites>
     <source>
         <include>
@@ -27,6 +30,7 @@
         </include>
     </source>
     <php>
+        <env name="CRM_ENABLED" value="true"/>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>

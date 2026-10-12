@@ -64,6 +64,9 @@ it('marks an order paid when a capture completes', function () {
 });
 
 it('notifies the buyer even though they never came back to the site', function () {
+    // Legacy email path, used while the TOCO CRM is off (the CRM replaces it: tests/Crm).
+    config(['crm.enabled' => false]);
+
     $this->postJson('/webhooks/paypal', captureEvent($this->order))->assertOk();
 
     Notification::assertSentTo($this->order->user, \App\Notifications\OrderStatusChanged::class);

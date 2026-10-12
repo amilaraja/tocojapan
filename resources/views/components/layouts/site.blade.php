@@ -414,6 +414,7 @@
                     <li><a href="{{ route('cms.page', 'contact') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Contact Us</a></li>
                     @auth
                         <li><a href="{{ route('dashboard') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">Dashboard</a></li>
+                        @if (Route::has('crm.portal.index'))<li><a href="{{ route('crm.portal.index') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">My purchases</a></li>@endif
                         <li><a href="{{ route('orders.index') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">My orders @if (($unreadMessageCount ?? 0) > 0)<span class="ml-2 inline-block bg-toco-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ $unreadMessageCount }}</span>@endif</a></li>
                         <li><a href="{{ route('favorites.index') }}" class="block px-5 py-3.5 hover:bg-toco-silver-2">My wishlist @if ($wishlistCount > 0)<span class="ml-2 inline-block bg-toco-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ $wishlistCount }}</span>@endif</a></li>
                     @else

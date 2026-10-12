@@ -153,6 +153,10 @@
             {{ $vehTitleNice }} for sale
             @if ($vehicle->bodyType?->name)<span class="text-ink-soft font-semibold"> — {{ $vehicle->bodyType->name }}</span>@endif
         </h1>
+        {{-- TOCO CRM: a logged-in buyer sees their open enquiry on this car (CRM-POR-007). --}}
+        @auth
+            @includeWhen(Route::has('crm.portal.index'), 'crm.portal.partials.vehicle-badge', ['vehicle' => $vehicle])
+        @endauth
         @if ($vehicle->mileage_km || $vehicle->transmission || $vehicle->fuel)
             <p class="text-sm text-ink-soft mt-1">
                 {{ collect([

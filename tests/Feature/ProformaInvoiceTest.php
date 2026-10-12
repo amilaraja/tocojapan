@@ -77,6 +77,9 @@ it('refuses a port that does not accept LC', function () {
 });
 
 it('creates the proforma, notifies sales and lets only the owner download the PDF', function () {
+    // Legacy email path, used while the TOCO CRM is off (the CRM replaces it: tests/Crm).
+    config(['crm.enabled' => false]);
+
     $this->actingAs($this->user)->post(route('proforma.store', $this->vehicle->slug), [
         'port_id' => $this->brisbane->id, 'consignee_name' => 'Dane Walsh',
         'consignee_address' => "9 Merivale Ave Jimboomba, QLD\nAustralia 4280", 'consignee_phone' => '+61 0000000000',

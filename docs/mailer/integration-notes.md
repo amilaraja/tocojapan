@@ -138,6 +138,7 @@ Write safety: `Vehicle::booted()` has a `saving` hook. `VehicleSource` never cal
 | `.gitignore` | ignore the design zip | done in 7d76bd7 |
 | `composer.json` / `composer.lock` | `giggsey/libphonenumber-for-php-lite` ^9.0 (phone numbers to E.164 for the buyer database) | addendum A1, TOC-BUY-002 (8 Oct 2026) |
 | `app/Modules/Mailer/Domain/Vehicles/VehicleSource.php` | campaign vehicle search limited to Toco own stock (supplier-feed vehicles excluded) | OnePrice supplier import 2026-10-06: feed vehicles have hotlinked photos only |
+| `app/Modules/Mailer/Domain/Campaigns/CampaignPusher.php` | pushed campaigns add `recipients.exclusionListIds` = the TOCO CRM "buying now" Brevo list when it exists (`MailerHandshake::exclusionListId()`) | TOCO CRM 2026-10-13 (proposal WEB-TOC-02 p.6): buyers mid-purchase get no stock emails. Nothing is sent; list membership only (CRM `crm:mailer-sync`) |
 
 ## 10. Open items still needed from TOCO before later phases
 

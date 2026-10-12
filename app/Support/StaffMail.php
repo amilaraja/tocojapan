@@ -28,6 +28,13 @@ class StaffMail
 
     public static function send(Notification $notification, string $what): void
     {
+        // The TOCO CRM routes new enquiries to their owner, or to the CRM admins (CRM-INT-004).
+        if (\App\Modules\Crm\CrmServiceProvider::enabled()) {
+            Log::info("Staff email handled by the CRM: {$what}");
+
+            return;
+        }
+
         $to = self::recipients();
         try {
             Notifier::route('mail', $to)->notify($notification);

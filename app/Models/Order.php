@@ -111,6 +111,11 @@ class Order extends Model
         };
         $this->save();
 
+        // The TOCO CRM emails the buyer at each step instead (docs/crm/integration-notes.md).
+        if (\App\Modules\Crm\CrmServiceProvider::enabled() && \App\Modules\Crm\CrmServiceProvider::replacesOrderEmails()) {
+            return;
+        }
+
         try {
             $this->user->notify(new \App\Notifications\OrderStatusChanged($this, $previous));
         } catch (\Throwable $e) {

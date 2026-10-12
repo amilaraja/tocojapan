@@ -84,3 +84,11 @@ Supplier-feed vehicles live in the same `vehicles` table, linked by `supplier_id
 ## JCT stock feed (app/Modules/JctFeed)
 JapaneseCarTrade.com pulls Toco's own stock daily in JCT's format: /feeds/jct/stock.json and /feeds/jct/stock.xml (?token=JCT_FEED_TOKEN; 404 while unset), photos at /feeds/jct/images/{id}-{hmac}.jpg (JPEG ≤1024x800, ≤512 KB).
 Separate from the Partner API (no partner tables). Read-only on vehicles. Notes: docs/jct-feed/README.md. `php artisan jct:feed [--warm] [--write=file]`. Tests: `--testsuite=JctFeed`.
+
+## TOCO CRM (app/Modules/Crm)
+SRS docs/crm/SRS-TOC-02_TOCO_CRM.docx + proposal WEB-TOC-02 (fixed price). Plan docs/crm/TOC-CRM-DEV-01_Build_Plan.md; register docs/crm/integration-notes.md (list every edit outside the module); staff guide docs/crm/staff-guide.md. IDs CRM-AREA-NNN.
+- On with `CRM_ENABLED=true`. Intake = model events after commit, wrapped in `Intake::safely` (never break a submission). Stage logic: `Domain/StageEngine` + `StepEffects` (order sync via `OrderSync`, which sets `$writing` to stop loops).
+- Buyers see the owner's NICKNAME only (crm_agent_status.nickname), never real names. CRM emails replace OrderStatusChanged and StaffMail while on.
+- Filament screens use inline styles (theme CSS is prebuilt); buyer pages live in resources/views/crm/portal and may only use Tailwind classes already in public/build (no node_modules on the server).
+- Blade: never mix `@php(...)` with `@php … @endphp` in one file. Filament closures: name query args `$query`.
+- Tests: `--testsuite=Crm`, helpers Tests\Crm\Support\CrmData. Commands: crm:tick, crm:inbound, crm:mailer-sync, crm:digest [--dry], crm:import [--apply].

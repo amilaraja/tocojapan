@@ -7,6 +7,7 @@
 @php
     $accountNav = [
         ['dashboard', 'Dashboard', route('dashboard'), 'M4 13h6V4H4zM14 9h6V4h-6zM14 20h6v-9h-6zM4 20h6v-7H4z'],
+        ...(Route::has('crm.portal.index') ? [['purchases', 'My Purchases', route('crm.portal.index'), 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11']] : []),
         ['orders', 'My Orders', route('orders.index'), 'M3 7l9-4 9 4-9 4-9-4zm0 0v10l9 4 9-4V7M12 11v10'],
         ['favorites', 'Wishlist', route('favorites.index'), 'M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.7A4 4 0 0 1 19 11c0 5.5-7 10-7 10z'],
         ['quotes', 'Quotes', route('quotes.index'), 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'],
