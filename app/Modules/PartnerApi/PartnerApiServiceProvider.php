@@ -22,6 +22,7 @@ use App\Modules\PartnerApi\Http\Middleware\RequireScope;
 use App\Modules\PartnerApi\Models\PartnerAccessToken;
 use App\Modules\PartnerApi\Models\PartnerRequestLog;
 use App\Modules\PartnerApi\Support\PartnerApi;
+use App\Modules\PartnerApi\Support\PartnerApiException;
 use App\Modules\PartnerApi\Support\Problem;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Debug\ExceptionHandler;
@@ -59,6 +60,8 @@ class PartnerApiServiceProvider extends ServiceProvider
         // Every error on a partner route is problem+json (SRS §6 conventions).
         $handler = $this->app->make(ExceptionHandler::class);
         if ($handler instanceof Handler) {
+            // Answers partners are meant to get (401, 404, 429 …) are not errors: keep the log for real failures.
+            $handler->dontReport([PartnerApiException::class]);
             $handler->renderable(function (Throwable $e, Request $request) {
                 return PartnerApi::isPartnerRequest($request) ? Problem::fromThrowable($e, $request) : null;
             });
