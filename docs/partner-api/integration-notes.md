@@ -60,6 +60,7 @@ Every edit outside `app/Modules/PartnerApi` is listed here.
 | 2026-10-10 | Server (outside git) | Cloudflare A record api → 200.234.45.127, DNS only (by the user). LiteSpeed: `api.$VH_NAME` alias in vhosts/tocojapan.com/vhost.conf; `api.tocojapan.com` added to both tocojapan.com listener maps in httpd_config.conf (backups in /root/migration/*before-api-20261010). New Let's Encrypt cert for tocojapan.com, www, api issued and renewed by acme.sh (/root/.acme.sh/tocojapan.com, installs to /etc/letsencrypt/live/tocojapan.com, reloads LiteSpeed); the old migrated cert had no renewal. | Dedicated API host (SRS section 6) |
 | 2026-10-10 | database/seeders/DatabaseSeeder.php | Calls PartnerPermissionSeeder | Permission seeding |
 | 2026-10-10 | resources/views/components/vehicle-card, vehicle-row, vehicles/show, vehicles/quick-view, partials/vehicle-buy-actions | "Under offer" badge and banner, buy buttons off, race message | UI brief 7 |
+| 2026-10-12 | resources/views/components/layouts/site.blade.php | Footer "Other" column: "API Developer Guide" link to /partner/docs | Client request: partners find the docs from the site |
 
 ## 4. Progress
 

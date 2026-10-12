@@ -501,6 +501,7 @@
                     <li><a href="{{ route('cms.page', 'import-regulations') }}" class="hover:text-white">Import Regulation</a></li>
                     <li><a href="{{ route('cms.page', 'shipping-schedule') }}" class="hover:text-white">Shipping Schedule</a></li>
                     <li><a href="{{ route('news.index') }}" class="hover:text-white">News and Updates</a></li>
+                    <li><a href="{{ route('partner-docs') }}" class="hover:text-white">API Developer Guide</a></li>
                 </ul>
             </div>
 

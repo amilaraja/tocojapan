@@ -1886,7 +1886,8 @@
                 "enum": [
                   "live",
                   "test"
-                ]
+                ],
+                "description": "Kind of key in use. Both read the same live stock; test keys (tcp_test_) cannot place holds. See the guide, section 3."
               }
             }
           },

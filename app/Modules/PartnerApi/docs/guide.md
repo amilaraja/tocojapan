@@ -31,6 +31,18 @@ Toco gives you one or more sets of **connection keys**, for example one for prod
 - a **client ID**, such as `tcc_4f1c2a9e0b7d3e5f6a8c`. It is not secret.
 - a **client secret**, such as `tcp_live_…` (live) or `tcp_test_…` (testing). It is shown **once**, when Toco creates it. Store it in your server's secret store.
 
+**Testing and live keys.** There is no separate sandbox. Both kinds of key read the same live stock, prices, photos and CIF estimates, through the same base URL.
+
+| | Testing key | Live key |
+|---|---|---|
+| Secret starts with | `tcp_test_` | `tcp_live_` |
+| Stock, prices, photos, CIF | Live data | Live data |
+| Holds (selling partners) | Refused with `403 holds_not_available_for_test_keys`, because a hold reserves a real car | Allowed |
+| Daily limits | Shared with your live keys | Shared with your testing keys |
+| `GET /me` → `client.environment` | `test` | `live` |
+
+Use a testing key while you build, or give it to a contractor. It can be revoked on its own without touching production. Do not publish a live site on a testing key: when you launch, ask Toco for a live key and Toco will revoke the testing key. Selling partners can build and test their whole integration on a testing key without reserving a real car by accident.
+
 If a secret leaks, tell Toco at once and it will be revoked. Toco treats a secret found in browser code or a public repository as leaked.
 
 **Rotation.** Toco can rotate a secret on request or on a schedule. The old secret keeps working for **7 days** after rotation, so you can switch without downtime.
@@ -337,6 +349,7 @@ Branch on `code`. `title` and `detail` are for people and may change. Errors fro
 
 | Date | Change |
 |---|---|
+| 2026-10-12 | Guide: how testing keys differ from live keys (section 3). No API change. |
 | 2026-10-10 | API moved to its own host, `https://api.tocojapan.com/partner/v1`. |
 | 2026-10-10 | Change notifications (signed webhooks) and holds for selling partners (`POST /vehicles/{stock_no}/holds`, `GET /holds`, `DELETE /holds/{hold_id}`). |
 | 2026-10-10 | Photos: `GET /img/{token}`. Limits and `GET /usage`; rate-limit headers on every response. |
