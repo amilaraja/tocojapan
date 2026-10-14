@@ -33,6 +33,7 @@ signature, and only photos of cars currently in the feed are served.
 - Chassis number masked like the website (`ZVG1*-*******`) unless `JCT_FEED_FULL_CHASSIS=true`.
 - Up to 10 photos, JPEG, fitted inside 1024 x 800, quality stepped down until ≤ 512 KB. Rendered from the
   watermarked `gallery` file on first request, cached in `storage/app/private/jct-feed/images/`.
+- `type` from JCT's type list (SUV, Sedan-car, Hatchback, Wagon, Van-minivan, Trucks, Mini Truck, BUS, Machinery, Bikes, Mini Car …), mapped from our body type; a "Truck" of 660 cc or less goes as Mini Truck. `subtype` (replaces `body_type`, JCT feedback 2026-10-14) only for Trucks (Dump, Crane, Freezer, Garbage, Box Body, Flatbody, from words in the title or description), BUS (Minibus / Large Bus) and Machinery; left out when unknown.
 - `location` = Japan, `port` = `JCT_FEED_PORT` (default Yokohama). `other_info` = description as plain
   text, max 500 characters. `accessories` = feature labels, comma separated.
 - Not sent (no data at Toco): `grade_ext`, `grade_int`, `loading_capacity`, `repaired`, `accident`,

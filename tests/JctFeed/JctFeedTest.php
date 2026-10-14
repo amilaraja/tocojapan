@@ -166,3 +166,16 @@ it('caps the feed at the membership limit and at 10 photos per car', function ()
         ->and($data->{'1'}['stock_number'])->toBe($newest->stock_no)
         ->and($data->{'1'}['picture'])->toHaveCount(10);
 });
+
+it('sends JCT types, and a subtype only for trucks, buses and machinery', function () {
+    $body = fn (string $name) => \App\Models\BodyType::firstOrCreate(['slug' => \Illuminate\Support\Str::slug($name)], ['name' => $name])->id;
+    $row = fn (array $attributes) => JctStockFeed::row(jctCar($attributes)->load('bodyType'));
+
+    expect($row(['body_type_id' => $body('Mini Van'), 'engine_cc' => 1800]))->toMatchArray(['type' => 'Van-minivan'])->not->toHaveKeys(['subtype', 'body_type'])
+        ->and($row(['body_type_id' => $body('Sedan'), 'engine_cc' => 1500])['type'])->toBe('Sedan-car')
+        ->and($row(['body_type_id' => $body('Truck'), 'engine_cc' => 660])['type'])->toBe('Mini Truck')
+        ->and($row(['body_type_id' => $body('Truck'), 'engine_cc' => 4000, 'title' => '2012 Fuso Canter Dump']))->toMatchArray(['type' => 'Trucks', 'subtype' => 'Dump Truck'])
+        ->and($row(['body_type_id' => $body('Truck'), 'engine_cc' => 4000, 'title' => '2012 Fuso Canter', 'description' => null]))->toMatchArray(['type' => 'Trucks'])->not->toHaveKey('subtype')
+        ->and($row(['body_type_id' => $body('Mini Bus'), 'engine_cc' => 4000]))->toMatchArray(['type' => 'BUS', 'subtype' => 'Minibus'])
+        ->and($row(['body_type_id' => $body('Heavy Equipment'), 'title' => 'Komatsu PC30 excavator']))->toMatchArray(['type' => 'Machinery', 'subtype' => 'Excavator']);
+});

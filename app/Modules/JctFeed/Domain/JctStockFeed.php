@@ -79,8 +79,8 @@ class JctStockFeed
             'update_date' => $vehicle->updated_at?->copy()->setTimezone($tz)->format('Y-m-d H:i:s'),
             'location' => config('jct_feed.location'),
             'port' => config('jct_feed.port'),
-            'type' => self::type($vehicle),
-            'body_type' => $vehicle->bodyType?->name,
+            'type' => $type = self::type($vehicle),
+            'subtype' => self::subtype($vehicle, $type),
             'make' => $vehicle->make?->name,
             'maker' => $vehicle->vehicleModel?->name,
             'model' => $vehicle->grade,
@@ -200,18 +200,70 @@ class JctStockFeed
         return (string) (int) round($value);
     }
 
-    /** JCT vehicle type: Car, Truck, Bus, Machinery or Bike. */
+    /**
+     * JCT vehicle type, from JCT's list (feedback 2026-10-14): SUV, Sedan-car, Hatchback, Wagon,
+     * Van-minivan, Trucks, Coupe, Sports Cars, Pickup, Mini Truck, BUS, Convertible, Machinery,
+     * Bikes, Mini Car, … Mapped from our body type; a "Truck" of 660 cc or less is a kei Mini Truck.
+     */
     private static function type(Vehicle $vehicle): string
     {
         $body = strtolower((string) $vehicle->bodyType?->name);
+        $cc = (int) $vehicle->engine_cc;
 
         return match (true) {
-            str_contains($body, 'truck') => 'Truck',
-            str_contains($body, 'bus') => 'Bus',
+            str_contains($body, 'mini truck') => 'Mini Truck',
+            str_contains($body, 'truck') => $cc > 0 && $cc <= 660 ? 'Mini Truck' : 'Trucks',
+            str_contains($body, 'bus') => 'BUS',
             str_contains($body, 'equipment') || str_contains($body, 'machinery') => 'Machinery',
-            str_contains($body, 'motorcycle') || str_contains($body, 'bike') => 'Bike',
-            default => 'Car',
+            str_contains($body, 'motorcycle') || str_contains($body, 'bike') => 'Bikes',
+            str_contains($body, 'van') => 'Van-minivan',
+            str_contains($body, 'sedan') => 'Sedan-car',
+            str_contains($body, 'hatch') => 'Hatchback',
+            str_contains($body, 'suv') => 'SUV',
+            str_contains($body, 'wagon') => 'Wagon',
+            str_contains($body, 'coupe') => 'Coupe',
+            str_contains($body, 'convertible') => 'Convertible',
+            str_contains($body, 'pickup') => 'Pickup',
+            $cc > 0 && $cc <= 660 => 'Mini Car',
+            default => 'Sedan-car',
         };
+    }
+
+    /** JCT subtype: only for Trucks, BUS and Machinery; left out when we cannot tell. */
+    private static function subtype(Vehicle $vehicle, string $type): ?string
+    {
+        if ($type === 'BUS') {
+            return str_contains(strtolower((string) $vehicle->bodyType?->name), 'mini') ? 'Minibus' : 'Large Bus';
+        }
+
+        $text = strtolower($vehicle->title.' '.$vehicle->grade.' '.$vehicle->description);
+        $words = match ($type) {
+            'Trucks' => [
+                'Dump Truck' => ['dump', 'tipper'],
+                'Crane Truck' => ['crane', 'unic'],
+                'Freezer Truck' => ['freezer', 'refrigerat', 'reefer'],
+                'Garbage Truck' => ['garbage', 'packer'],
+                'Box Body Truck' => ['box body', 'dry van', 'wing body', 'aluminum van', 'aluminium van'],
+                'Flatbody Truck' => ['flat body', 'flatbody', 'flat deck', 'flatbed', 'flat bed'],
+            ],
+            'Machinery' => [
+                'Excavator' => ['excavator', 'backhoe'],
+                'Wheel Loader' => ['wheel loader', 'loader'],
+                'Bulldozer' => ['bulldozer', 'dozer'],
+                'Heavy Cranes' => ['crane'],
+                'Crawler' => ['crawler'],
+            ],
+            default => [],
+        };
+        foreach ($words as $subtype => $needles) {
+            foreach ($needles as $needle) {
+                if (str_contains($text, $needle)) {
+                    return $subtype;
+                }
+            }
+        }
+
+        return null;
     }
 
     /** Feature labels, flattened and de-duplicated. @return list<string> */
