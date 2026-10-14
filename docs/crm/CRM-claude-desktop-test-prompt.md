@@ -25,7 +25,7 @@ Three browser windows are already open and logged in:
 - **GMAIL**: a Gmail tab (amilaraja@gmail.com). Emails to the agent and buyer arrive here, addressed to
   amilaraja+tocoagent@gmail.com and amilaraja+tocobuyer@gmail.com.
 
-The test car is stock number **[FILL IN, e.g. E02099]**, titled "TEST CAR – CRM demo (do not buy)".
+The test car is stock number **TEST01** (page: tocojapan.com/vehicles/test-car-crm-demo-do-not-buy), titled "TEST CAR – CRM demo (do not buy)".
 
 ### Safety rules (follow strictly)
 - Only work with the TEST CAR, the Case created in this test, Demo Agent and Demo Buyer. Never open, edit, reply to,
