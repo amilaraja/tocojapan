@@ -66,6 +66,8 @@ class CheckoutFlow
     {
         return Country::query()
             ->where('is_active', true)
+            // Only countries a buyer can actually ship to; others would show an empty port list.
+            ->whereHas('ports', fn ($q) => $q->where('is_active', true))
             ->with(['ports' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')])
             ->orderBy('sort_order')->orderBy('name')
             ->get();
