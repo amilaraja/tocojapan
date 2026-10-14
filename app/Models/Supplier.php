@@ -126,21 +126,82 @@ class Supplier extends Model
 
     /**
      * Profit margin to apply: an import's own override wins, then this
-     * supplier's setting, then the site default. Each part falls back on its
-     * own, so a supplier can override only the % and keep the default fixed amount.
+     * supplier's setting, then the site default tiers (Site settings → Supplier stock).
+     * A flat override replaces the tiers; each overridden part falls back on its own,
+     * so a supplier can override only the % and keep the legacy default fixed amount.
      *
      * @param  array{percent?: float|int|string|null, fixed_usd?: float|int|string|null}|null  $override
-     * @return array{percent: float, fixed_usd: float}
+     * @return array{percent: float, fixed_usd: float, tiers?: list<array{from_usd: float, to_usd: ?float, percent: float, fixed_usd: float}>}
      */
     public function effectiveMargin(?array $override = null): array
     {
         $site = app(StockSettings::class);
+        $parts = [$override['percent'] ?? null, $override['fixed_usd'] ?? null, $this->setting('margin_percent'), $this->setting('margin_fixed_usd')];
+
+        if (! collect($parts)->contains(fn ($v) => self::filled($v)) && ($tiers = $site->tiers()) !== []) {
+            return ['percent' => $tiers[0]['percent'], 'fixed_usd' => $tiers[0]['fixed_usd'], 'tiers' => $tiers];
+        }
+
         $pick = fn ($import, $supplier, $default) => (float) (self::filled($import) ? $import : (self::filled($supplier) ? $supplier : $default));
 
         return [
             'percent' => $pick($override['percent'] ?? null, $this->setting('margin_percent'), $site->supplier_margin_percent),
             'fixed_usd' => $pick($override['fixed_usd'] ?? null, $this->setting('margin_fixed_usd'), $site->supplier_margin_fixed_usd),
         ];
+    }
+
+    /**
+     * A stored margin (import stats, vehicle meta) in the shape fobFromSource() expects.
+     *
+     * @return array{percent: float, fixed_usd: float, tiers?: list<array{from_usd: float, to_usd: ?float, percent: float, fixed_usd: float}>}
+     */
+    public static function normaliseMargin(array $m): array
+    {
+        $out = ['percent' => (float) ($m['percent'] ?? 0), 'fixed_usd' => (float) ($m['fixed_usd'] ?? 0)];
+        if (! empty($m['tiers']) && is_array($m['tiers'])) {
+            $out['tiers'] = StockSettings::normaliseTiers($m['tiers']);
+        }
+
+        return $out;
+    }
+
+    /**
+     * The % and fixed amount for a converted (pre-margin) USD price: with tiers, the
+     * highest tier whose "from" is at or below the price (the lowest tier below that).
+     *
+     * @return array{percent: float, fixed_usd: float}
+     */
+    public static function marginFor(array $margin, float $baseUsd): array
+    {
+        $tiers = $margin['tiers'] ?? [];
+        if ($tiers === []) {
+            return ['percent' => (float) $margin['percent'], 'fixed_usd' => (float) $margin['fixed_usd']];
+        }
+        $hit = $tiers[0];
+        foreach ($tiers as $t) {
+            if ($baseUsd >= $t['from_usd']) {
+                $hit = $t;
+            }
+        }
+
+        return ['percent' => (float) $hit['percent'], 'fixed_usd' => (float) $hit['fixed_usd']];
+    }
+
+    /** Short admin label, e.g. "10% + $0 per vehicle" or "$0–2,000: 20%; $2,001+: $200". */
+    public static function describeMargin(array $m): string
+    {
+        $flat = fn ($pct, $fix) => collect([
+            (float) $pct ? rtrim(rtrim(number_format((float) $pct, 2), '0'), '.').'%' : null,
+            (float) $fix ? '$'.number_format((float) $fix) : null,
+        ])->filter()->implode(' + ') ?: '0%';
+
+        if (! empty($m['tiers'])) {
+            return collect($m['tiers'])->map(fn ($t) => '$'.number_format($t['from_usd'])
+                .($t['to_usd'] !== null ? '–'.number_format($t['to_usd']) : '+').': '.$flat($t['percent'], $t['fixed_usd']))
+                ->implode('; ');
+        }
+
+        return rtrim(rtrim(number_format((float) $m['percent'], 2), '0'), '.').'% + $'.number_format((float) $m['fixed_usd']).' per vehicle';
     }
 
     private static function filled(mixed $v): bool
@@ -150,10 +211,10 @@ class Supplier extends Model
 
     /**
      * USD FOB price for a supplier source price: converted at the current
-     * exchange rate, then the margin (% first, then the fixed USD amount),
-     * rounded up to the supplier's step.
+     * exchange rate, then the margin (% first, then the fixed USD amount; with
+     * tiers, the tier for the converted price), rounded up to the supplier's step.
      *
-     * @param  array{percent: float, fixed_usd: float}|null  $margin  null = effectiveMargin()
+     * @param  array{percent: float, fixed_usd: float, tiers?: array}|null  $margin  null = effectiveMargin()
      */
     public function fobFromSource(?float $source, ?float $rateToUsd = null, ?array $margin = null): ?float
     {
@@ -164,8 +225,9 @@ class Supplier extends Model
         if (! $rate || $rate <= 0) {
             return null;
         }
-        $margin ??= $this->effectiveMargin();
-        $usd = $source / $rate * (1 + $margin['percent'] / 100) + $margin['fixed_usd'];
+        $base = $source / $rate;
+        $m = self::marginFor($margin ?? $this->effectiveMargin(), $base);
+        $usd = $base * (1 + $m['percent'] / 100) + $m['fixed_usd'];
         $step = max(1, (int) $this->setting('round_to'));
 
         // round() first so float noise (16500.000000002) doesn't bump a step.

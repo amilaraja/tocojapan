@@ -141,17 +141,16 @@ class SupplierImportResource extends Resource
                 ->columns(2)
                 ->schema([
                     TextInput::make('margin_percent')->label('Margin %')->numeric()->minValue(0)->suffix('%')
-                        ->placeholder(fn (Get $get) => ($s = $supplier($get)) ? (string) $s->effectiveMargin()['percent'] : null),
+                        ->placeholder(fn (Get $get) => ($s = $supplier($get)) ? (isset(($m = $s->effectiveMargin())['tiers']) ? 'By price tier' : (string) $m['percent']) : null),
                     TextInput::make('margin_fixed_usd')->label('Fixed profit per vehicle')->numeric()->minValue(0)->prefix('$')
-                        ->placeholder(fn (Get $get) => ($s = $supplier($get)) ? (string) $s->effectiveMargin()['fixed_usd'] : null),
+                        ->placeholder(fn (Get $get) => ($s = $supplier($get)) ? (isset(($m = $s->effectiveMargin())['tiers']) ? 'By price tier' : (string) $m['fixed_usd']) : null),
                 ]),
         ]);
     }
 
-    /** @param  array{percent: float, fixed_usd: float}  $m */
     public static function marginLabel(array $m): string
     {
-        return rtrim(rtrim(number_format($m['percent'], 2), '0'), '.').'% + $'.number_format($m['fixed_usd']).' per vehicle';
+        return \App\Models\Supplier::describeMargin($m);
     }
 
     public static function table(Table $table): Table

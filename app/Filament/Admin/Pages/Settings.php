@@ -63,8 +63,7 @@ class Settings extends Page implements HasForms
 
         $this->form->fill([
             'stock' => [
-                'supplier_margin_percent' => $stock->supplier_margin_percent,
-                'supplier_margin_fixed_usd' => $stock->supplier_margin_fixed_usd,
+                'supplier_margin_tiers' => $stock->tiers(),
             ],
             'proforma' => collect(self::PROFORMA_FIELDS)->mapWithKeys(fn ($f) => [$f => $proforma->{$f}])->all(),
             'general' => [
@@ -307,12 +306,24 @@ class Settings extends Page implements HasForms
                             ]),
                         Tab::make('Supplier stock')
                             ->schema([
-                                Section::make('Default profit margin')
-                                    ->description('Added to supplier-feed vehicles (OnePrice …) when their price is converted to USD: price ÷ exchange rate × (1 + margin %) + fixed profit. A supplier (Catalogue → Suppliers) or a single import can override it.')
-                                    ->columns(2)
+                                Section::make('Default profit margin by price')
+                                    ->description('Added to supplier-feed vehicles (OnePrice …) when their price is converted to USD. The tier is chosen by the supplier price in USD before margin; then FOB = price × (1 + margin %) + fixed profit, rounded up. Leave "To" empty on the last tier for "and above". A supplier (Catalogue → Suppliers) or a single import can set its own flat margin instead. Existing vehicles change on the next import, or at once with Suppliers → Reprice → "Apply the current margin".')
                                     ->schema([
-                                        TextInput::make('stock.supplier_margin_percent')->label('Margin %')->numeric()->minValue(0)->suffix('%')->required(),
-                                        TextInput::make('stock.supplier_margin_fixed_usd')->label('Fixed profit per vehicle')->numeric()->minValue(0)->prefix('$')->required(),
+                                        Repeater::make('stock.supplier_margin_tiers')
+                                            ->hiddenLabel()
+                                            ->columns(4)
+                                            ->addActionLabel('Add tier')
+                                            ->reorderable(false)
+                                            ->minItems(1)
+                                            ->itemLabel(fn (array $state): string => 'Price $'.number_format((float) ($state['from_usd'] ?? 0))
+                                                .(filled($state['to_usd'] ?? null) ? ' – $'.number_format((float) $state['to_usd']) : ' and above'))
+                                            ->schema([
+                                                TextInput::make('from_usd')->label('Price from')->prefix('$')->numeric()->minValue(0)->required()->default(0),
+                                                TextInput::make('to_usd')->label('Price to')->prefix('$')->numeric()->minValue(0)->placeholder('and above'),
+                                                TextInput::make('percent')->label('Margin %')->suffix('%')->numeric()->minValue(0)->default(0),
+                                                TextInput::make('fixed_usd')->label('Fixed profit')->prefix('$')->numeric()->minValue(0)->default(0),
+                                            ])
+                                            ->default([['from_usd' => 0, 'to_usd' => null, 'percent' => 0, 'fixed_usd' => 0]]),
                                     ]),
                             ]),
                         Tab::make('Proforma invoice')
@@ -470,8 +481,7 @@ class Settings extends Page implements HasForms
         $payment->save();
 
         $stock = app(StockSettings::class);
-        $stock->supplier_margin_percent = (float) ($state['stock']['supplier_margin_percent'] ?? 0);
-        $stock->supplier_margin_fixed_usd = (float) ($state['stock']['supplier_margin_fixed_usd'] ?? 0);
+        $stock->supplier_margin_tiers = StockSettings::normaliseTiers(array_values($state['stock']['supplier_margin_tiers'] ?? []));
         $stock->save();
 
         $proforma = app(ProformaSettings::class);

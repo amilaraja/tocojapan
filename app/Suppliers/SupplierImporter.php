@@ -627,12 +627,12 @@ class SupplierImporter
         return $this->bodyTypeIds ??= BodyType::query()->pluck('id', 'slug')->map(fn ($id) => (int) $id)->all();
     }
 
-    /** @return array{percent: float, fixed_usd: float} */
+    /** @return array{percent: float, fixed_usd: float, tiers?: array} */
     private function margin(SupplierImport $import): array
     {
         $m = $import->stat('margin', null);
 
-        return is_array($m) ? ['percent' => (float) $m['percent'], 'fixed_usd' => (float) $m['fixed_usd']]
+        return is_array($m) ? Supplier::normaliseMargin($m)
             : $import->supplier->effectiveMargin($import->stat('margin_override', null));
     }
 

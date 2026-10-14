@@ -75,6 +75,7 @@ Supplier-feed vehicles live in the same `vehicles` table, linked by `supplier_id
 - Upload limit 128 MB (vhost phpIniOverride: upload_max_filesize/post_max_size, memory_limit 256M; config/livewire.php temp-upload rule). Bigger files: zip, inbox `storage/app/private/supplier-inbox/{supplier}/`, or the CLI.
 - New Filament resources/pages only appear after `php artisan filament:cache-components` (panel component cache in bootstrap/cache/filament); run `php artisan optimize` after deploying.
 - php artisan suppliers:import oneprice /path/file.csv[.gz|.zip] [--partial] [--apply [--force]]   # same pipeline; without --apply it stops at preview
+- Margin: site default = price tiers (StockSettings::supplier_margin_tiers; tier chosen by supplier price in USD before margin, `Supplier::marginFor`); a supplier/import flat margin replaces the tiers; each vehicle keeps its import margin (incl. tiers) in supplier_meta.margin for the nightly reprice. No @var docblock on settings array properties (spatie tries to cast).
 - php artisan suppliers:reprice [supplier]   # daily 03:15 after currency:fetch-rates
 - php artisan suppliers:purge [--dry-run]    # weekly; delisted > N days with no orders/quotes/favourites
 - Run tests with the config cache bypassed (bootstrap/cache/config.php otherwise points tests at production MySQL):

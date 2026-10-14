@@ -52,7 +52,7 @@ class RepriceSupplierStock extends Command
                         $stored = is_array($meta['margin'] ?? null) ? $meta['margin'] : null;
                         $margin = $remargin || ! $stored
                             ? $current
-                            : ['percent' => (float) $stored['percent'], 'fixed_usd' => (float) $stored['fixed_usd']];
+                            : Supplier::normaliseMargin($stored);
                         $new = $supplier->fobFromSource($source, $rate, $margin);
                         $old = $row->price_fob !== null ? (float) $row->price_fob : null;
                         $metaChanged = $stored != $margin;

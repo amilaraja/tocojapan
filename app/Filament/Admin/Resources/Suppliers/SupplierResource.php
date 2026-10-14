@@ -6,7 +6,6 @@ use App\Filament\Admin\Resources\Suppliers\Pages\CreateSupplier;
 use App\Filament\Admin\Resources\Suppliers\Pages\EditSupplier;
 use App\Filament\Admin\Resources\Suppliers\Pages\ListSuppliers;
 use App\Models\Supplier;
-use App\Settings\StockSettings;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
@@ -65,7 +64,7 @@ class SupplierResource extends Resource
                 ]),
 
             Section::make('Pricing')
-                ->description('FOB (USD) = supplier price ÷ exchange rate × (1 + margin %) + fixed margin, rounded up. Leave the margin empty to use the site default (Site settings → Supplier stock). Each import can also set its own margin.')
+                ->description('FOB (USD) = supplier price ÷ exchange rate × (1 + margin %) + fixed margin, rounded up. Leave the margin empty to use the site default price tiers (Site settings → Supplier stock). Each import can also set its own margin.')
                 ->columns(3)
                 ->visible($feed)
                 ->schema([
@@ -81,10 +80,10 @@ class SupplierResource extends Resource
                         ->options(fn () => DB::table('currencies')->orderBy('sort_order')->pluck('code', 'code')->all())
                         ->default('JPY')->required(),
                     TextInput::make('settings.margin_percent')->label('Profit margin %')->numeric()->minValue(0)->suffix('%')
-                        ->placeholder(fn () => 'Site default: '.app(StockSettings::class)->supplier_margin_percent.'%'),
+                        ->placeholder('Site default tiers'),
                     TextInput::make('settings.margin_fixed_usd')->label('Fixed profit per vehicle')->numeric()->minValue(0)->prefix('$')
-                        ->placeholder(fn () => 'Site default: $'.app(StockSettings::class)->supplier_margin_fixed_usd)
-                        ->helperText('Added after the % margin.'),
+                        ->placeholder('Site default tiers')
+                        ->helperText('Added after the % margin. Setting either field replaces the site price tiers for this supplier.'),
                     TextInput::make('settings.round_to')->label('Round up to (USD)')->numeric()->minValue(1)->default(10),
                     TextInput::make('settings.max_source_price')->label('Treat prices at or above this as "On request"')->numeric()
                         ->default(Supplier::DEFAULT_SETTINGS['max_source_price'])
@@ -127,7 +126,7 @@ class SupplierResource extends Resource
         $fob = $record->fobFromSource((float) $example, $rate);
         $m = $record->effectiveMargin();
 
-        return '<div class="text-sm text-gray-500">Example with the saved settings (margin '.$m['percent'].'% + $'.number_format($m['fixed_usd']).'): '
+        return '<div class="text-sm text-gray-500">Example with the saved settings (margin '.e(Supplier::describeMargin($m)).'): '
             .e($record->setting('source_currency')).' '.number_format($example)
             .' → <strong>$'.($fob !== null ? number_format($fob) : '—').'</strong> FOB'
             .($rate ? ' (today\'s rate '.number_format($rate, 2).' per USD)' : ' (no exchange rate found)').'</div>';
