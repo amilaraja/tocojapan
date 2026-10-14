@@ -100,8 +100,8 @@
     .vr-note b{color:var(--color-ink)}
     .vr-cta{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;background:#ef7c0e;color:#fff;font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.06em;padding:11px 12px;border-radius:3px;box-shadow:0 1px 2px rgba(0,0,0,.15)}
     .vr-cta:hover{background:#d4690a;color:#fff}
-    .vr-quick{background:none;border:0;cursor:pointer;font-size:12px;font-weight:600;color:var(--color-toco-navy);text-align:center}
-    .vr-quick:hover{color:var(--color-toco-red)}
+    .vr-quick{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:none;border:1px solid #c4c8d0;border-radius:3px;padding:10px 12px;cursor:pointer;font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--color-toco-navy)}
+    .vr-quick:hover{border-color:var(--color-toco-navy)}
     .vr-sold .vr-photo img{filter:grayscale(1)}
     @media (min-width:768px){
         .vr-specs{grid-template-columns:repeat(4,max-content minmax(0,1fr))}
@@ -221,6 +221,9 @@
         @endunless
         <button type="button" x-data class="vr-quick"
                 data-quick-view="{{ route('vehicles.quick-view', $vehicle->slug) }}" data-href="{{ $url }}"
-                @click="$dispatch('quick-view', { url: $el.dataset.quickView })">Quick view</button>
+                @click="$dispatch('quick-view', { url: $el.dataset.quickView })">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+            Quick view
+        </button>
     </div>
 </article>
