@@ -18,7 +18,7 @@
             'title' => 'Payment',
             'body' => 'Pay securely with PayPal or telegraphic bank transfer to our Japanese bank.',
             'buttons' => [
-                ['label' => 'PayPal (Online)', 'url' => '/vehicles', 'icon' => 'paypal', 'style' => 'outline'],
+                ['label' => 'PayPal (Online)', 'url' => '/how-to-pay-with-paypal', 'icon' => 'paypal', 'style' => 'outline'],
                 ['label' => 'Bank Transfer', 'url' => route('cms.page', 'bank-details'), 'icon' => 'bank', 'style' => 'outline'],
             ],
         ],
