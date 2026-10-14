@@ -41,6 +41,7 @@
         'year_to' => ($filters['year_to'] ?? null) ? 'To '.$filters['year_to'] : null,
         'price_from' => ($filters['price_from'] ?? null) ? 'From $'.number_format((float) $filters['price_from']) : null,
         'price_to' => ($filters['price_to'] ?? null) ? 'To $'.number_format((float) $filters['price_to']) : null,
+        'mileage_min' => ($filters['mileage_min'] ?? null) ? 'Mileage ≥ '.number_format((int) $filters['mileage_min']).' km' : null,
         'mileage_max' => ($filters['mileage_max'] ?? null) ? 'Mileage ≤ '.number_format((int) $filters['mileage_max']).' km' : null,
         'engine_from' => ($filters['engine_from'] ?? null) ? 'Engine ≥ '.$filters['engine_from'].' cc' : null,
         'engine_to' => ($filters['engine_to'] ?? null) ? 'Engine ≤ '.$filters['engine_to'].' cc' : null,
@@ -50,7 +51,9 @@
     ];
 
     // Filter dropdown options
-    $yearRange = range(1999, (int) date('Y'));
+    $yearRange = range(1980, (int) date('Y'));
+    $mileageTiers = [100, 500, 1000, 2000, 3000, 5000, 7500, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000, 120000, 150000, 200000];
+    $engineTiers = [550, 660, 800, 1000, 1200, 1300, 1500, 1600, 1800, 2000, 2400, 2500, 3000, 3500, 4000, 4500, 5000, 6000];
     $priceTiers = [500, 1000, 1500, 2000, 3000, 5000, 8000, 12000, 16000, 20000, 25000, 30000, 35000, 40000, 50000];
 @endphp
 
@@ -176,7 +179,7 @@
                                 <div class="grid grid-cols-2 gap-1.5">
                                     <select name="year_from" class="text-sm">
                                         <option value="">From</option>
-                                        @foreach ($yearRange as $y)
+                                        @foreach (array_reverse($yearRange) as $y)
                                             <option value="{{ $y }}" {{ (string) ($filters['year_from'] ?? '') === (string) $y ? 'selected' : '' }}>{{ $y }}</option>
                                         @endforeach
                                     </select>
@@ -236,15 +239,35 @@
                             <div>
                                 <label class="block font-mono text-[9px] uppercase tracking-widest text-ink-soft mb-1">Mileage (km)</label>
                                 <div class="grid grid-cols-2 gap-1.5">
-                                    <input type="number" name="mileage_min" min="0" placeholder="MIN" value="{{ $filters['mileage_min'] ?? '' }}" class="text-sm">
-                                    <input type="number" name="mileage_max" min="0" placeholder="MAX" value="{{ $filters['mileage_max'] ?? '' }}" class="text-sm">
+                                    <select name="mileage_min" class="text-sm">
+                                        <option value="">From</option>
+                                        @foreach ($mileageTiers as $m)
+                                            <option value="{{ $m }}" {{ (string) ($filters['mileage_min'] ?? '') === (string) $m ? 'selected' : '' }}>{{ number_format($m) }} km</option>
+                                        @endforeach
+                                    </select>
+                                    <select name="mileage_max" class="text-sm">
+                                        <option value="">To</option>
+                                        @foreach ($mileageTiers as $m)
+                                            <option value="{{ $m }}" {{ (string) ($filters['mileage_max'] ?? '') === (string) $m ? 'selected' : '' }}>{{ number_format($m) }} km</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
                             <div>
                                 <label class="block font-mono text-[9px] uppercase tracking-widest text-ink-soft mb-1">Engine Size (cc)</label>
                                 <div class="grid grid-cols-2 gap-1.5">
-                                    <input type="number" name="engine_from" min="0" placeholder="MIN" value="{{ $filters['engine_from'] ?? '' }}" class="text-sm">
-                                    <input type="number" name="engine_to" min="0" placeholder="MAX" value="{{ $filters['engine_to'] ?? '' }}" class="text-sm">
+                                    <select name="engine_from" class="text-sm">
+                                        <option value="">From</option>
+                                        @foreach ($engineTiers as $e)
+                                            <option value="{{ $e }}" {{ (string) ($filters['engine_from'] ?? '') === (string) $e ? 'selected' : '' }}>{{ number_format($e) }} cc</option>
+                                        @endforeach
+                                    </select>
+                                    <select name="engine_to" class="text-sm">
+                                        <option value="">To</option>
+                                        @foreach ($engineTiers as $e)
+                                            <option value="{{ $e }}" {{ (string) ($filters['engine_to'] ?? '') === (string) $e ? 'selected' : '' }}>{{ number_format($e) }} cc</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
                             <div class="flex flex-col gap-1.5 self-end pb-0.5">

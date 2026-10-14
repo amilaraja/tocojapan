@@ -71,7 +71,7 @@
                 <label class="block font-medium mb-1">Year from</label>
                 <select x-model="yearFrom" class="w-full border-line rounded">
                     <option value="">— Any —</option>
-                    @for ($y = $currentYear; $y >= 1990; $y--)
+                    @for ($y = $currentYear; $y >= 1980; $y--)
                         <option value="{{ $y }}">{{ $y }}</option>
                     @endfor
                 </select>
@@ -80,7 +80,7 @@
                 <label class="block font-medium mb-1">Year to</label>
                 <select x-model="yearTo" class="w-full border-line rounded">
                     <option value="">— Any —</option>
-                    @for ($y = $currentYear; $y >= 1990; $y--)
+                    @for ($y = $currentYear; $y >= 1980; $y--)
                         <option value="{{ $y }}">{{ $y }}</option>
                     @endfor
                 </select>
