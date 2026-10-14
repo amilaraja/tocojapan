@@ -147,6 +147,7 @@ class CrmServiceProvider extends ServiceProvider
         }
 
         return [
+            Filament\Pages\CrmDashboard::class,
             Filament\Pages\MyWork::class,
             Filament\Pages\PipelineBoard::class,
             Filament\Pages\TeamOverview::class,

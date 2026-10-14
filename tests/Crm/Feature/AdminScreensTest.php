@@ -26,6 +26,7 @@ it('renders every CRM screen for an admin', function () {
     $case = CrmCase::sole();
 
     $this->actingAs($admin);
+    $this->get('/admin/crm')->assertOk()->assertSee('Pipeline: open car sales by stage')->assertSee('Needs attention');
     foreach (['cases', 'cases/create', 'cases/'.$case->id, 'customers', 'customers/'.$case->customer_id, 'tasks', 'queues', 'steps', 'templates',
         'my-work', 'pipeline', 'team', 'sla', 'reports', 'settings', 'profile', 'help'] as $path) {
         $this->get('/admin/crm/'.$path)->assertOk();
@@ -101,4 +102,15 @@ it('gives team leads their own role with agent rights', function () {
     expect(\App\Modules\Crm\Support\CrmAccess::isTeamLead($lead))->toBeTrue()
         ->and(\App\Modules\Crm\Support\CrmAccess::canPick($lead))->toBeTrue();
     $this->actingAs($lead)->get('/admin/crm/team')->assertOk();
+});
+
+it('sends CRM-only staff from the admin home to the CRM Dashboard, admins stay', function () {
+    $agent = CrmData::staff();
+    CrmData::quote(CrmData::buyer(), CrmData::car()); // the agent's Case
+
+    $this->actingAs($agent)->get('/admin')->assertRedirect('/admin/crm');
+    $this->actingAs($agent)->get('/admin/crm')->assertOk()->assertSee('Open Cases')->assertSee('Search & Order');
+    $this->actingAs(CrmData::admin())->get('/admin')->assertRedirect('/admin/crm');   // CRM-only admin too
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+    $this->actingAs(\App\Models\User::factory()->create()->assignRole('admin'))->get('/admin')->assertOk();
 });

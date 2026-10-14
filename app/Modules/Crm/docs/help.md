@@ -17,6 +17,8 @@ The TOCO CRM keeps every buyer enquiry in one place. Each enquiry has one owner,
 | CRM Team lead | Senior sales | Agent rights, plus sees every Case of their queue, the team overview and reports |
 | CRM Operations | Shipping and documents | Works the shipping and document steps (stages 03 and 04) on any Case |
 
+**Where you start.** **CRM → Dashboard** is the CRM's front page. CRM staff who are not site admins land there straight after signing in.
+
 **Set up your profile first** (**CRM → My profile**):
 
 - **Nickname.** Buyers only ever see this name, in the email sender ("Ken · TOCO Japan"), the sign-off and "Your TOCO contact" on their purchase page. Your real name stays private. Without a nickname buyers see "TOCO Sales Team".
@@ -326,6 +328,7 @@ Every email sent or failed is logged. A failed email is retried and never stops 
 
 | Screen | Shows |
 |---|---|
+| Dashboard (everyone) | Coloured tiles: open Cases, new this week, late replies, unassigned, pipeline value, cars sold this month, conversion (90 days). The five stages with how many open car sales and how much value sit in each, and how many are late. Charts: new Cases and cars sold per week (12 weeks), sales value by month (6 months), where enquiries come from (90 days), open Cases by status. "Needs attention": late replies first, then Cases without an owner, then overdue follow-ups. Agents see their own Cases, admins see all. Click a tile or a stage to open the matching list. |
 | Pipeline | Every open vehicle sale in five columns, with customer, car, value, owner, days in stage and a coloured edge for the deadline. Filter by owner, source, country, dealer stock and dates. |
 | Team overview | For each staff member: open Cases per stage, average first-reply time, replies on time (%), overdue follow-ups, stale Cases, last activity, cars won this month. |
 | SLA monitor | Late and at-risk Cases, refreshed every minute. |

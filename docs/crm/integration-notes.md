@@ -45,6 +45,7 @@ Operating guide: admin **CRM → CRM Help** (source `app/Modules/Crm/docs/help.m
 | 2026-10-13 | `app/Modules/Mailer/Domain/Campaigns/CampaignPusher.php` | exclusion list on pushed campaigns (also in the Mailer register §9) | proposal p.6 |
 | 2026-10-13 | `phpunit.xml`, `tests/Pest.php` | Crm testsuite; `CRM_ENABLED=true` for tests | NFR-007 |
 | 2026-10-13 | `tests/Feature/{ProformaInvoice,StaffMail,PayPalWebhook}Test.php` | the three legacy-email tests run with the CRM off | old path kept testable |
+| 2026-10-14 | `app/Providers/Filament/AdminPanelProvider.php` | admin home is `Crm\Filament\Pages\HomeDashboard` (Filament Dashboard subclass): CRM-only staff are redirected to CRM → Dashboard | client change: CRM dashboard as default page |
 
 The "CRM Case C-…" links on the order, quote, contact and spare-part screens (INT-002) come from a Filament render hook in `CrmServiceProvider`. Those resource files are unchanged.
 

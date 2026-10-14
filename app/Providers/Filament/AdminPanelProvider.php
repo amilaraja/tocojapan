@@ -17,7 +17,6 @@ use Illuminate\Support\Facades\Blade;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -65,7 +64,8 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')
             ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\\Filament\\Admin\\Pages')
             ->pages([
-                Dashboard::class,
+                // Admin home; CRM-only staff are sent on to the CRM Dashboard.
+                \App\Modules\Crm\Filament\Pages\HomeDashboard::class,
                 // TOCO Mailer module screens (each gates itself via canAccess()).
                 ...MailerServiceProvider::filamentPages(),
                 // Partner Stock API screens (gated by partners.admin).
