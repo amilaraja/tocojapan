@@ -33,9 +33,6 @@ class CrmDashboard extends Page
 
     protected static ?int $navigationSort = 0;
 
-    /** One colour per stage, used by the tiles, bars and the pipeline strip. */
-    public const STAGE_COLOURS = [1 => '#6366f1', 2 => '#f59e0b', 3 => '#0ea5e9', 4 => '#a855f7', 5 => '#10b981'];
-
     public const SOURCE_COLOURS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#64748b'];
 
     public static function canAccess(): bool
@@ -62,7 +59,7 @@ class CrmDashboard extends Page
             ->selectRaw('stage, count(*) c, sum(coalesce(value_usd, 0)) v')->groupBy('stage')->get()->keyBy('stage');
         $stageLate = $late($active()->where('type', Crm::TYPE_VEHICLE))->selectRaw('stage, count(*) c')->groupBy('stage')->pluck('c', 'stage');
         $stages = collect(Crm::STAGES)->map(fn ($name, $n) => [
-            'n' => $n, 'name' => $name, 'colour' => self::STAGE_COLOURS[$n],
+            'n' => $n, 'name' => $name, 'colour' => CrmUi::stageHex($n),
             'count' => (int) ($stageRows[$n]->c ?? 0), 'value' => (float) ($stageRows[$n]->v ?? 0), 'late' => (int) ($stageLate[$n] ?? 0),
         ])->values();
 

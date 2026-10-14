@@ -13,6 +13,7 @@
     $muted = 'opacity:.65';
 @endphp
 <x-filament-panels::page>
+    @include('crm::filament.partials.theme')
     <style>
         .crmd-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
         .crmd-tile{display:block;border-radius:12px;padding:14px 16px;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.12);transition:transform .15s,box-shadow .15s}
@@ -61,8 +62,8 @@
     </div>
 
     {{-- Pipeline strip --}}
-    <x-filament::section>
-        <x-slot name="heading">Pipeline: open car sales by stage</x-slot>
+    <div class="crm-accent" style="--c:#6366f1"><x-filament::section>
+        <x-slot name="heading"><span class="crm-h"><span class="dot"></span>Pipeline: open car sales by stage</span></x-slot>
         <x-slot name="afterHeader"><x-filament::button size="xs" color="gray" tag="a" :href="\App\Modules\Crm\Filament\Pages\PipelineBoard::getUrl()" icon="heroicon-o-view-columns">Open the pipeline board</x-filament::button></x-slot>
         <div class="crmd-pipe">
             @foreach ($stages as $s)
@@ -78,12 +79,12 @@
                 </a>
             @endforeach
         </div>
-    </x-filament::section>
+    </x-filament::section></div>
 
     <div class="crmd-grid">
         {{-- Weekly new vs sold --}}
-        <x-filament::section>
-            <x-slot name="heading">New Cases and cars sold, last 12 weeks</x-slot>
+        <div class="crm-accent" style="--c:#0ea5e9"><x-filament::section>
+            <x-slot name="heading"><span class="crm-h"><span class="dot"></span>New Cases and cars sold, last 12 weeks</span></x-slot>
             @php
                 $w = 560; $h = 190; $pad = 24; $slot = ($w - $pad) / 12; $bw = $slot / 2 - 4;
             @endphp
@@ -106,11 +107,11 @@
                 @endforeach
             </svg>
             <div class="crmd-legend"><span><i style="background:#6366f1"></i>New Cases</span><span><i style="background:#10b981"></i>Cars sold</span></div>
-        </x-filament::section>
+        </x-filament::section></div>
 
         {{-- Won value by month --}}
-        <x-filament::section>
-            <x-slot name="heading">Sales value by month (USD)</x-slot>
+        <div class="crm-accent" style="--c:#f97316"><x-filament::section>
+            <x-slot name="heading"><span class="crm-h"><span class="dot"></span>Sales value by month (USD)</span></x-slot>
             @php
                 $w = 560; $h = 190; $slot = $w / 6; $bw = $slot - 24;
                 $palette = ['#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#10b981'];
@@ -128,11 +129,11 @@
                 @endforeach
             </svg>
             <div class="crmd-legend" style="{{ $muted }}">Bars: value of cars sold. Under each month: number of cars.</div>
-        </x-filament::section>
+        </x-filament::section></div>
 
         {{-- Sources --}}
-        <x-filament::section>
-            <x-slot name="heading">Where enquiries come from (90 days)</x-slot>
+        <div class="crm-accent" style="--c:#ec4899"><x-filament::section>
+            <x-slot name="heading"><span class="crm-h"><span class="dot"></span>Where enquiries come from (90 days)</span></x-slot>
             @forelse ($sources as $src)
                 <div class="crmd-hbar">
                     <span>{{ $src['label'] }}</span>
@@ -142,11 +143,11 @@
             @empty
                 <p style="{{ $muted }}">No enquiries in the last 90 days.</p>
             @endforelse
-        </x-filament::section>
+        </x-filament::section></div>
 
         {{-- Open Cases by state (donut) --}}
-        <x-filament::section>
-            <x-slot name="heading">Open Cases by status</x-slot>
+        <div class="crm-accent" style="--c:#3b82f6"><x-filament::section>
+            <x-slot name="heading"><span class="crm-h"><span class="dot"></span>Open Cases by status</span></x-slot>
             @php
                 $r = 60; $c = 2 * M_PI * $r; $offset = 0;
             @endphp
@@ -174,12 +175,12 @@
                     @endforeach
                 </div>
             </div>
-        </x-filament::section>
+        </x-filament::section></div>
     </div>
 
     {{-- Needs attention --}}
-    <x-filament::section>
-        <x-slot name="heading">Needs attention</x-slot>
+    <div class="crm-accent" style="--c:#ef4444"><x-filament::section>
+        <x-slot name="heading"><span class="crm-h"><span class="dot"></span>Needs attention</span></x-slot>
         <x-slot name="description">Late replies, Cases without an owner and overdue follow-ups.</x-slot>
         @if ($d['attention']->isEmpty())
             <p style="{{ $muted }}">Nothing needs attention right now. 🎉</p>
@@ -203,5 +204,5 @@
                 @endforeach
             </table>
         @endif
-    </x-filament::section>
+    </x-filament::section></div>
 </x-filament-panels::page>

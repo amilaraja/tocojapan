@@ -329,7 +329,7 @@ Every email sent or failed is logged. A failed email is retried and never stops 
 | Screen | Shows |
 |---|---|
 | Dashboard (everyone) | Coloured tiles: open Cases, new this week, late replies, unassigned, pipeline value, cars sold this month, conversion (90 days). The five stages with how many open car sales and how much value sit in each, and how many are late. Charts: new Cases and cars sold per week (12 weeks), sales value by month (6 months), where enquiries come from (90 days), open Cases by status. "Needs attention": late replies first, then Cases without an owner, then overdue follow-ups. Agents see their own Cases, admins see all. Click a tile or a stage to open the matching list. |
-| Pipeline | Every open vehicle sale in five columns, with customer, car, value, owner, days in stage and a coloured edge for the deadline. Filter by owner, source, country, dealer stock and dates. |
+| Pipeline | Every open vehicle sale in five coloured columns (each stage has the same colour everywhere in the CRM), with customer, car, value, owner, days in stage (green under 3 days, amber under 7, red after) and a coloured edge for the deadline. Filter by owner, source, country, dealer stock and dates. |
 | Team overview | For each staff member: open Cases per stage, average first-reply time, replies on time (%), overdue follow-ups, stale Cases, last activity, cars won this month. |
 | SLA monitor | Late and at-risk Cases, refreshed every minute. |
 | Sales reports | Funnel (how many Cases reached each step), lost reasons, sources and conversion, average time in each stage, response times, cars sold by month and by country. Every table downloads as CSV for Excel. |

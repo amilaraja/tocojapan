@@ -21,6 +21,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Support\Colors\Color;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -107,7 +108,7 @@ class CaseResource extends Resource
                     ->description(fn (CrmCase $record) => $record->customer?->email),
                 TextColumn::make('progress')->label('Stage / status')->badge()
                     ->state(fn (CrmCase $record) => $record->progressLabel())
-                    ->color(fn (CrmCase $record) => $record->isVehicleSale() ? 'info' : 'gray'),
+                    ->color(fn (CrmCase $record) => $record->isVehicleSale() && $record->stage ? Color::hex(CrmUi::stageHex($record->stage)) : 'gray'),
                 TextColumn::make('vehicle.stock_no')->label('Vehicle')->placeholder('—')
                     ->description(fn (CrmCase $record) => $record->vehicle ? mb_strimwidth(trim($record->vehicle->title), 0, 34, '…') : null),
                 TextColumn::make('owner.name')->label('Owner')->placeholder('Unassigned')->sortable(),

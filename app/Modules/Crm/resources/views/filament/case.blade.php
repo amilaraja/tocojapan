@@ -25,9 +25,10 @@
 @endphp
 
 <x-filament-panels::page>
+    @include('crm::filament.partials.theme')
     {{-- Header (CRM-CAS-004) --}}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">
-        <x-filament::section compact>
+        <div class="crm-accent" style="--c:#6366f1"><x-filament::section compact>
             <div style="{{ $muted }}">Customer</div>
             <div style="font-size:17px;font-weight:700;margin-top:2px">
                 <a href="{{ \App\Modules\Crm\Filament\Resources\Customers\CustomerResource::getUrl('view', ['record' => $customer]) }}" style="text-decoration:underline">{{ $customer?->displayName() }}</a>
@@ -41,9 +42,9 @@
                 @if ($customer?->whatsappNumber())<div><a href="https://wa.me/{{ $customer->whatsappNumber() }}" target="_blank" style="color:#16a34a;font-weight:600">WhatsApp {{ $customer->whatsapp ?: $customer->phone }}</a></div>@endif
                 @if ($customer?->country || $customer?->country_name)<div>{{ $customer->country?->name ?? $customer->country_name }}</div>@endif
             </div>
-        </x-filament::section>
+        </x-filament::section></div>
 
-        <x-filament::section compact>
+        <div class="crm-accent" style="--c:{{ $case->isVehicleSale() ? CrmUi::stageHex($case->stage) : '#0ea5e9' }}"><x-filament::section compact>
             <div style="{{ $muted }}">{{ Crm::TYPES[$case->type] }} · {{ Crm::SOURCES[$case->source] ?? $case->source }}</div>
             @if ($case->vehicle)
                 <div style="display:flex;gap:10px;margin-top:6px;align-items:center">
@@ -63,14 +64,15 @@
                 @if ($case->value_usd)<div style="font-weight:700">US$ {{ number_format((float) $case->value_usd) }} {{ $case->value_basis }}</div>@endif
                 @if ($case->payment_mode)<div>{{ Crm::PAYMENT_MODES[$case->payment_mode] ?? $case->payment_mode }}</div>@endif
             </div>
-        </x-filament::section>
+        </x-filament::section></div>
 
-        <x-filament::section compact>
+        <div class="crm-accent" style="--c:{{ CrmUi::stateHex($case->state) }}"><x-filament::section compact>
             <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
                 <div style="{{ $muted }}">Owner</div>
-                <span style="{{ $pill(match ($case->state) { 'won' => '#16a34a', 'lost' => '#dc2626', 'on_hold' => '#d97706', 'open' => '#2563eb', default => '#6b7280' }) }}">{{ Crm::STATES[$case->state] }}{{ $case->reason ? ': '.$case->reason : '' }}</span>
+                <span style="{{ $pill(CrmUi::stateHex($case->state)) }}">{{ Crm::STATES[$case->state] }}{{ $case->reason ? ': '.$case->reason : '' }}</span>
             </div>
-            <div style="font-size:16px;font-weight:700;margin-top:2px">
+            <div style="font-size:16px;font-weight:700;margin-top:2px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <span class="crm-avatar" style="--c:{{ CrmUi::personHex($case->owner_id) }}">{{ $case->owner ? CrmUi::initials($case->owner->name) : '?' }}</span>
                 {{ $case->owner?->name ?? 'Unassigned' }}
                 @if ($case->owner && ($nick = CrmAgentStatus::nicknameFor($case->owner_id)))<span style="font-weight:400;{{ $muted }}">buyers see "{{ $nick }}"</span>@endif
             </div>
@@ -82,7 +84,7 @@
                 <div>Next follow-up: <b style="color:{{ $case->isActive() && $case->next_follow_up_at?->isPast() ? '#dc2626' : 'inherit' }}">{{ CrmUi::time($case->next_follow_up_at) }}</b></div>
                 @if ($case->stale_at && $case->isActive())<div><span style="{{ $pill('#d97706') }}">Stale: no activity for {{ $case->last_staff_activity_at ? $case->last_staff_activity_at->diffInDays() : $case->created_at->diffInDays() }}+ days</span></div>@endif
             </div>
-        </x-filament::section>
+        </x-filament::section></div>
     </div>
 
     {{-- SLA clocks (CRM-SLA-005) --}}
@@ -100,12 +102,14 @@
 
     {{-- Five-stage bar (CRM-STG-001, 008) --}}
     @if ($case->isVehicleSale())
-        <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px">
+        <div class="crm-stages">
             @foreach (Crm::STAGES as $n => $name)
-                @php $state = $case->state === 'won' || $n < $case->stage ? 'done' : ($n === $case->stage ? 'now' : 'next'); @endphp
-                <div style="border-radius:8px;padding:8px 10px;background:{{ $state === 'done' ? 'rgba(22,163,74,.15)' : ($state === 'now' ? 'rgba(227,6,19,.12)' : 'rgba(127,127,127,.08)') }};border:1px solid {{ $state === 'done' ? '#16a34a' : ($state === 'now' ? '#E30613' : 'rgba(127,127,127,.25)') }}">
-                    <div style="font-weight:800;font-size:13px">{{ sprintf('%02d', $n) }} <span style="font-weight:600">{{ $name }}</span></div>
-                    <div style="{{ $muted }}">{{ isset($times[$n]) ? CrmUi::duration($times[$n]) : ($state === 'next' ? 'upcoming' : '') }}</div>
+                @php
+                    $state = $case->state === 'won' || $n < $case->stage ? 'done' : ($n === $case->stage ? 'now' : 'next');
+                @endphp
+                <div class="crm-stage {{ $state }}" style="--c:{{ CrmUi::stageHex($n) }}">
+                    <div class="t">{{ $state === 'done' ? '✓ ' : '' }}{{ sprintf('%02d', $n) }} <span style="font-weight:600">{{ $name }}</span></div>
+                    <div class="d">{{ isset($times[$n]) ? CrmUi::duration($times[$n]) : ($state === 'next' ? 'upcoming' : '') }}</div>
                 </div>
             @endforeach
         </div>
@@ -114,17 +118,18 @@
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;align-items:start">
         {{-- Mini steps (CRM-STG-002..006) --}}
         @if ($case->isVehicleSale())
-            <x-filament::section heading="Checklist">
+            <div class="crm-accent" style="--c:{{ CrmUi::stageHex($case->stage) }}"><x-filament::section>
+            <x-slot name="heading"><span class="crm-h"><span class="dot"></span>Checklist</span></x-slot>
                 @foreach ($steps->groupBy(fn ($s) => $s->template->stage) as $stage => $group)
                     <details @if ($stage === (int) $case->stage) open @endif style="margin-bottom:10px">
                         <summary style="cursor:pointer;font-weight:700;padding:4px 0">
-                            {{ Crm::stageLabel($stage) }}
-                            <span style="{{ $muted }}">· {{ $group->filter->isDone()->count() }}/{{ $group->count() }} done</span>
+                            <span class="crm-chip" style="--c:{{ CrmUi::stageHex($stage) }}">{{ sprintf('%02d', $stage) }}</span> {{ Crm::STAGES[$stage] }}
+                            <span class="crm-soft" style="--c:{{ $group->filter->isDone()->count() === $group->count() ? '#10b981' : CrmUi::stageHex($stage) }}">{{ $group->filter->isDone()->count() }}/{{ $group->count() }} done</span>
                         </summary>
                         <ul style="list-style:none;padding:0;margin:6px 0 0">
                             @foreach ($group as $step)
                                 <li style="display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid rgba(127,127,127,.15)">
-                                    <span style="flex:none;width:20px;height:20px;border-radius:999px;display:grid;place-items:center;font-size:12px;{{ $step->isDone() ? 'background:#16a34a;color:#fff' : 'border:1.5px solid rgba(127,127,127,.5)' }}">{{ $step->isDone() ? '✓' : '' }}</span>
+                                    <span style="flex:none;width:20px;height:20px;border-radius:999px;display:grid;place-items:center;font-size:12px;{{ $step->isDone() ? 'background:'.CrmUi::stageHex($stage).';color:#fff' : 'border:1.5px solid '.CrmUi::stageHex($stage) }}">{{ $step->isDone() ? '✓' : '' }}</span>
                                     <div style="flex:1;min-width:0">
                                         <div style="font-size:14px">
                                             {{ $step->template->label }}
@@ -156,24 +161,26 @@
                         </ul>
                     </details>
                 @endforeach
-            </x-filament::section>
+            </x-filament::section></div>
         @endif
 
         <div style="display:grid;gap:16px">
             {{-- Linked website records (CRM-CAS-005) --}}
             @if ($linked = $this->linkedRecords())
-                <x-filament::section heading="Website records" compact>
+                <div class="crm-accent" style="--c:#14b8a6"><x-filament::section compact>
+                <x-slot name="heading"><span class="crm-h"><span class="dot"></span>Website records</span></x-slot>
                     @foreach ($linked as $row)
                         <div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;font-size:14px">
                             @if ($row['url'])<a href="{{ $row['url'] }}" style="font-weight:600;text-decoration:underline">{{ $row['label'] }}</a>@else<span>{{ $row['label'] }}</span>@endif
                             <span style="{{ $muted }}">{{ $row['status'] }}</span>
                         </div>
                     @endforeach
-                </x-filament::section>
+                </x-filament::section></div>
             @endif
 
             {{-- Tasks (CRM-ACT-004) --}}
-            <x-filament::section heading="Tasks" compact>
+            <div class="crm-accent" style="--c:#0ea5e9"><x-filament::section compact>
+            <x-slot name="heading"><span class="crm-h"><span class="dot"></span>Tasks</span> <span class="crm-count">{{ $tasks->whereNull('done_at')->count() }}</span></x-slot>
                 @forelse ($tasks as $task)
                     <div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;font-size:14px;{{ $task->done_at ? 'opacity:.5;text-decoration:line-through' : '' }}">
                         <div>
@@ -185,10 +192,11 @@
                 @empty
                     <div style="{{ $muted }}">No tasks. Use Follow up → Add task.</div>
                 @endforelse
-            </x-filament::section>
+            </x-filament::section></div>
 
             {{-- Documents (CRM-ACT-007) --}}
-            <x-filament::section heading="Documents" compact>
+            <div class="crm-accent" style="--c:#a855f7"><x-filament::section compact>
+            <x-slot name="heading"><span class="crm-h"><span class="dot"></span>Documents</span> <span class="crm-count">{{ $documents->count() }}</span></x-slot>
                 @forelse ($documents as $doc)
                     <div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;font-size:14px">
                         <div style="min-width:0">
@@ -200,15 +208,16 @@
                 @empty
                     <div style="{{ $muted }}">No documents. Use Follow up → Upload document.</div>
                 @endforelse
-            </x-filament::section>
+            </x-filament::section></div>
         </div>
     </div>
 
     {{-- Timeline (CRM-ACT-001) --}}
-    <x-filament::section heading="Timeline">
+    <div class="crm-accent" style="--c:#f59e0b"><x-filament::section>
+    <x-slot name="heading"><span class="crm-h"><span class="dot"></span>Timeline</span></x-slot>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
             @foreach (['all' => 'All', 'messages' => 'Messages', 'emails' => 'Emails', 'notes' => 'Notes', 'calls' => 'Calls & WhatsApp', 'progress' => 'Progress', 'documents' => 'Documents', 'system' => 'System'] as $key => $label)
-                <button type="button" wire:click="$set('timelineFilter', '{{ $key }}')" style="padding:3px 10px;border-radius:999px;font-size:12px;border:1px solid rgba(127,127,127,.35);{{ $timelineFilter === $key ? 'background:#1F2356;color:#fff' : '' }}">{{ $label }}</button>
+                <button type="button" wire:click="$set('timelineFilter', '{{ $key }}')" style="padding:3px 10px;border-radius:999px;font-size:12px;border:1px solid rgba(127,127,127,.35);{{ $timelineFilter === $key ? 'background:#6366f1;border-color:#6366f1;color:#fff' : '' }}">{{ $label }}</button>
             @endforeach
         </div>
         @forelse ($this->timeline() as $activity)
@@ -231,5 +240,5 @@
         @empty
             <div style="{{ $muted }}">Nothing yet.</div>
         @endforelse
-    </x-filament::section>
+    </x-filament::section></div>
 </x-filament-panels::page>

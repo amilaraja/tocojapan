@@ -12,6 +12,49 @@ use Illuminate\Support\Carbon;
 /** Small display helpers shared by the CRM admin screens. */
 class CrmUi
 {
+    /** One colour per stage, used on every CRM screen (client change 2026-10-14: uniformly colourful). */
+    public const STAGE_COLOURS = [1 => '#6366f1', 2 => '#f59e0b', 3 => '#0ea5e9', 4 => '#a855f7', 5 => '#10b981'];
+
+    /** Accent colours for sections, avatars and charts, in order. */
+    public const PALETTE = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#a855f7', '#ec4899', '#14b8a6', '#f97316', '#84cc16'];
+
+    public static function stageHex(?int $stage): string
+    {
+        return self::STAGE_COLOURS[$stage] ?? '#64748b';
+    }
+
+    /** Case state as a hex colour (pills). */
+    public static function stateHex(?string $state): string
+    {
+        return match ($state) {
+            Crm::STATE_OPEN => '#3b82f6',
+            Crm::STATE_WAITING => '#f59e0b',
+            Crm::STATE_ON_HOLD => '#94a3b8',
+            Crm::STATE_WON => '#10b981',
+            Crm::STATE_LOST => '#ef4444',
+            default => '#64748b',
+        };
+    }
+
+    /** A stable colour per staff member, for avatars. */
+    public static function personHex(?int $userId): string
+    {
+        return $userId ? self::PALETTE[$userId % count(self::PALETTE)] : '#94a3b8';
+    }
+
+    public static function initials(?string $name): string
+    {
+        $parts = preg_split('/\s+/', trim((string) $name)) ?: [];
+
+        return $name ? mb_strtoupper(mb_substr($parts[0], 0, 1).(isset($parts[1]) ? mb_substr($parts[1], 0, 1) : '')) : '?';
+    }
+
+    /** Green under 3 days in a stage, amber under 7, red after. */
+    public static function ageHex(int $days): string
+    {
+        return $days < 3 ? '#10b981' : ($days < 7 ? '#f59e0b' : '#ef4444');
+    }
+
     /** The viewer's own time zone (CRM-NFR-005). */
     public static function tz(): string
     {
