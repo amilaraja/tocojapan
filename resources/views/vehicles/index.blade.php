@@ -32,6 +32,7 @@
     $chipDefs = [
         'supplier' => ($filters['supplier'] ?? '') === 'partners' ? 'Dealer stock'
             : (($filters['supplier'] ?? '') ? ($suppliers->firstWhere('slug', $filters['supplier'])?->name) : null),
+        'stock' => match ($filters['stock'] ?? null) { 'toco' => 'Toco Stock only', 'dealer' => 'Dealer Stock only', default => null },
         'make' => $activeMake,
         'vehicle_model' => $activeModel,
         'body_type' => $activeBody,
@@ -208,6 +209,24 @@
                                             <option value="{{ $p }}" {{ (string) ($filters['price_to'] ?? '') === (string) $p ? 'selected' : '' }}>${{ number_format($p) }}</option>
                                         @endforeach
                                     </select>
+                                </div>
+                            </div>
+                            <div x-data="{ toco: {{ ($filters['stock'] ?? '') === 'dealer' ? 'false' : 'true' }}, dealer: {{ ($filters['stock'] ?? '') === 'toco' ? 'false' : 'true' }} }">
+                                <label class="block text-[13px] font-bold uppercase tracking-wide text-toco-navy mb-1.5">Show stock</label>
+                                {{-- Both on = all stock (no value sent); turning both off switches the other back on. --}}
+                                <input type="hidden" name="stock" :value="toco && !dealer ? 'toco' : (dealer && !toco ? 'dealer' : '')" :disabled="toco && dealer"
+                                       value="{{ $filters['stock'] ?? '' }}" @disabled(empty($filters['stock']))>
+                                <div class="grid grid-cols-2 gap-1.5 text-[13px] font-bold">
+                                    <button type="button" @click="toco = !toco; if (!toco && !dealer) dealer = true" :aria-pressed="toco.toString()"
+                                            class="flex items-center justify-center gap-1.5 py-1.5 border rounded-sm transition"
+                                            :style="toco ? 'background:var(--color-toco-red);border-color:var(--color-toco-red);color:#fff' : 'background:#fff;border-color:var(--color-line);color:var(--color-ink-soft)'">
+                                        <span x-text="toco ? '✓' : '○'" aria-hidden="true"></span> Toco
+                                    </button>
+                                    <button type="button" @click="dealer = !dealer; if (!toco && !dealer) toco = true" :aria-pressed="dealer.toString()"
+                                            class="flex items-center justify-center gap-1.5 py-1.5 border rounded-sm transition"
+                                            :style="dealer ? 'background:var(--color-toco-navy);border-color:var(--color-toco-navy);color:#fff' : 'background:#fff;border-color:var(--color-line);color:var(--color-ink-soft)'">
+                                        <span x-text="dealer ? '✓' : '○'" aria-hidden="true"></span> Dealer
+                                    </button>
                                 </div>
                             </div>
                         </div>
