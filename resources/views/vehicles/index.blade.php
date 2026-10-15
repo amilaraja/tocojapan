@@ -137,7 +137,7 @@
                         <div class="p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                             @if ($suppliers->count() > 1)
                                 <div>
-                                    <label class="block font-mono text-[9px] uppercase tracking-widest text-ink-soft mb-1">Stock</label>
+                                    <label class="block text-[13px] font-bold uppercase tracking-wide text-toco-navy mb-1.5">Stock</label>
                                     <select name="supplier" class="w-full text-sm">
                                         <option value="">All stock</option>
                                         <option value="partners" @selected(($filters['supplier'] ?? '') === 'partners')>Dealer stock (all partners)</option>
@@ -148,7 +148,7 @@
                                 </div>
                             @endif
                             <div>
-                                <label class="block font-mono text-[9px] uppercase tracking-widest text-ink-soft mb-1">Make</label>
+                                <label class="block text-[13px] font-bold uppercase tracking-wide text-toco-navy mb-1.5">Make</label>
                                 <select name="make" class="w-full text-sm">
                                     <option value="">Any Make</option>
                                     @foreach ($makes as $m)
@@ -157,7 +157,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block font-mono text-[9px] uppercase tracking-widest text-ink-soft mb-1">Model</label>
+                                <label class="block text-[13px] font-bold uppercase tracking-wide text-toco-navy mb-1.5">Model</label>
                                 <select name="vehicle_model" class="w-full text-sm" {{ $models->isEmpty() ? 'disabled' : '' }}>
                                     <option value="">Any Model</option>
                                     @foreach ($models as $m)
@@ -166,7 +166,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block font-mono text-[9px] uppercase tracking-widest text-ink-soft mb-1">Type</label>
+                                <label class="block text-[13px] font-bold uppercase tracking-wide text-toco-navy mb-1.5">Type</label>
                                 <select name="body_type" class="w-full text-sm">
                                     <option value="">Any Type</option>
                                     @foreach ($bodyTypes as $b)
@@ -175,7 +175,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block font-mono text-[9px] uppercase tracking-widest text-ink-soft mb-1">Registration Year</label>
+                                <label class="block text-[13px] font-bold uppercase tracking-wide text-toco-navy mb-1.5">Registration Year</label>
                                 <div class="grid grid-cols-2 gap-1.5">
                                     <select name="year_from" class="text-sm">
                                         <option value="">From</option>
@@ -192,7 +192,7 @@
                                 </div>
                             </div>
                             <div>
-                                <label class="block font-mono text-[9px] uppercase tracking-widest text-ink-soft mb-1">Price Range (USD)</label>
+                                <label class="block text-[13px] font-bold uppercase tracking-wide text-toco-navy mb-1.5">Price Range (USD)</label>
                                 <div class="grid grid-cols-2 gap-1.5">
                                     <select name="price_from" class="text-sm">
                                         <option value="">From</option>
@@ -213,8 +213,8 @@
                         {{-- Row 2 (advanced) --}}
                         <div x-show="advanced" x-cloak class="px-4 pb-2 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                             <div>
-                                <label class="block font-mono text-[9px] uppercase tracking-widest text-ink-soft mb-1">Steering</label>
-                                <div class="grid grid-cols-3 gap-0 text-[11px] font-bold">
+                                <label class="block text-[13px] font-bold uppercase tracking-wide text-toco-navy mb-1.5">Steering</label>
+                                <div class="grid grid-cols-3 gap-0 text-[13px] font-bold">
                                     @foreach (['' => 'Any', 'left' => 'Left', 'right' => 'Right'] as $val => $label)
                                         @php($checked = ($filters['steering'] ?? '') === $val)
                                         <label class="cursor-pointer">
@@ -225,8 +225,8 @@
                                 </div>
                             </div>
                             <div>
-                                <label class="block font-mono text-[9px] uppercase tracking-widest text-ink-soft mb-1">Transmission</label>
-                                <div class="grid grid-cols-3 gap-0 text-[11px] font-bold">
+                                <label class="block text-[13px] font-bold uppercase tracking-wide text-toco-navy mb-1.5">Transmission</label>
+                                <div class="grid grid-cols-3 gap-0 text-[13px] font-bold">
                                     @foreach (['' => 'Any', 'automatic' => 'AT', 'manual' => 'MT'] as $val => $label)
                                         @php($checked = ($filters['transmission'] ?? '') === $val)
                                         <label class="cursor-pointer">
@@ -237,7 +237,7 @@
                                 </div>
                             </div>
                             <div>
-                                <label class="block font-mono text-[9px] uppercase tracking-widest text-ink-soft mb-1">Mileage (km)</label>
+                                <label class="block text-[13px] font-bold uppercase tracking-wide text-toco-navy mb-1.5">Mileage (km)</label>
                                 <div class="grid grid-cols-2 gap-1.5">
                                     <select name="mileage_min" class="text-sm">
                                         <option value="">From</option>
@@ -254,7 +254,7 @@
                                 </div>
                             </div>
                             <div>
-                                <label class="block font-mono text-[9px] uppercase tracking-widest text-ink-soft mb-1">Engine Size (cc)</label>
+                                <label class="block text-[13px] font-bold uppercase tracking-wide text-toco-navy mb-1.5">Engine Size (cc)</label>
                                 <div class="grid grid-cols-2 gap-1.5">
                                     <select name="engine_from" class="text-sm">
                                         <option value="">From</option>
@@ -271,11 +271,11 @@
                                 </div>
                             </div>
                             <div class="flex flex-col gap-1.5 self-end pb-0.5">
-                                <label class="flex items-center gap-2 text-[12px] font-semibold text-ink cursor-pointer">
+                                <label class="flex items-center gap-2 text-[13px] font-bold text-ink cursor-pointer">
                                     <input type="checkbox" name="discounted" value="1" {{ ! empty($filters['discounted']) ? 'checked' : '' }} class="text-toco-red">
                                     Discounted Cars
                                 </label>
-                                <label class="flex items-center gap-2 text-[12px] font-semibold text-ink cursor-pointer">
+                                <label class="flex items-center gap-2 text-[13px] font-bold text-ink cursor-pointer">
                                     <input type="checkbox" name="new_only" value="1" {{ ! empty($filters['new_only']) ? 'checked' : '' }} class="text-toco-red">
                                     New Arrivals
                                 </label>
