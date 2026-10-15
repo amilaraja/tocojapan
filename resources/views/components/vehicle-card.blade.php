@@ -1,4 +1,4 @@
-@props(['vehicle', 'priority' => false])
+@props(['vehicle', 'priority' => false, 'stockLabel' => true])
 
 {{--
     Grid card (home hot deals / featured, recently viewed, favourites, country pages).
@@ -48,6 +48,7 @@
     .vc-fav button{width:30px;height:30px;display:grid;place-items:center;border-radius:4px;background:rgba(255,255,255,.92);border:1px solid var(--color-line);color:var(--color-ink-soft);cursor:pointer}
     .vc-fav button:hover,.vc-fav button.on{color:var(--color-toco-red);border-color:var(--color-toco-red)}
     .vc-ref{display:inline-block;align-self:flex-start;background:var(--color-toco-silver);font-weight:700;font-size:11px;line-height:1;color:var(--color-ink);padding:3px 6px;margin-bottom:4px}
+    .vc-stock{position:absolute;left:8px;bottom:8px;color:#fff;font:800 10px/1 ui-sans-serif,system-ui,sans-serif;text-transform:uppercase;letter-spacing:.05em;padding:5px 7px;border-radius:2px;box-shadow:0 1px 2px rgba(0,0,0,.25)}
     .vc-body{display:flex;flex-direction:column;flex:1;padding:8px 10px 9px}
     .vc-title{font-size:14px;font-weight:800;line-height:1.25;color:var(--color-toco-navy);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
     .vc-title a:hover{color:var(--color-toco-red)}
@@ -86,6 +87,7 @@
         @elseif ($isNew)
             <span class="vc-badge" style="background:#047857">New</span>
         @endif
+        @if ($stockLabel)<span class="vc-stock" style="background:{{ $vehicle->isSupplierStock() ? 'var(--color-toco-navy)' : 'var(--color-toco-red)' }}">{{ $vehicle->stockLabel() }}</span>@endif
         @if ($isDiscounted)
             <span class="vc-badge vc-save" style="background:var(--color-toco-navy)">
                 Save {{ (int) round((((float) $vehicle->price_fob - (float) $vehicle->price_fob_discount) / (float) $vehicle->price_fob) * 100) }}%

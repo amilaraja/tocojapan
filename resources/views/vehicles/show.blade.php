@@ -148,7 +148,7 @@
     </div>
 
     <section class="max-w-[1600px] mx-auto px-6 2xl:px-8 pt-6 pb-2">
-        <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">{{ $vehicle->stock_no ? 'Stock #'.$vehicle->stock_no : $vehicle->ref_no }}</p>
+        <p class="text-[13px] uppercase tracking-wider text-toco-red font-bold">{{ $vehicle->stock_no ? 'Stock #'.$vehicle->stock_no : $vehicle->ref_no }}<span style="display:inline-block;vertical-align:middle;margin-left:8px;padding:4px 8px;border-radius:3px;color:#fff;font:800 11px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.05em;text-transform:uppercase;background:{{ $vehicle->isSupplierStock() ? 'var(--color-toco-navy)' : 'var(--color-toco-red)' }}">{{ $vehicle->stockLabel() }}</span></p>
         <h1 class="text-2xl md:text-3xl font-extrabold text-toco-navy leading-tight mt-1">
             {{ $vehTitleNice }} for sale
             @if ($vehicle->bodyType?->name)<span class="text-ink-soft font-semibold"> — {{ $vehicle->bodyType->name }}</span>@endif
@@ -409,7 +409,7 @@
                 {{-- Description --}}
                 @if ($vehicle->description)
                     <div class="bg-white border border-line rounded-sm p-5">
-                        <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">About this vehicle</p>
+                        <p class="text-[13px] uppercase tracking-wider text-toco-red font-bold">About this vehicle</p>
                         <h2 class="font-bold text-toco-navy text-lg mt-1 mb-3">Description</h2>
                         <div class="prose prose-sm max-w-none text-ink-soft leading-relaxed">{!! nl2br(e($vehicle->description)) !!}</div>
                     </div>
@@ -419,13 +419,13 @@
                 @if (! empty($vehicle->features))
                     @php($featureSchema = config('vehicle_features'))
                     <div class="bg-white border border-line rounded-sm p-5">
-                        <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">Equipment</p>
+                        <p class="text-[13px] uppercase tracking-wider text-toco-red font-bold">Equipment</p>
                         <h2 class="font-bold text-toco-navy text-lg mt-1 mb-3">Vehicle Options</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
                             @foreach ($vehicle->features as $group => $items)
                                 @if (is_array($items) && count($items) > 0)
                                     <div>
-                                        <p class="font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-2">{{ $featureSchema[$group]['label'] ?? str_replace('_', ' ', \Illuminate\Support\Str::title((string) $group)) }}</p>
+                                        <p class="text-[12px] font-bold uppercase tracking-wide text-ink-soft mb-2">{{ $featureSchema[$group]['label'] ?? str_replace('_', ' ', \Illuminate\Support\Str::title((string) $group)) }}</p>
                                         <ul class="space-y-1 text-sm">
                                             @foreach ($items as $item)
                                                 <li class="flex items-center gap-2">
@@ -444,7 +444,7 @@
                 {{-- Partner (supplier feed) stock: auction grade, sheet, yard. --}}
                 @if ($isPartnerStock)
                     <div class="bg-white border border-line rounded-sm p-5">
-                        <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">Partner stock</p>
+                        <p class="text-[13px] uppercase tracking-wider text-toco-red font-bold">Partner stock</p>
                         <h2 class="font-bold text-toco-navy text-lg mt-1 mb-3">Inspection &amp; availability</h2>
                         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
                             @if (! empty($supplierMeta['evaluation_score']))
@@ -490,9 +490,9 @@
                                 {{ $isFavorited ? 'Saved' : 'Wishlist' }}
                             </button>
                         </form>
-                        <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">{{ $vehicle->stock_no ? 'Stock #'.$vehicle->stock_no : $vehicle->ref_no }}</p>
+                        <p class="text-[13px] uppercase tracking-wider text-toco-red font-bold pr-24">{{ $vehicle->stock_no ? 'Stock #'.$vehicle->stock_no : $vehicle->ref_no }}</p>
                         <p class="text-xl font-extrabold text-toco-navy leading-tight mt-1 pr-24">{{ $vehicle->title }}</p>
-                        <p class="font-mono text-[11px] uppercase tracking-widest text-ink-soft mt-2">FOB</p>
+                        <p class="text-[13px] font-bold uppercase tracking-wide text-ink-soft mt-2">FOB<span style="display:inline-block;vertical-align:middle;margin-left:10px;padding:4px 8px;border-radius:3px;color:#fff;font:800 11px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.05em;text-transform:uppercase;background:{{ $vehicle->isSupplierStock() ? 'var(--color-toco-navy)' : 'var(--color-toco-red)' }}">{{ $vehicle->stockLabel() }}</span></p>
                         @if ($vehicle->price_on_request)
                             <p class="font-extrabold text-3xl text-toco-red mt-1">On request</p>
                         @elseif ($vehicle->isDiscounted())
@@ -537,13 +537,13 @@
 
                 {{-- ============ Vehicle Details (right sidebar, 2 sub-columns per PDF) ============ --}}
                 <div class="bg-white border border-line rounded-sm p-5">
-                    <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">At a glance</p>
+                    <p class="text-[13px] uppercase tracking-wider text-toco-red font-bold">At a glance</p>
                     <h2 class="font-bold text-toco-navy text-lg mt-1 mb-3">Vehicle Details</h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0 text-[13px]">
                         <dl class="divide-y divide-line">
                             @foreach ($detailsLeft as $row)
                                 <div class="py-1.5">
-                                    <dt class="font-mono text-[9px] uppercase tracking-widest text-ink-soft leading-tight">{{ $row[0] }}</dt>
+                                    <dt class="text-[12px] font-semibold uppercase tracking-wide text-ink-soft leading-tight">{{ $row[0] }}</dt>
                                     <dd class="font-semibold text-ink break-words leading-snug mt-0.5">{{ $row[1] }}</dd>
                                 </div>
                             @endforeach
@@ -551,7 +551,7 @@
                         <dl class="divide-y divide-line">
                             @foreach ($detailsRight as $row)
                                 <div class="py-1.5">
-                                    <dt class="font-mono text-[9px] uppercase tracking-widest text-ink-soft leading-tight">{{ $row[0] }}</dt>
+                                    <dt class="text-[12px] font-semibold uppercase tracking-wide text-ink-soft leading-tight">{{ $row[0] }}</dt>
                                     <dd class="font-semibold text-ink break-words leading-snug mt-0.5">{{ $row[1] }}</dd>
                                 </div>
                             @endforeach
@@ -615,29 +615,29 @@
                         class="absolute top-3 right-3 w-9 h-9 grid place-items-center text-toco-navy hover:text-toco-red">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                 </button>
-                <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">Request a quote</p>
+                <p class="text-[13px] uppercase tracking-wider text-toco-red font-bold">Request a quote</p>
                 <h2 id="quote-form-title" class="font-extrabold text-toco-navy text-xl mt-1 pr-10">Get a CIF estimate for {{ $vehicle->title }}</h2>
                 <p class="text-sm text-ink-soft mt-1">Tell us where you'd like it delivered. We'll come back with a final figure within one business day.</p>
 
                 <form method="POST" action="{{ route('quotes.store', $vehicle->slug) }}" class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-5 text-sm">
                     @csrf
                     <div>
-                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Your name</label>
+                        <label class="block text-[13px] font-bold uppercase tracking-wide text-toco-navy mb-1.5">Your name</label>
                         <input type="text" name="contact_name" value="{{ old('contact_name', Auth::user()->name) }}" required class="w-full border-line rounded-sm">
                         @error('contact_name')<p class="text-toco-red text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
                     <div>
-                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Email</label>
+                        <label class="block text-[13px] font-bold uppercase tracking-wide text-toco-navy mb-1.5">Email</label>
                         <input type="email" name="contact_email" value="{{ old('contact_email', Auth::user()->email) }}" required class="w-full border-line rounded-sm">
                         @error('contact_email')<p class="text-toco-red text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
                     <div>
-                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Phone (optional)</label>
+                        <label class="block text-[13px] font-bold uppercase tracking-wide text-toco-navy mb-1.5">Phone (optional)</label>
                         <input type="text" name="contact_phone" value="{{ old('contact_phone', Auth::user()->phone) }}" class="w-full border-line rounded-sm">
                     </div>
                     <div></div>
                     <div>
-                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Destination country</label>
+                        <label class="block text-[13px] font-bold uppercase tracking-wide text-toco-navy mb-1.5">Destination country</label>
                         <select name="country_id" x-model="countryId" @change="onCountry()" class="w-full border-line rounded-sm">
                             <option value="">— Country —</option>
                             <template x-for="c in countries" :key="c.id">
@@ -646,7 +646,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Port</label>
+                        <label class="block text-[13px] font-bold uppercase tracking-wide text-toco-navy mb-1.5">Port</label>
                         <select name="port_id" x-model="portId" :disabled="!ports.length" class="w-full border-line rounded-sm disabled:bg-toco-silver-2">
                             <option value="">— Port —</option>
                             <template x-for="p in ports" :key="p.id">
@@ -657,27 +657,27 @@
                     </div>
 
                     {{-- Import regulations for the chosen port --}}
-                    <div x-show="regulation()" x-cloak class="md:col-span-2 border border-line rounded-sm bg-toco-silver-2/60 p-4">
-                        <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold mb-2">Import regulations — your destination port</p>
-                        <p x-show="regulation()?.description" x-text="regulation()?.description" class="text-[13px] text-ink mb-3"></p>
-                        <dl class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[13px]">
+                    <div x-show="regulation()" x-cloak class="md:col-span-2 rounded-sm p-4" style="background:#FFF4E5;border:1px solid #F5C58A;border-left:4px solid #EF7C0E">
+                        <p class="font-bold mb-2" style="font-size:16px;color:#9A3412">Import regulations — your destination port</p>
+                        <p x-show="regulation()?.description" x-text="regulation()?.description" class="text-ink mb-3" style="font-size:15px;line-height:1.5"></p>
+                        <dl class="grid grid-cols-1 sm:grid-cols-3 gap-3" style="font-size:15px">
                             <div x-show="regulation()?.age_limit">
-                                <dt class="text-ink-soft font-mono text-[10px] uppercase tracking-widest">Age limit</dt>
-                                <dd class="font-semibold text-toco-navy mt-0.5" x-text="regulation()?.age_limit"></dd>
+                                <dt class="font-bold uppercase tracking-wide" style="font-size:12px;color:#9A3412">Age limit</dt>
+                                <dd class="font-bold text-toco-navy mt-0.5" x-text="regulation()?.age_limit"></dd>
                             </div>
                             <div x-show="regulation()?.shipment_time">
-                                <dt class="text-ink-soft font-mono text-[10px] uppercase tracking-widest">Shipment time</dt>
-                                <dd class="font-semibold text-toco-navy mt-0.5" x-text="regulation()?.shipment_time"></dd>
+                                <dt class="font-bold uppercase tracking-wide" style="font-size:12px;color:#9A3412">Shipment time</dt>
+                                <dd class="font-bold text-toco-navy mt-0.5" x-text="regulation()?.shipment_time"></dd>
                             </div>
                             <div x-show="regulation()?.notes" class="sm:col-span-3">
-                                <dt class="text-ink-soft font-mono text-[10px] uppercase tracking-widest">Notes</dt>
+                                <dt class="font-bold uppercase tracking-wide" style="font-size:12px;color:#9A3412">Notes</dt>
                                 <dd class="text-ink mt-0.5 whitespace-pre-line" x-text="regulation()?.notes"></dd>
                             </div>
                         </dl>
                     </div>
 
                     <div class="md:col-span-2">
-                        <label class="block font-mono text-[10px] uppercase tracking-widest text-ink-soft mb-1">Message (optional)</label>
+                        <label class="block text-[13px] font-bold uppercase tracking-wide text-toco-navy mb-1.5">Message (optional)</label>
                         <textarea name="message" rows="4" maxlength="4000" placeholder="Anything we should know? (target accessories, alternative models, currency, ETA…)" class="w-full border-line rounded-sm">{{ old('message') }}</textarea>
                         @error('message')<p class="text-toco-red text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
@@ -697,7 +697,7 @@
             <div class="max-w-[1600px] mx-auto px-6 2xl:px-8 py-10 md:py-14">
                 <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-6">
                     <div>
-                        <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-toco-red font-bold">You might also like</p>
+                        <p class="text-[13px] uppercase tracking-wider text-toco-red font-bold">You might also like</p>
                         <h2 class="text-2xl md:text-[28px] font-extrabold text-toco-navy mt-1 leading-tight">Related vehicles</h2>
                         <p class="text-ink-soft text-sm mt-1">More {{ $vehicle->make?->name ?? '' }} {{ $vehicle->vehicleModel?->name ?? ($vehicle->bodyType?->name ? mb_strtolower($vehicle->bodyType->name).'s' : 'vehicles') }} in our stock.</p>
                     </div>

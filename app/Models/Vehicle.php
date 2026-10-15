@@ -222,6 +222,12 @@ class Vehicle extends Model implements HasMedia
         return $this->supplier_id !== null && (int) $this->supplier_id !== Supplier::ownStockId();
     }
 
+    /** Buyer-facing stock badge: "Dealer Stock" for supplier feeds, "Toco Stock" for Toco's yard. */
+    public function stockLabel(): string
+    {
+        return $this->isSupplierStock() ? 'Dealer Stock' : 'Toco Stock';
+    }
+
     /**
      * PayPal / bank-transfer checkout. Supplier stock is quote-only unless the
      * supplier's "allow online checkout" setting is on, because its

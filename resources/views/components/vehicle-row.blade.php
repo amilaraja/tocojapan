@@ -78,10 +78,14 @@
     .vr-title{font-size:18px;font-weight:800;line-height:1.25;color:var(--color-toco-navy)}
     .vr-title a:hover{color:var(--color-toco-red)}
     .vr-stats{display:flex;flex-wrap:wrap;margin-top:10px}
-    .vr-stat{padding:2px 16px;text-align:center;border-left:1px solid var(--color-line)}
+    .vr-stat{padding:2px 9px;text-align:center;border-left:1px solid var(--color-line)}
     .vr-stat:first-child{border-left:0;padding-left:0}
     .vr-stat dt{font-size:13px;color:var(--color-ink-soft)}
     .vr-stat dd{font-size:16px;font-weight:700;color:var(--color-ink);white-space:nowrap;display:flex;align-items:center;gap:6px;justify-content:center}
+    .vr-stock-cell{display:flex;align-items:center;margin-left:auto;padding-right:0}
+    .vr-stock{display:inline-block;padding:5px 8px;border-radius:3px;color:#fff;font-size:11px;line-height:1.2;font-weight:800;text-transform:uppercase;letter-spacing:.04em;text-align:center;white-space:nowrap}
+    .vr-stock-toco{background:var(--color-toco-red)}
+    .vr-stock-dealer{background:var(--color-toco-navy)}
     .vr-stat dd img{width:20px;height:14px;box-shadow:0 0 0 1px var(--color-line)}
     .vr-specs{display:grid;grid-template-columns:repeat(2,max-content minmax(0,1fr));gap:1px;margin-top:12px;background:var(--color-line);border:1px solid var(--color-line);font-size:13px}
     .vr-specs dt,.vr-specs dd{padding:5px 8px;color:var(--color-ink);overflow-wrap:anywhere}
@@ -175,6 +179,9 @@
             @if ($place)
                 <div class="vr-stat"><dt>Location</dt><dd><img src="/img/flags/jp.svg" alt="" width="20" height="14">{{ $place }}</dd></div>
             @endif
+            <div class="vr-stat vr-stock-cell">
+                <span class="vr-stock {{ $vehicle->isSupplierStock() ? 'vr-stock-dealer' : 'vr-stock-toco' }}">{!! str_replace(' ', '<br>', e($vehicle->stockLabel())) !!}</span>
+            </div>
         </dl>
 
         <dl class="vr-specs">

@@ -43,7 +43,8 @@
                                 {{ $carousel['ribbon'] }}
                             </div>
                         </div>
-                        <x-vehicle-card :vehicle="$vehicle" />
+                        {{-- The Dealer Stock ribbon already says it: skip the card's own stock label. --}}
+                        <x-vehicle-card :vehicle="$vehicle" :stockLabel="$carousel['ribbon'] !== $vehicle->stockLabel()" />
                     </div>
                 </div>
             @endforeach

@@ -2,7 +2,7 @@
      Needs an enclosing x-data="cifCalc({...})" scope — see
      partials/cif-calc-script. Shared by the detail page and the quick view.
      Params: $vehicle, $proformaEligible. --}}
-<p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold">Calculate Your Total Price</p>
+<p class="text-[13px] uppercase tracking-wider text-toco-red font-bold">Calculate Your Total Price</p>
 <h3 class="font-bold text-toco-navy text-base mb-3">Estimate landed cost</h3>
 
 <div class="space-y-2 text-sm">
@@ -25,20 +25,20 @@
 </div>
 
 {{-- Import regulations for the chosen port --}}
-<div x-show="regulation()" x-cloak class="mt-3 border border-line rounded-sm bg-toco-silver-2/60 p-3 text-[12px] leading-snug">
-    <p class="font-mono text-[10px] uppercase tracking-widest text-toco-red font-bold mb-1.5">Import rules — your port</p>
+<div x-show="regulation()" x-cloak class="mt-3 rounded-sm p-3 leading-snug" style="background:#FFF4E5;border:1px solid #F5C58A;border-left:4px solid #EF7C0E;font-size:14px">
+    <p class="font-bold mb-1.5" style="font-size:15px;color:#9A3412">Import rules — your port</p>
     <p x-show="regulation()?.description" x-text="regulation()?.description" class="text-ink mb-2"></p>
     <dl class="space-y-1">
-        <div x-show="regulation()?.age_limit" class="flex gap-2"><dt class="text-ink-soft w-28 shrink-0">Age limit</dt><dd class="font-semibold text-toco-navy" x-text="regulation()?.age_limit"></dd></div>
-        <div x-show="regulation()?.shipment_time" class="flex gap-2"><dt class="text-ink-soft w-28 shrink-0">Shipment time</dt><dd class="font-semibold text-toco-navy" x-text="regulation()?.shipment_time"></dd></div>
-        <div x-show="regulation()?.notes" class="flex gap-2"><dt class="text-ink-soft w-28 shrink-0">Notes</dt><dd class="text-ink whitespace-pre-line" x-text="regulation()?.notes"></dd></div>
+        <div x-show="regulation()?.age_limit" class="flex gap-2"><dt class="w-28 shrink-0 font-semibold" style="color:#9A3412">Age limit</dt><dd class="font-bold text-toco-navy" x-text="regulation()?.age_limit"></dd></div>
+        <div x-show="regulation()?.shipment_time" class="flex gap-2"><dt class="w-28 shrink-0 font-semibold" style="color:#9A3412">Shipment time</dt><dd class="font-bold text-toco-navy" x-text="regulation()?.shipment_time"></dd></div>
+        <div x-show="regulation()?.notes" class="flex gap-2"><dt class="w-28 shrink-0 font-semibold" style="color:#9A3412">Notes</dt><dd class="text-ink whitespace-pre-line" x-text="regulation()?.notes"></dd></div>
     </dl>
 </div>
 
 @if ($proformaEligible)
     {{-- LC destinations (Import regulations → Payment modes) get a proforma invoice. --}}
     <div x-show="regulation()?.lc" x-cloak class="mt-3 border border-toco-navy/30 rounded-sm p-3 text-[12px] leading-snug">
-        <p class="font-mono text-[10px] uppercase tracking-widest text-toco-navy font-bold mb-1">LC payment accepted</p>
+        <p class="text-[13px] uppercase tracking-wider text-toco-navy font-bold mb-1">LC payment accepted</p>
         <p class="text-ink-soft mb-2">Paying by Letter of Credit? Download a proforma invoice for this vehicle to open your LC.</p>
         @auth
             <a :href="'{{ route('proforma.create', $vehicle->slug) }}?port_id=' + portId" class="block text-center bg-toco-navy hover:bg-toco-navy-deep text-white font-bold uppercase tracking-widest text-xs px-4 py-2.5 rounded-sm">Get a proforma invoice</a>
