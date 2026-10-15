@@ -7,7 +7,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
 
 class UserForm
 {
@@ -26,12 +25,16 @@ class UserForm
                 ]),
 
             Section::make('Roles')
-                ->description('A user with no admin/sales/super_admin role cannot access this panel.')
+                ->description('Website admin: super_admin, admin, sales, mailer roles. Sales team (CRM at /crm only): crm_agent, crm_team_lead, crm_operations, crm_admin.')
                 ->schema([
+                    // Options come from the relationship (keyed by role id) so the
+                    // chosen roles validate and save; super_admin only for super admins.
                     Select::make('roles')
                         ->multiple()
-                        ->relationship('roles', 'name')
-                        ->options(self::availableRoles())
+                        ->relationship('roles', 'name', modifyQueryUsing: fn ($query) => $query
+                            ->where('guard_name', 'web')
+                            ->when(! auth()->user()?->hasRole('super_admin'), fn ($query) => $query->where('name', '!=', 'super_admin'))
+                            ->orderBy('name'))
                         ->preload(),
                 ]),
 
@@ -46,21 +49,5 @@ class UserForm
                         ->dehydrateStateUsing(fn (string $state) => Hash::make($state)),
                 ]),
         ]);
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private static function availableRoles(): array
-    {
-        $current = auth()->user();
-        $roles = Role::where('guard_name', 'web')->orderBy('name')->pluck('name', 'name')->all();
-
-        // Only super_admin can grant the super_admin role.
-        if (! $current?->hasRole('super_admin')) {
-            unset($roles['super_admin']);
-        }
-
-        return $roles;
     }
 }
