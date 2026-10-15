@@ -514,11 +514,10 @@
                                  calculator's port + ticked add-ons so the two
                                  numbers never disagree. Hides itself while the
                                  picker is dirty without a fresh result. --}}
-                            <p class="text-[12px] text-ink-soft mt-2 leading-tight"
-                                x-show="result || ! touched" x-cloak>
-                                CIF to <span class="font-semibold text-toco-navy" x-text="result?.port?.name || initialPortName"></span>:
-                                <span class="font-bold text-toco-navy" x-text="fmt(result ? grandTotal() : initialCif)"></span>
-                            </p>
+                            <div class="mt-3" x-show="result || ! touched" x-cloak>
+                                <p class="text-[13px] font-bold uppercase tracking-wide text-ink-soft">CIF to <span class="text-toco-navy" x-text="result?.port?.name || initialPortName"></span></p>
+                                <p class="font-extrabold text-3xl mt-1" style="color:#047857" x-text="fmt(result ? grandTotal() : initialCif)"></p>
+                            </div>
                         @endif
                     </div>
                     <div class="p-5 space-y-2">
