@@ -1,4 +1,6 @@
 @php
+    // Engine steps in litres: 660 -> 0.66L (kei), 1500 -> 1.5L.
+    $litres = fn ($cc) => ((int) $cc === 660 ? '0.66' : number_format((int) $cc / 1000, 1)).'L';
     $showStockCounts = app(\App\Settings\GeneralSettings::class)->show_stock_counts;
     $activeMake = ($filters['make'] ?? '') ? ($makes->firstWhere('slug', $filters['make'])?->name) : null;
     $activeBody = ($filters['body_type'] ?? '') ? \Illuminate\Support\Str::title(str_replace('-', ' ', $filters['body_type'])) : null;
@@ -43,8 +45,8 @@
         'price_to' => ($filters['price_to'] ?? null) ? 'To $'.number_format((float) $filters['price_to']) : null,
         'mileage_min' => ($filters['mileage_min'] ?? null) ? 'Mileage ≥ '.number_format((int) $filters['mileage_min']).' km' : null,
         'mileage_max' => ($filters['mileage_max'] ?? null) ? 'Mileage ≤ '.number_format((int) $filters['mileage_max']).' km' : null,
-        'engine_from' => ($filters['engine_from'] ?? null) ? 'Engine ≥ '.$filters['engine_from'].' cc' : null,
-        'engine_to' => ($filters['engine_to'] ?? null) ? 'Engine ≤ '.$filters['engine_to'].' cc' : null,
+        'engine_from' => ($filters['engine_from'] ?? null) ? 'Engine from '.$litres($filters['engine_from']) : null,
+        'engine_to' => ($filters['engine_to'] ?? null) ? 'Engine to '.$litres($filters['engine_to']) : null,
         'featured' => ($filters['featured'] ?? null) ? 'Hot deals' : null,
         'discounted' => ($filters['discounted'] ?? null) ? 'Discounted' : null,
         'new_only' => ($filters['new_only'] ?? null) ? 'New arrivals' : null,
@@ -53,7 +55,7 @@
     // Filter dropdown options
     $yearRange = range(1980, (int) date('Y'));
     $mileageTiers = [100, 500, 1000, 2000, 3000, 5000, 7500, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000, 120000, 150000, 200000];
-    $engineTiers = [550, 660, 800, 1000, 1200, 1300, 1500, 1600, 1800, 2000, 2400, 2500, 3000, 3500, 4000, 4500, 5000, 6000];
+    $engineTiers = [660, 1000, 1200, 1300, 1500, 1600, 1800, 2000, 2400, 2500, 3000, 3500, 4000, 4500, 5000, 6000];
     $priceTiers = [500, 1000, 1500, 2000, 3000, 5000, 8000, 12000, 16000, 20000, 25000, 30000, 35000, 40000, 50000];
 @endphp
 
@@ -254,18 +256,18 @@
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-[13px] font-bold uppercase tracking-wide text-toco-navy mb-1.5">Engine Size (cc)</label>
+                                <label class="block text-[13px] font-bold uppercase tracking-wide text-toco-navy mb-1.5">Engine Size</label>
                                 <div class="grid grid-cols-2 gap-1.5">
                                     <select name="engine_from" class="text-sm">
                                         <option value="">From</option>
                                         @foreach ($engineTiers as $e)
-                                            <option value="{{ $e }}" {{ (string) ($filters['engine_from'] ?? '') === (string) $e ? 'selected' : '' }}>{{ number_format($e) }} cc</option>
+                                            <option value="{{ $e }}" {{ (string) ($filters['engine_from'] ?? '') === (string) $e ? 'selected' : '' }}>{{ $litres($e) }}</option>
                                         @endforeach
                                     </select>
                                     <select name="engine_to" class="text-sm">
                                         <option value="">To</option>
                                         @foreach ($engineTiers as $e)
-                                            <option value="{{ $e }}" {{ (string) ($filters['engine_to'] ?? '') === (string) $e ? 'selected' : '' }}>{{ number_format($e) }} cc</option>
+                                            <option value="{{ $e }}" {{ (string) ($filters['engine_to'] ?? '') === (string) $e ? 'selected' : '' }}>{{ $litres($e) }}</option>
                                         @endforeach
                                     </select>
                                 </div>

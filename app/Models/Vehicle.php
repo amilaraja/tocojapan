@@ -544,8 +544,10 @@ class Vehicle extends Model implements HasMedia
             ->when(! empty($filters['price_to']), fn ($q) => $q->whereRaw('COALESCE(price_fob_discount, price_fob) <= ?', [(float) $filters['price_to']]))
             ->when(! empty($filters['mileage_min']), fn ($q) => $q->where('mileage_km', '>=', (int) $filters['mileage_min']))
             ->when(! empty($filters['mileage_max']), fn ($q) => $q->where('mileage_km', '<=', (int) $filters['mileage_max']))
-            ->when(! empty($filters['engine_from']), fn ($q) => $q->where('engine_cc', '>=', (int) $filters['engine_from']))
-            ->when(! empty($filters['engine_to']), fn ($q) => $q->where('engine_cc', '<=', (int) $filters['engine_to']))
+            // Engine steps are shown in litres (1.5L), so match the rounded size:
+            // a 1,496 cc car counts as 1.5L and a 996 cc car as 1.0L.
+            ->when(! empty($filters['engine_from']), fn ($q) => $q->where('engine_cc', '>=', (int) $filters['engine_from'] - 50))
+            ->when(! empty($filters['engine_to']), fn ($q) => $q->where('engine_cc', '<=', (int) $filters['engine_to'] + 49))
             ->when(! empty($filters['transmission']), fn ($q) => $q->where('transmission', $filters['transmission']))
             ->when(! empty($filters['fuel']), fn ($q) => $q->where('fuel', $filters['fuel']))
             ->when(! empty($filters['steering']), fn ($q) => $q->where('steering_side', $filters['steering']))
