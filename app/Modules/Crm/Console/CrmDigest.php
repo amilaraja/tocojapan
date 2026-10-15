@@ -47,7 +47,7 @@ class CrmDigest extends Command
             Notifier::queue($user->email, new CrmMail(
                 mailSubject: 'TOCO CRM: your day, '.now('Asia/Tokyo')->format('D j M'),
                 text: $text,
-                button: ['label' => 'Open My work', 'url' => url('/admin/crm/my-work')],
+                button: ['label' => 'Open My work', 'url' => url('/crm/my-work')],
             ), 'daily_digest', 'email');
         }
 

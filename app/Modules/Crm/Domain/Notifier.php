@@ -279,7 +279,7 @@ class Notifier
 
     public static function caseUrl(CrmCase $case): string
     {
-        return url('/admin/crm/cases/'.$case->id);
+        return url('/crm/cases/'.$case->id);
     }
 
     private static function icon(string $event): string

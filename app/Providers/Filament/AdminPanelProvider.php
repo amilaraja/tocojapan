@@ -52,7 +52,7 @@ class AdminPanelProvider extends PanelProvider
             // Bell for partner network alerts (UI brief 6.1).
             ->databaseNotifications()
             ->databaseNotificationsPolling('60s')
-            ->navigationGroups(['CRM', 'Catalogue', 'Content', 'Enquiries', 'Mailer', 'Partner Network', 'Shipping', 'System'])
+            ->navigationGroups(['Catalogue', 'Content', 'Enquiries', 'Mailer', 'Partner Network', 'Shipping', 'System'])
             ->renderHook(PanelsRenderHook::HEAD_END, fn (): string => Blade::render('@include("filament.admin.auth.head")'))
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn (): string => Blade::render('@include("filament.admin.auth.turnstile")'))
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_BEFORE, fn (): string => Blade::render('@include("filament.admin.auth.brand")'))
@@ -64,16 +64,22 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')
             ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\\Filament\\Admin\\Pages')
             ->pages([
-                // Admin home; CRM-only staff are sent on to the CRM Dashboard.
+                // Admin home; staff whose job is the CRM are sent on to /crm.
                 \App\Modules\Crm\Filament\Pages\HomeDashboard::class,
                 // TOCO Mailer module screens (each gates itself via canAccess()).
                 ...MailerServiceProvider::filamentPages(),
                 // Partner Stock API screens (gated by partners.admin).
                 ...PartnerApiServiceProvider::filamentPages(),
-                // TOCO CRM screens (each gates itself with CrmAccess).
-                ...CrmServiceProvider::filamentPages(),
             ])
-            ->resources([...MailerServiceProvider::filamentResources(), ...PartnerApiServiceProvider::filamentResources(), ...CrmServiceProvider::filamentResources()])
+            ->resources([...MailerServiceProvider::filamentResources(), ...PartnerApiServiceProvider::filamentResources()])
+            // TOCO CRM moved to its own panel at /crm (CR-TOC-02-01).
+            ->navigationItems([
+                \Filament\Navigation\NavigationItem::make('Open CRM')
+                    ->url('/crm')
+                    ->icon('heroicon-o-arrow-top-right-on-square')
+                    ->sort(-1)
+                    ->visible(fn (): bool => CrmServiceProvider::enabled() && \App\Modules\Crm\Support\CrmAccess::canUse()),
+            ])
             ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\\Filament\\Admin\\Widgets')
             ->widgets([
                 AccountWidget::class,
@@ -94,7 +100,8 @@ class AdminPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([
-                Authenticate::class,
+                // Filament's Authenticate, but CRM-only staff are sent to /crm instead of a 403.
+                \App\Modules\Crm\Http\Middleware\SendCrmStaffToCrm::class,
             ]);
     }
 }

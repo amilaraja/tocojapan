@@ -10,6 +10,6 @@
             <span style="font-weight:800;color:#1F2356;font-size:1.125rem;">Toco Japan</span>
         </div>
     @endif
-    <h1>Admin sign in</h1>
-    <p>Toco Japan management console</p>
+    <h1>{{ $heading ?? 'Admin sign in' }}</h1>
+    <p>{{ $subheading ?? 'Toco Japan management console' }}</p>
 </div>

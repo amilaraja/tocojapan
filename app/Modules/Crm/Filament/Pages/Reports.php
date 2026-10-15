@@ -18,7 +18,7 @@ class Reports extends Page
 
     protected string $view = 'crm::filament.reports';
 
-    protected static ?string $slug = 'crm/reports';
+    protected static ?string $slug = 'reports';
 
     protected static ?string $title = 'Sales reports';
 

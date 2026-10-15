@@ -37,7 +37,7 @@ class CaseResource extends Resource
 {
     protected static ?string $model = CrmCase::class;
 
-    protected static ?string $slug = 'crm/cases';
+    protected static ?string $slug = 'cases';
 
     protected static ?string $modelLabel = 'Case';
 

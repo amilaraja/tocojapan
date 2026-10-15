@@ -47,7 +47,17 @@ Operating guide: admin **CRM → CRM Help** (source `app/Modules/Crm/docs/help.m
 | 2026-10-13 | `tests/Feature/{ProformaInvoice,StaffMail,PayPalWebhook}Test.php` | the three legacy-email tests run with the CRM off | old path kept testable |
 | 2026-10-14 | `app/Providers/Filament/AdminPanelProvider.php` | admin home is `Crm\Filament\Pages\HomeDashboard` (Filament Dashboard subclass): CRM-only staff are redirected to CRM → Dashboard | client change: CRM dashboard as default page |
 
+| 2026-10-15 | `bootstrap/providers.php` | registers `Crm\Filament\CrmPanelProvider` (the /crm panel) | CR-TOC-02-01 |
+| 2026-10-15 | `app/Providers/Filament/AdminPanelProvider.php` | CRM pages, resources and "CRM" group removed; "Open CRM" menu link; auth middleware `Crm\Http\Middleware\SendCrmStaffToCrm` (Filament `Authenticate` subclass: CRM-only staff → /crm instead of 403) | CR-TOC-02-01 |
+| 2026-10-15 | `app/Models/User.php` | `canAccessPanel`: admin = super_admin, admin, sales, mailer roles; crm = `CrmAccess::canUse` while the CRM is on | CR-TOC-02-01 |
+| 2026-10-15 | `resources/views/filament/admin/auth/brand.blade.php` | heading / subheading variables (CRM login says "CRM sign in") | CR-TOC-02-01 |
+| 2026-10-15 | `tests/Mailer/Feature/RoutesTest.php` | accepts a subclass of Filament `Authenticate` on admin routes | CR-TOC-02-01 |
+
 The "CRM Case C-…" links on the order, quote, contact and spare-part screens (INT-002) come from a Filament render hook in `CrmServiceProvider`. Those resource files are unchanged.
+
+## 3a. Own workspace at /crm (CR-TOC-02-01, 15 Oct 2026, no charge)
+
+Panel `crm` (`app/Modules/Crm/Filament/CrmPanelProvider.php`) at /crm with the admin login class and theme; CRM slugs no longer carry `crm/`; CrmDashboard is the panel root. Same session as /admin. Old `/admin/crm/{path}` → 301 `/crm/{path}` (route `crm.legacy-admin`). Staff emails and digests link to /crm. Case page links to admin records only for users who can open /admin. Tests use `Filament::setCurrentPanel('crm')`.
 
 ## 4. Requirement status (phase 1 + agreed extras)
 
@@ -56,4 +66,4 @@ Not built: NFR-006 2FA (decision: out). NFR-001 load at 20k Cases is not benchma
 
 ## 5. Tests
 
-`--testsuite=Crm` (47 tests). Helpers: `Tests\Crm\Support\CrmData`. The Mailer, PartnerApi and JctFeed suites stay green. Feature has 6 failures that existed before this work (auth, password reset, sitemap).
+`--testsuite=Crm` (54 tests). Helpers: `Tests\Crm\Support\CrmData`. The Mailer, PartnerApi and JctFeed suites stay green. Feature has 6 failures that existed before this work (auth, password reset, sitemap).

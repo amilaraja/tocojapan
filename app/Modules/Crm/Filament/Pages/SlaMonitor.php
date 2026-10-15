@@ -15,7 +15,7 @@ class SlaMonitor extends Page
 {
     protected string $view = 'crm::filament.sla';
 
-    protected static ?string $slug = 'crm/sla';
+    protected static ?string $slug = 'sla';
 
     protected static ?string $title = 'SLA monitor';
 

@@ -374,15 +374,18 @@ class ViewCase extends ViewRecord
     /** Website records linked to the Case, with links to their admin screens (CRM-CAS-005, INT-002). @return list<array{label: string, url: ?string, status: ?string}> */
     public function linkedRecords(): array
     {
-        return $this->case()->links()->with('linkable')->get()->filter(fn ($link) => $link->linkable)->map(function ($link) {
+        // CRM-only staff cannot open /admin (CR-TOC-02-01): they see the record and its status without a link.
+        $adminUrls = (bool) auth()->user()?->canAccessPanel(\Filament\Facades\Filament::getPanel('admin'));
+
+        return $this->case()->links()->with('linkable')->get()->filter(fn ($link) => $link->linkable)->map(function ($link) use ($adminUrls) {
             $r = $link->linkable;
 
             return match (true) {
-                $r instanceof \App\Models\Quote => ['label' => 'Quote '.$r->reference, 'url' => \App\Filament\Admin\Resources\Quotes\QuoteResource::getUrl('edit', ['record' => $r]), 'status' => ucfirst(str_replace('_', ' ', $r->status))],
-                $r instanceof \App\Models\Order => ['label' => 'Order '.$r->order_no, 'url' => \App\Filament\Admin\Resources\Orders\OrderResource::getUrl('view', ['record' => $r]), 'status' => $r->statusLabel()],
-                $r instanceof \App\Models\ProformaInvoice => ['label' => 'Proforma '.$r->invoice_no, 'url' => \App\Filament\Admin\Resources\ProformaInvoices\ProformaInvoiceResource::getUrl('index'), 'status' => 'Expires '.\Illuminate\Support\Carbon::parse($r->expires_on)->format('j M')],
-                $r instanceof \App\Models\ContactInquiry => ['label' => 'Contact form #'.$r->id, 'url' => \App\Filament\Admin\Resources\ContactInquiries\ContactInquiryResource::getUrl('edit', ['record' => $r]), 'status' => $r->is_handled ? 'Handled' : 'Not handled'],
-                $r instanceof \App\Models\SparePartInquiry => ['label' => 'Spare-part request #'.$r->id, 'url' => \App\Filament\Admin\Resources\SparePartInquiries\SparePartInquiryResource::getUrl('edit', ['record' => $r]), 'status' => $r->is_handled ? 'Handled' : 'Not handled'],
+                $r instanceof \App\Models\Quote => ['label' => 'Quote '.$r->reference, 'url' => ($adminUrls ? \App\Filament\Admin\Resources\Quotes\QuoteResource::getUrl('edit', ['record' => $r], panel: 'admin') : null), 'status' => ucfirst(str_replace('_', ' ', $r->status))],
+                $r instanceof \App\Models\Order => ['label' => 'Order '.$r->order_no, 'url' => ($adminUrls ? \App\Filament\Admin\Resources\Orders\OrderResource::getUrl('view', ['record' => $r], panel: 'admin') : null), 'status' => $r->statusLabel()],
+                $r instanceof \App\Models\ProformaInvoice => ['label' => 'Proforma '.$r->invoice_no, 'url' => ($adminUrls ? \App\Filament\Admin\Resources\ProformaInvoices\ProformaInvoiceResource::getUrl('index', panel: 'admin') : null), 'status' => 'Expires '.\Illuminate\Support\Carbon::parse($r->expires_on)->format('j M')],
+                $r instanceof \App\Models\ContactInquiry => ['label' => 'Contact form #'.$r->id, 'url' => ($adminUrls ? \App\Filament\Admin\Resources\ContactInquiries\ContactInquiryResource::getUrl('edit', ['record' => $r], panel: 'admin') : null), 'status' => $r->is_handled ? 'Handled' : 'Not handled'],
+                $r instanceof \App\Models\SparePartInquiry => ['label' => 'Spare-part request #'.$r->id, 'url' => ($adminUrls ? \App\Filament\Admin\Resources\SparePartInquiries\SparePartInquiryResource::getUrl('edit', ['record' => $r], panel: 'admin') : null), 'status' => $r->is_handled ? 'Handled' : 'Not handled'],
                 default => ['label' => class_basename($r).' #'.$r->getKey(), 'url' => null, 'status' => null],
             };
         })->values()->all();

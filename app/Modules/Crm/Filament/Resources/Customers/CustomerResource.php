@@ -27,7 +27,7 @@ class CustomerResource extends Resource
 {
     protected static ?string $model = CrmCustomer::class;
 
-    protected static ?string $slug = 'crm/customers';
+    protected static ?string $slug = 'customers';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
 

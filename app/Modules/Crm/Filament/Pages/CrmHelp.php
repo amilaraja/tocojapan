@@ -14,7 +14,7 @@ class CrmHelp extends Page
 {
     protected string $view = 'crm::filament.help';
 
-    protected static ?string $slug = 'crm/help';
+    protected static ?string $slug = 'help';
 
     protected static ?string $title = 'CRM Help';
 

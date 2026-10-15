@@ -16,7 +16,7 @@ class HomeDashboard extends Dashboard
     {
         $user = auth()->user();
         if (CrmServiceProvider::enabled() && CrmAccess::canUse($user) && ! $user->hasAnyRole(['super_admin', 'admin'])) {
-            $this->redirect(CrmDashboard::getUrl());
+            $this->redirect(CrmDashboard::getUrl(panel: 'crm'));
         }
     }
 }

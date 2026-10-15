@@ -88,6 +88,7 @@ Separate from the Partner API (no partner tables). Read-only on vehicles. Notes:
 
 ## TOCO CRM (app/Modules/Crm)
 SRS docs/crm/SRS-TOC-02_TOCO_CRM.docx + proposal WEB-TOC-02 (fixed price). Plan docs/crm/TOC-CRM-DEV-01_Build_Plan.md; register docs/crm/integration-notes.md (list every edit outside the module); operating guide = CRM → CRM Help, source app/Modules/Crm/docs/help.md (update it with every behaviour change). IDs CRM-AREA-NNN.
+- Own Filament panel `crm` at /crm (CR-TOC-02-01): `Crm\Filament\CrmPanelProvider`; CRM-only staff cannot open /admin (`User::canAccessPanel`, `SendCrmStaffToCrm`); old /admin/crm/* 301 → /crm/*. Cross-panel links pass `panel: 'crm'|'admin'` to getUrl. Tests: `Filament::setCurrentPanel('crm')`.
 - On with `CRM_ENABLED=true`. Intake = model events after commit, wrapped in `Intake::safely` (never break a submission). Stage logic: `Domain/StageEngine` + `StepEffects` (order sync via `OrderSync`, which sets `$writing` to stop loops).
 - Roles: crm_admin, crm_agent, crm_team_lead, crm_operations (super_admin/admin act as CRM admin).
 - Buyers see the owner's NICKNAME only (crm_agent_status.nickname), never real names. CRM emails replace OrderStatusChanged and StaffMail while on.

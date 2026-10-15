@@ -32,7 +32,7 @@ is reserved or marked sold. Clean-up is at the end.
    a password, role **CRM Agent**.
 3. **Put the agent in the sales queue.** CRM → Queues → Sales → add Demo Agent as a member.
    (Now new car enquiries go to the agent automatically.)
-4. **Agent profile (window B).** Log in to tocojapan.com/admin as the agent. CRM → My profile:
+4. **Agent profile (window B).** Log in to tocojapan.com/crm as the agent. CRM → My profile:
    nickname **Ken**, time zone Asia/Colombo, emails "As they happen". Save.
 5. **Test buyer (window C).** On tocojapan.com, Register with `amilaraja+tocobuyer@gmail.com`, name `Demo Buyer`,
    country Sri Lanka. Verify the email if asked.
@@ -45,10 +45,10 @@ is reserved or marked sold. Clean-up is at the end.
 
 ## Scene 1 — Welcome and the Dashboard (1.5 min) · window A
 
-**DO:** Open tocojapan.com/admin → CRM → **Dashboard**. Hover over the tiles, then the pipeline strip, then scroll to the charts and "Needs attention".
+**DO:** Open tocojapan.com/crm → **Dashboard**. Hover over the tiles, then the pipeline strip, then scroll to the charts and "Needs attention".
 
 **SAY:**
-> "Hello TOCO team. This is your new sales tracking system, the CRM, now live inside your tocojapan.com admin.
+> "Hello TOCO team. This is your new sales tracking system, the CRM, now live in its own workspace at tocojapan.com/crm.
 > This is the CRM Dashboard, the first thing your team sees every morning.
 > At the top: open enquiries, new ones this week, late replies, enquiries that still need an owner, the value of
 > every car sale in progress, cars sold this month and your conversion rate.

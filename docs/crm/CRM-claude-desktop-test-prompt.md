@@ -3,8 +3,8 @@
 How to use:
 1. Do the **set-up** below first (or ask Claude Code on the server to create the test car and accounts).
 2. Open three browser windows and log in yourself (you type the passwords, not Claude):
-   - **Chrome (normal window)** → tocojapan.com/admin as **admin@tocojapan.com**
-   - **Chrome Incognito window** → tocojapan.com/admin as **Demo Agent** (amilaraja+tocoagent@gmail.com)
+   - **Chrome (normal window)** → tocojapan.com/crm as **admin@tocojapan.com**
+   - **Chrome Incognito window** → tocojapan.com/crm as **Demo Agent** (amilaraja+tocoagent@gmail.com)
    - **Firefox (or Edge)** → tocojapan.com, logged in as **Demo Buyer** (amilaraja+tocobuyer@gmail.com)
    - A fourth tab with **Gmail** (amilaraja@gmail.com) open.
 3. Start your screen recorder if you want the run on video.
@@ -20,7 +20,7 @@ You are testing the TOCO CRM on the live website tocojapan.com, end to end, by u
 Three browser windows are already open and logged in:
 
 - **ADMIN**: Chrome normal window, tocojapan.com/admin, logged in as the site admin.
-- **AGENT**: Chrome Incognito window, tocojapan.com/admin, logged in as "Demo Agent" (nickname Ken).
+- **AGENT**: Chrome Incognito window, tocojapan.com/crm, logged in as "Demo Agent" (nickname Ken).
 - **BUYER**: Firefox, tocojapan.com, logged in as "Demo Buyer".
 - **GMAIL**: a Gmail tab (amilaraja@gmail.com). Emails to the agent and buyer arrive here, addressed to
   amilaraja+tocoagent@gmail.com and amilaraja+tocobuyer@gmail.com.

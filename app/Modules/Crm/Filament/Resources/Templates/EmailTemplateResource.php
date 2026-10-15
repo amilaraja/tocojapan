@@ -22,7 +22,7 @@ class EmailTemplateResource extends Resource
 {
     protected static ?string $model = CrmEmailTemplate::class;
 
-    protected static ?string $slug = 'crm/templates';
+    protected static ?string $slug = 'templates';
 
     protected static ?string $modelLabel = 'email template';
 

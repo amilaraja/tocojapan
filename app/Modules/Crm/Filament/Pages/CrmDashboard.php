@@ -21,7 +21,13 @@ class CrmDashboard extends Page
 {
     protected string $view = 'crm::filament.dashboard';
 
-    protected static ?string $slug = 'crm';
+    protected static ?string $slug = 'dashboard';
+
+    /** Home page of the /crm workspace. */
+    public static function getRoutePath(\Filament\Panel $panel): string
+    {
+        return '/';
+    }
 
     protected static ?string $title = 'CRM Dashboard';
 

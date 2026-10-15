@@ -14,6 +14,7 @@ it('puts every Mailer route under /admin with the admin auth middleware', functi
 
     foreach ($mailerRoutes as $route) {
         expect($route->uri())->toStartWith('admin/mailer')
-            ->and($route->gatherMiddleware())->toContain(Authenticate::class);
+            // The admin panel uses a subclass of Filament's Authenticate (CRM staff → /crm, CR-TOC-02-01).
+            ->and(collect($route->gatherMiddleware())->contains(fn ($m) => is_string($m) && is_a($m, Authenticate::class, true)))->toBeTrue();
     }
 });

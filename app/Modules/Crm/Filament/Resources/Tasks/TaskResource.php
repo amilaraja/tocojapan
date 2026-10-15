@@ -24,7 +24,7 @@ class TaskResource extends Resource
 {
     protected static ?string $model = CrmTask::class;
 
-    protected static ?string $slug = 'crm/tasks';
+    protected static ?string $slug = 'tasks';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCheckCircle;
 

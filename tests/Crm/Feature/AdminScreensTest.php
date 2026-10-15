@@ -12,11 +12,11 @@ use Tests\Crm\Support\CrmData;
 beforeEach(function () {
     CrmData::reset();
     Queue::fake([\App\Modules\Crm\Jobs\SendCrmEmail::class]);
-    Filament::setCurrentPanel('admin');
+    Filament::setCurrentPanel('crm');
 });
 
-it('CRM-GEN-001 sends visitors to the admin login', function () {
-    $this->get('/admin/crm/cases')->assertRedirect();
+it('CRM-GEN-001 sends visitors to the CRM login', function () {
+    $this->get('/crm/cases')->assertRedirect();
 });
 
 it('renders every CRM screen for an admin', function () {
@@ -26,10 +26,10 @@ it('renders every CRM screen for an admin', function () {
     $case = CrmCase::sole();
 
     $this->actingAs($admin);
-    $this->get('/admin/crm')->assertOk()->assertSee('Pipeline: open car sales by stage')->assertSee('Needs attention');
+    $this->get('/crm')->assertOk()->assertSee('Pipeline: open car sales by stage')->assertSee('Needs attention');
     foreach (['cases', 'cases/create', 'cases/'.$case->id, 'customers', 'customers/'.$case->customer_id, 'tasks', 'queues', 'steps', 'templates',
         'my-work', 'pipeline', 'team', 'sla', 'reports', 'settings', 'profile', 'help'] as $path) {
-        $this->get('/admin/crm/'.$path)->assertOk();
+        $this->get('/crm/'.$path)->assertOk();
     }
 });
 
@@ -39,8 +39,8 @@ it('CRM-GEN-002 an agent opening another agent\'s Case gets 403', function () {
     CrmData::quote(CrmData::buyer(), CrmData::car()); // to A
     \App\Modules\Crm\Models\CrmAgentStatus::create(['user_id' => $b->id, 'can_pick_unassigned' => false]);
 
-    $this->actingAs($b)->get('/admin/crm/cases/'.CrmCase::sole()->id)->assertStatus(404);
-    $this->actingAs($b)->get('/admin/crm/settings')->assertForbidden();
+    $this->actingAs($b)->get('/crm/cases/'.CrmCase::sole()->id)->assertStatus(404);
+    $this->actingAs($b)->get('/crm/settings')->assertForbidden();
 });
 
 it('CRM-GEN-005 an agent adds a note and ticks a step from the Case page', function () {
@@ -84,15 +84,17 @@ it('CRM-CAS-003 staff create a Case by hand with source WhatsApp', function () {
 });
 
 it('shows the CRM Case link on the order screen (CRM-INT-002)', function () {
-    $admin = CrmData::admin();
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+    $admin = CrmData::admin()->assignRole('admin');
     $buyer = CrmData::buyer();
     $order = CrmData::order($buyer, CrmData::car());
 
-    $this->actingAs($admin)->get('/admin/orders/'.$order->id)->assertOk()->assertSee('CRM Case '.CrmCase::sole()->reference);
+    $this->actingAs($admin)->get('/admin/orders/'.$order->id)->assertOk()->assertSee('CRM Case '.CrmCase::sole()->reference)
+        ->assertSee('/crm/cases/'.CrmCase::sole()->id, false);
 });
 
 it('shows the operating guide to every CRM user under CRM Help', function () {
-    $this->actingAs(CrmData::staff())->get('/admin/crm/help')
+    $this->actingAs(CrmData::staff())->get('/crm/help')
         ->assertOk()->assertSee('The five TOCO steps')->assertSee('Adding a new staff member')->assertSee('id="5-the-five-toco-steps-vehicle-sales"', false);
 });
 
@@ -101,16 +103,42 @@ it('gives team leads their own role with agent rights', function () {
 
     expect(\App\Modules\Crm\Support\CrmAccess::isTeamLead($lead))->toBeTrue()
         ->and(\App\Modules\Crm\Support\CrmAccess::canPick($lead))->toBeTrue();
-    $this->actingAs($lead)->get('/admin/crm/team')->assertOk();
+    $this->actingAs($lead)->get('/crm/team')->assertOk();
 });
 
-it('sends CRM-only staff from the admin home to the CRM Dashboard, admins stay', function () {
+it('keeps CRM-only staff out of /admin and sends them to /crm, admins use both (CR-TOC-02-01)', function () {
     $agent = CrmData::staff();
     CrmData::quote(CrmData::buyer(), CrmData::car()); // the agent's Case
 
-    $this->actingAs($agent)->get('/admin')->assertRedirect('/admin/crm');
-    $this->actingAs($agent)->get('/admin/crm')->assertOk()->assertSee('Open Cases')->assertSee('Search & Order');
-    $this->actingAs(CrmData::admin())->get('/admin')->assertRedirect('/admin/crm');   // CRM-only admin too
+    $this->actingAs($agent)->get('/admin')->assertRedirect('/crm');
+    $this->actingAs($agent)->get('/crm')->assertOk()->assertSee('Open Cases')->assertSee('Search & Order');
+    $this->actingAs(CrmData::admin())->get('/admin')->assertRedirect('/crm');   // CRM-only admin too
+    $this->actingAs($agent)->get('/admin/orders')->assertRedirect('/crm');
     \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
     $this->actingAs(\App\Models\User::factory()->create()->assignRole('admin'))->get('/admin')->assertOk();
+});
+
+it('redirects old /admin/crm addresses to /crm (CR-TOC-02-01)', function () {
+    $this->get('/admin/crm')->assertRedirect('/crm')->assertStatus(301);
+    $this->get('/admin/crm/cases/5?tab=notes')->assertRedirect('/crm/cases/5?tab=notes');
+});
+
+it('shows linked website records to CRM-only staff without admin links (CR-TOC-02-01)', function () {
+    $agent = CrmData::staff();
+    CrmData::quote(CrmData::buyer(), CrmData::car());
+    $this->actingAs($agent);
+
+    $rows = Livewire::test(ViewCase::class, ['record' => CrmCase::sole()->getKey()])->instance()->linkedRecords();
+    expect($rows)->not->toBeEmpty()->and(collect($rows)->pluck('url')->filter())->toBeEmpty();
+});
+
+it('links site admins from /admin to /crm (CR-TOC-02-01)', function () {
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+    Filament::setCurrentPanel('admin');
+    $this->actingAs(\App\Models\User::factory()->create()->assignRole('admin'))->get('/admin')->assertOk()->assertSee('Open CRM');
+});
+
+it('links site admins from /crm back to /admin (CR-TOC-02-01)', function () {
+    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+    $this->actingAs(\App\Models\User::factory()->create()->assignRole('admin'))->get('/crm')->assertOk()->assertSee('Website admin');
 });

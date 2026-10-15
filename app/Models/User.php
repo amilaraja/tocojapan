@@ -34,8 +34,12 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return $panel->getId() === 'admin'
-            && $this->hasAnyRole(['super_admin', 'admin', 'sales', 'mailer_admin', 'mailer_marketer', 'crm_admin', 'crm_agent', 'crm_operations', 'crm_team_lead']);
+        // CRM staff work in their own /crm panel and cannot open /admin (CR-TOC-02-01).
+        return match ($panel->getId()) {
+            'admin' => $this->hasAnyRole(['super_admin', 'admin', 'sales', 'mailer_admin', 'mailer_marketer']),
+            'crm' => \App\Modules\Crm\CrmServiceProvider::enabled() && \App\Modules\Crm\Support\CrmAccess::canUse($this),
+            default => false,
+        };
     }
 
     /** @return BelongsTo<Country, $this> */

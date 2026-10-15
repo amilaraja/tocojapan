@@ -33,7 +33,7 @@ class CrmSettingsPage extends Page implements HasForms
 
     protected string $view = 'crm::filament.settings';
 
-    protected static ?string $slug = 'crm/settings';
+    protected static ?string $slug = 'settings';
 
     protected static ?string $title = 'CRM settings';
 

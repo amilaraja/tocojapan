@@ -17,7 +17,7 @@ class MyWork extends Page
 {
     protected string $view = 'crm::filament.my-work';
 
-    protected static ?string $slug = 'crm/my-work';
+    protected static ?string $slug = 'my-work';
 
     protected static ?string $title = 'My work';
 

@@ -26,7 +26,7 @@ class StepTemplateResource extends Resource
 {
     protected static ?string $model = CrmStepTemplate::class;
 
-    protected static ?string $slug = 'crm/steps';
+    protected static ?string $slug = 'steps';
 
     protected static ?string $modelLabel = 'mini step';
 

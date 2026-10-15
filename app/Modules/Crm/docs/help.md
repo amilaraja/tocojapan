@@ -6,9 +6,11 @@ The TOCO CRM keeps every buyer enquiry in one place. Each enquiry has one owner,
 
 ## 1. Getting started
 
+**Where the CRM is.** The CRM has its own workspace at **tocojapan.com/crm**. Sales staff sign in there with their usual login and work in the CRM only; the website admin (tocojapan.com/admin) is for site admins. A sales user who opens /admin is sent back to /crm. Site admins use both with one sign-in: **Open CRM** in the admin menu, **Website admin** in the CRM menu. Old /admin/crm links still work and open the same screen in /crm.
+
 **Your login.** Each staff member has their own login. Every action you take is recorded with your name. Do not share logins.
 
-**Your role** decides what you see. Admins give roles on **Admin → System → Users**.
+**Your role** decides what you see. Site admins give roles in the website admin under **System → Users**.
 
 | Role | Who | Can do |
 |---|---|---|
@@ -17,7 +19,7 @@ The TOCO CRM keeps every buyer enquiry in one place. Each enquiry has one owner,
 | CRM Team lead | Senior sales | Agent rights, plus sees every Case of their queue, the team overview and reports |
 | CRM Operations | Shipping and documents | Works the shipping and document steps (stages 03 and 04) on any Case |
 
-**Where you start.** **CRM → Dashboard** is the CRM's front page. CRM staff who are not site admins land there straight after signing in.
+**Where you start.** **CRM → Dashboard** is the CRM's front page (tocojapan.com/crm). Staff land there straight after signing in.
 
 **Set up your profile first** (**CRM → My profile**):
 
@@ -76,7 +78,7 @@ Open a Case from **CRM → Cases** or from any list. The page shows:
 - **Deadline pills:** each running deadline, green, amber or red.
 - **The five-stage bar** with the time spent in each stage.
 - **Checklist** of mini steps (vehicle sales).
-- **Website records:** the quote, proforma, order or form behind the Case, with links to their admin screens.
+- **Website records:** the quote, proforma, order or form behind the Case, with links to their admin screens (site admins only; sales staff see the record and its status).
 - **Tasks** and **Documents**.
 - **Timeline:** everything that happened, newest first. Use the filters (Messages, Emails, Notes, Calls & WhatsApp, Progress, Documents, System). Yellow entries are internal notes; the customer never sees them.
 

@@ -18,7 +18,7 @@ class PipelineBoard extends Page
 {
     protected string $view = 'crm::filament.pipeline';
 
-    protected static ?string $slug = 'crm/pipeline';
+    protected static ?string $slug = 'pipeline';
 
     protected static ?string $title = 'Pipeline';
 

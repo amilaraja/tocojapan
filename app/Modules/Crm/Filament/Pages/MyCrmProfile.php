@@ -29,7 +29,7 @@ class MyCrmProfile extends Page implements HasForms
 
     protected string $view = 'crm::filament.settings';
 
-    protected static ?string $slug = 'crm/profile';
+    protected static ?string $slug = 'profile';
 
     protected static ?string $title = 'My CRM profile';
 

@@ -25,7 +25,7 @@ class QueueResource extends Resource
 {
     protected static ?string $model = CrmQueue::class;
 
-    protected static ?string $slug = 'crm/queues';
+    protected static ?string $slug = 'queues';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
 

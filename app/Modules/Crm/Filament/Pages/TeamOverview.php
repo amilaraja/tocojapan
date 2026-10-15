@@ -16,7 +16,7 @@ class TeamOverview extends Page
 
     protected string $view = 'crm::filament.team';
 
-    protected static ?string $slug = 'crm/team';
+    protected static ?string $slug = 'team';
 
     protected static ?string $title = 'Team overview';
 
